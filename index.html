@@ -1,0 +1,1599 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Rakspark Academy – #1 JAMB 2026 Tutorial Platform in Nigeria</title>
+  <meta name="description" content="Join Rakspark Academy – Nigeria's most trusted JAMB tutorial platform. Score 300+ in JAMB 2026 with video lessons, past questions & mock exams."/>
+
+  <!-- Fonts & Icons -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+
+  <style>
+    :root {
+      --primary: #1E3A8A;
+      --primary-dark: #1E293B;
+      --secondary: #3B82F6;
+      --accent: #F59E0B;
+      --dark: #0F172A;
+      --dark-light: #1E293B;
+      --gray: #F8FAFC;
+      --gray-light: #F1F5F9;
+      --gray-dark: #64748B;
+      --white: #ffffff;
+      --success: #10B981;
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.1);
+      --shadow-md: 0 4px 6px rgba(0,0,0,0.1);
+      --shadow-lg: 0 10px 15px rgba(0,0,0,0.1);
+      --shadow-xl: 0 20px 25px rgba(0,0,0,0.1);
+    }
+
+    * { 
+      margin: 0; 
+      padding: 0; 
+      box-sizing: border-box; 
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--white);
+      color: #334155;
+      line-height: 1.7;
+      overflow-x: hidden;
+    }
+
+    html { 
+      scroll-behavior: smooth; 
+    }
+
+    .container { 
+      max-width: 1280px; 
+      margin: 0 auto; 
+      padding: 0 20px; 
+    }
+
+    /* Header */
+    header {
+      background: rgba(255, 255, 255, 0.98);
+      backdrop-filter: blur(12px);
+      position: fixed;
+      top: 0;
+      width: 100%;
+      z-index: 1000;
+      box-shadow: var(--shadow-sm);
+      transition: all 0.3s ease;
+    }
+
+    header.scrolled {
+      box-shadow: var(--shadow-md);
+    }
+
+    .nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 18px 0;
+      transition: padding 0.3s ease;
+    }
+
+    .logo-container {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .logo-icon {
+      width: 40px;
+      height: 40px;
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      color: white;
+      font-weight: 900;
+    }
+
+    .logo {
+      font-family: 'Outfit', sans-serif;
+      font-size: 22px;
+      font-weight: 800;
+      color: var(--primary);
+      letter-spacing: -0.5px;
+    }
+
+    .auth-buttons {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .btn {
+      padding: 10px 24px;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-size: 14px;
+      border: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-family: 'Inter', sans-serif;
+      text-decoration: none;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: var(--primary-dark);
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
+    }
+
+    .btn-outline {
+      background: transparent;
+      border: 2px solid var(--primary);
+      color: var(--primary);
+    }
+
+    .btn-outline:hover {
+      background: var(--primary);
+      color: white;
+    }
+
+    .btn-accent {
+      background: var(--accent);
+      color: white;
+    }
+
+    .btn-accent:hover {
+      background: #D97706;
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
+    }
+
+    /* Hero Section */
+    .hero {
+      min-height: 100vh;
+      background: linear-gradient(135deg, var(--dark) 0%, var(--dark-light) 100%);
+      display: flex;
+      align-items: center;
+      padding-top: 80px;
+      padding-bottom: 60px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero::before {
+      content: '';
+      position: absolute;
+      width: 500px;
+      height: 500px;
+      background: radial-gradient(circle, rgba(59, 130, 246, 0.15) 0%, transparent 70%);
+      border-radius: 50%;
+      top: -150px;
+      right: -150px;
+      animation: float 8s ease-in-out infinite;
+    }
+
+    .hero::after {
+      content: '';
+      position: absolute;
+      width: 400px;
+      height: 400px;
+      background: radial-gradient(circle, rgba(245, 158, 11, 0.1) 0%, transparent 70%);
+      border-radius: 50%;
+      bottom: -100px;
+      left: -100px;
+      animation: float 10s ease-in-out infinite reverse;
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translate(0, 0); }
+      50% { transform: translate(20px, 20px); }
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 2;
+      text-align: center;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 40px 0;
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      padding: 8px 20px;
+      border-radius: 50px;
+      color: white;
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 24px;
+    }
+
+    .hero-badge i {
+      color: var(--accent);
+      font-size: 14px;
+    }
+
+    .hero-content h1 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 48px;
+      font-weight: 900;
+      color: white;
+      line-height: 1.2;
+      margin-bottom: 20px;
+      letter-spacing: -1px;
+    }
+
+    .gradient-text {
+      background: linear-gradient(135deg, var(--secondary), var(--accent));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero-content p {
+      font-size: 18px;
+      color: rgba(255, 255, 255, 0.85);
+      margin-bottom: 16px;
+      font-weight: 400;
+      line-height: 1.6;
+    }
+
+    .hero-content .highlight {
+      font-weight: 700;
+      color: var(--accent);
+    }
+
+    .countdown-container {
+      margin: 40px 0;
+    }
+
+    .countdown-label {
+      font-size: 14px;
+      color: rgba(255, 255, 255, 0.7);
+      margin-bottom: 16px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .countdown {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .countdown-item {
+      background: rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      padding: 16px 20px;
+      border-radius: 12px;
+      min-width: 85px;
+      transition: transform 0.3s ease;
+    }
+
+    .countdown-item:hover {
+      transform: translateY(-4px);
+      background: rgba(255, 255, 255, 0.12);
+    }
+
+    .countdown-value {
+      display: block;
+      font-size: 36px;
+      font-weight: 900;
+      font-family: 'Outfit', sans-serif;
+      color: var(--accent);
+      line-height: 1;
+      margin-bottom: 6px;
+    }
+
+    .countdown-unit {
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.7);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .hero-buttons {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-top: 32px;
+    }
+
+    .hero-buttons .btn {
+      padding: 14px 32px;
+      font-size: 15px;
+      font-weight: 700;
+    }
+
+    .stats-row {
+      display: flex;
+      justify-content: center;
+      gap: 40px;
+      margin-top: 50px;
+      flex-wrap: wrap;
+    }
+
+    .stat-item {
+      text-align: center;
+    }
+
+    .stat-value {
+      font-size: 32px;
+      font-weight: 900;
+      font-family: 'Outfit', sans-serif;
+      color: var(--accent);
+      display: block;
+      margin-bottom: 6px;
+    }
+
+    .stat-label {
+      font-size: 13px;
+      color: rgba(255, 255, 255, 0.7);
+      font-weight: 500;
+    }
+
+    /* Video Section */
+    .video-section {
+      padding: 100px 0;
+      background: var(--gray);
+    }
+
+    .section-header {
+      text-align: center;
+      max-width: 700px;
+      margin: 0 auto 60px;
+    }
+
+    .section-badge {
+      display: inline-block;
+      background: rgba(30, 58, 138, 0.1);
+      color: var(--primary);
+      padding: 6px 16px;
+      border-radius: 50px;
+      font-size: 13px;
+      font-weight: 700;
+      margin-bottom: 16px;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+
+    .section-header h2 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 40px;
+      font-weight: 900;
+      color: var(--dark);
+      margin-bottom: 16px;
+      line-height: 1.2;
+      letter-spacing: -0.5px;
+    }
+
+    .section-header p {
+      font-size: 17px;
+      color: var(--gray-dark);
+      line-height: 1.7;
+    }
+
+    .video-container {
+      max-width: 900px;
+      margin: 0 auto;
+      background: white;
+      padding: 20px;
+      border-radius: 16px;
+      box-shadow: var(--shadow-lg);
+    }
+
+    .video-wrapper {
+      position: relative;
+      padding-bottom: 56.25%;
+      height: 0;
+      overflow: hidden;
+      border-radius: 12px;
+    }
+
+    .video-wrapper iframe {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      border: none;
+    }
+
+    /* Features Section */
+    .features {
+      padding: 100px 0;
+      background: white;
+    }
+
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 24px;
+      margin-top: 50px;
+    }
+
+    .feature-card {
+      background: var(--gray-light);
+      padding: 32px;
+      border-radius: 16px;
+      transition: all 0.3s ease;
+      border: 2px solid transparent;
+    }
+
+    .feature-card:hover {
+      transform: translateY(-6px);
+      box-shadow: var(--shadow-lg);
+      border-color: var(--primary);
+      background: white;
+    }
+
+    .feature-icon {
+      width: 56px;
+      height: 56px;
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      color: white;
+      margin-bottom: 20px;
+    }
+
+    .feature-card h3 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--dark);
+      margin-bottom: 10px;
+    }
+
+    .feature-card p {
+      color: var(--gray-dark);
+      font-size: 14px;
+      line-height: 1.7;
+    }
+
+    /* Testimonials */
+    .testimonials {
+      padding: 100px 0;
+      background: var(--gray);
+    }
+
+    .testimonial-slider {
+      max-width: 900px;
+      margin: 0 auto;
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      padding: 50px;
+      border-radius: 20px;
+      box-shadow: var(--shadow-xl);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .testimonial-slider::before {
+      content: '';
+      position: absolute;
+      width: 250px;
+      height: 250px;
+      background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+      border-radius: 50%;
+      top: -80px;
+      right: -80px;
+    }
+
+    .slide {
+      display: none;
+      opacity: 0;
+      transition: opacity 0.5s ease;
+      text-align: center;
+      position: relative;
+      z-index: 2;
+    }
+
+    .slide.active {
+      display: block;
+      opacity: 1;
+    }
+
+    .quote-icon {
+      font-size: 40px;
+      color: rgba(255, 255, 255, 0.25);
+      margin-bottom: 20px;
+    }
+
+    .stars {
+      color: var(--accent);
+      font-size: 20px;
+      margin-bottom: 20px;
+    }
+
+    .testimonial-text {
+      font-size: 19px;
+      color: white;
+      line-height: 1.6;
+      margin-bottom: 28px;
+      font-weight: 400;
+    }
+
+    .testimonial-author {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+    }
+
+    .author-avatar {
+      width: 50px;
+      height: 50px;
+      background: linear-gradient(135deg, var(--accent), #D97706);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      font-weight: 700;
+      color: white;
+    }
+
+    .author-info strong {
+      display: block;
+      color: white;
+      font-size: 16px;
+      font-weight: 700;
+      margin-bottom: 3px;
+      text-align: left;
+    }
+
+    .author-info span {
+      color: rgba(255, 255, 255, 0.7);
+      font-size: 13px;
+      text-align: left;
+    }
+
+    .slider-controls {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 16px;
+      margin-top: 32px;
+    }
+
+    .slider-dots {
+      display: flex;
+      gap: 8px;
+    }
+
+    .dot {
+      width: 8px;
+      height: 8px;
+      background: rgba(255, 255, 255, 0.3);
+      border-radius: 50%;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .dot.active {
+      background: var(--accent);
+      width: 24px;
+      border-radius: 4px;
+    }
+
+    /* Final CTA */
+    .final-cta {
+      background: linear-gradient(135deg, var(--dark), var(--dark-light));
+      padding: 100px 0;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .final-cta::before {
+      content: '';
+      position: absolute;
+      width: 400px;
+      height: 400px;
+      background: radial-gradient(circle, rgba(59, 130, 246, 0.1) 0%, transparent 70%);
+      border-radius: 50%;
+      top: -200px;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+
+    .final-cta-content {
+      position: relative;
+      z-index: 2;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    .final-cta h2 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 44px;
+      font-weight: 900;
+      color: white;
+      margin-bottom: 16px;
+      line-height: 1.2;
+      letter-spacing: -0.5px;
+    }
+
+    .final-cta p {
+      font-size: 18px;
+      color: rgba(255, 255, 255, 0.85);
+      margin-bottom: 40px;
+    }
+
+    .cta-buttons {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .cta-buttons .btn {
+      padding: 16px 40px;
+      font-size: 16px;
+      font-weight: 700;
+    }
+
+    /* Footer */
+    footer {
+      background: var(--dark);
+      color: rgba(255, 255, 255, 0.7);
+      padding: 60px 0 30px;
+    }
+
+    .footer-content {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 40px;
+      margin-bottom: 40px;
+    }
+
+    .footer-section h3 {
+      color: white;
+      font-family: 'Outfit', sans-serif;
+      font-size: 17px;
+      font-weight: 700;
+      margin-bottom: 16px;
+    }
+
+    .footer-section p {
+      font-size: 14px;
+      line-height: 1.7;
+      margin-bottom: 16px;
+    }
+
+    .footer-section ul {
+      list-style: none;
+    }
+
+    .footer-section ul li {
+      margin-bottom: 10px;
+    }
+
+    .footer-section ul li a {
+      color: rgba(255, 255, 255, 0.7);
+      text-decoration: none;
+      transition: color 0.3s ease;
+      font-size: 14px;
+    }
+
+    .footer-section ul li a:hover {
+      color: var(--accent);
+    }
+
+    .footer-section ul li i {
+      margin-right: 8px;
+      color: var(--accent);
+    }
+
+    .social-links {
+      display: flex;
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    .social-link {
+      width: 36px;
+      height: 36px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      text-decoration: none;
+      transition: all 0.3s ease;
+      font-size: 16px;
+    }
+
+    .social-link:hover {
+      background: var(--primary);
+      transform: translateY(-3px);
+    }
+
+    .footer-bottom {
+      text-align: center;
+      padding-top: 30px;
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+      color: rgba(255, 255, 255, 0.5);
+      font-size: 13px;
+    }
+
+    /* WhatsApp Float */
+    .whatsapp-float {
+      position: fixed;
+      bottom: 25px;
+      right: 25px;
+      width: 56px;
+      height: 56px;
+      background: linear-gradient(135deg, #25D366, #128C7E);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      color: white;
+      z-index: 999;
+      box-shadow: 0 4px 12px rgba(37, 211, 102, 0.4);
+      transition: all 0.3s ease;
+      animation: pulse 2s infinite;
+    }
+
+    .whatsapp-float:hover {
+      transform: scale(1.1);
+      box-shadow: 0 6px 16px rgba(37, 211, 102, 0.5);
+    }
+
+    @keyframes pulse {
+      0% { box-shadow: 0 4px 12px rgba(37, 211, 102, 0.4); }
+      50% { box-shadow: 0 4px 12px rgba(37, 211, 102, 0.4), 0 0 0 10px rgba(37, 211, 102, 0.2); }
+      100% { box-shadow: 0 4px 12px rgba(37, 211, 102, 0.4); }
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+      .container {
+        padding: 0 16px;
+      }
+
+      .nav {
+        flex-direction: column;
+        gap: 12px;
+        padding: 14px 0;
+      }
+
+      .logo {
+        font-size: 20px;
+      }
+
+      .logo-icon {
+        width: 36px;
+        height: 36px;
+        font-size: 18px;
+      }
+
+      .auth-buttons {
+        width: 100%;
+        justify-content: center;
+      }
+
+      .auth-buttons .btn {
+        flex: 1;
+        justify-content: center;
+        min-width: 100px;
+      }
+
+      .hero {
+        min-height: auto;
+        padding-top: 120px;
+        padding-bottom: 50px;
+      }
+
+      .hero-content h1 {
+        font-size: 32px;
+        letter-spacing: -0.5px;
+      }
+
+      .hero-content p {
+        font-size: 16px;
+      }
+
+      .countdown {
+        gap: 8px;
+      }
+
+      .countdown-item {
+        padding: 12px 16px;
+        min-width: 70px;
+      }
+
+      .countdown-value {
+        font-size: 28px;
+      }
+
+      .countdown-unit {
+        font-size: 10px;
+      }
+
+      .hero-buttons {
+        flex-direction: column;
+        width: 100%;
+      }
+
+      .hero-buttons .btn {
+        width: 100%;
+        justify-content: center;
+      }
+
+      .stats-row {
+        gap: 24px;
+        margin-top: 40px;
+      }
+
+      .stat-value {
+        font-size: 26px;
+      }
+
+      .stat-label {
+        font-size: 12px;
+      }
+
+      .video-section,
+      .features,
+      .testimonials,
+      .final-cta {
+        padding: 60px 0;
+      }
+
+      .section-header h2 {
+        font-size: 28px;
+      }
+
+      .section-header p {
+        font-size: 15px;
+      }
+
+      .video-container {
+        padding: 12px;
+      }
+
+      .features-grid {
+        grid-template-columns: 1fr;
+        gap: 20px;
+      }
+
+      .feature-card {
+        padding: 24px;
+      }
+
+      .testimonial-slider {
+        padding: 32px 20px;
+      }
+
+      .testimonial-text {
+        font-size: 16px;
+      }
+
+      .final-cta h2 {
+        font-size: 28px;
+      }
+
+      .final-cta p {
+        font-size: 16px;
+      }
+
+      .cta-buttons {
+        flex-direction: column;
+        width: 100%;
+      }
+
+      .cta-buttons .btn {
+        width: 100%;
+        justify-content: center;
+      }
+
+      .footer-content {
+        grid-template-columns: 1fr;
+        gap: 30px;
+      }
+
+      .whatsapp-float {
+        width: 50px;
+        height: 50px;
+        font-size: 24px;
+        bottom: 20px;
+        right: 20px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .hero-content h1 {
+        font-size: 28px;
+      }
+
+      .section-header h2 {
+        font-size: 24px;
+      }
+
+      .final-cta h2 {
+        font-size: 24px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- WhatsApp Float -->
+  <a href="https://wa.me/+2349040009663" class="whatsapp-float" target="_blank" aria-label="Chat on WhatsApp">
+    <i class="fab fa-whatsapp"></i>
+  </a>
+
+  <!-- Header -->
+  <header id="header">
+    <div class="container nav">
+      <div class="logo-container">
+        <div class="logo-icon">R</div>
+        <div class="logo">Rakspark Academy</div>
+      </div>
+      <div class="auth-buttons">
+        <button id="loginBtn" class="btn btn-outline">
+          <i class="fas fa-sign-in-alt"></i> Login
+        </button>
+        <button id="registerBtn" class="btn btn-primary">
+          <i class="fas fa-rocket"></i> Register Free
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="container hero-content">
+      <div class="hero-badge">
+        <i class="fas fa-trophy"></i>
+        Nigeria's #1 JAMB Tutorial Platform
+      </div>
+      <h1>
+        Score <span class="gradient-text">300+</span> in<br>JAMB 2026
+      </h1>
+      <p>
+        Join <span class="highlight">50,000+ students</span> using our proven system<br>
+        Video lessons • Past questions • Mock exams • Expert tutors
+      </p>
+
+      <div class="countdown-container">
+        <div class="countdown-label">JAMB 2026 Exam In:</div>
+        <div class="countdown">
+          <div class="countdown-item">
+            <span class="countdown-value" id="days">000</span>
+            <span class="countdown-unit">Days</span>
+          </div>
+          <div class="countdown-item">
+            <span class="countdown-value" id="hours">00</span>
+            <span class="countdown-unit">Hours</span>
+          </div>
+          <div class="countdown-item">
+            <span class="countdown-value" id="minutes">00</span>
+            <span class="countdown-unit">Mins</span>
+          </div>
+          <div class="countdown-item">
+            <span class="countdown-value" id="seconds">00</span>
+            <span class="countdown-unit">Secs</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="hero-buttons">
+        <button id="heroRegister" class="btn btn-accent">
+          <i class="fas fa-rocket"></i> Start Learning Free
+        </button>
+        <button id="heroLogin" class="btn btn-outline" style="background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.3); color: white;">
+          <i class="fas fa-play-circle"></i> Watch Demo
+        </button>
+      </div>
+
+      <div class="stats-row">
+        <div class="stat-item">
+          <span class="stat-value" data-target="50000" data-suffix="K+">0</span>
+          <span class="stat-label">Active Students</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-value" data-target="98" data-suffix="%">0</span>
+          <span class="stat-label">Success Rate</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-value" data-target="320" data-suffix="+">0</span>
+          <span class="stat-label">Avg. Score</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Video Section -->
+  <section class="video-section" id="video">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-badge">Watch & Learn</span>
+        <h2>See How We Help Students Excel</h2>
+        <p>Watch this introduction video to understand how Rakspark Academy can transform your JAMB preparation journey</p>
+      </div>
+
+      <div class="video-container">
+        <div class="video-wrapper">
+          <!-- Replace this YouTube URL with your actual video URL -->
+          <iframe 
+            src="https://www.youtube.com/embed/dQw4w9WgXcQ" 
+            title="Rakspark Academy Introduction Video" 
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+            allowfullscreen>
+          </iframe>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features Section -->
+  <section class="features" id="features">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-badge">Why Choose Us</span>
+        <h2>Everything You Need to Excel in JAMB</h2>
+        <p>Comprehensive learning platform designed to help you achieve your dream score with confidence</p>
+      </div>
+
+      <div class="features-grid">
+        <div class="feature-card">
+          <div class="feature-icon">
+            <i class="fas fa-video"></i>
+          </div>
+          <h3>HD Video Lessons</h3>
+          <p>Access 1000+ high-quality video tutorials covering all JAMB subjects with expert explanations</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon">
+            <i class="fas fa-book-open"></i>
+          </div>
+          <h3>Past Questions Bank</h3>
+          <p>Practice with 10+ years of authentic JAMB past questions with detailed solutions</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon">
+            <i class="fas fa-clipboard-check"></i>
+          </div>
+          <h3>Mock Examinations</h3>
+          <p>Take unlimited CBT mock exams in real exam environment to build confidence</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon">
+            <i class="fas fa-chart-line"></i>
+          </div>
+          <h3>Performance Analytics</h3>
+          <p>Track your progress with detailed analytics and personalized study recommendations</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon">
+            <i class="fas fa-users"></i>
+          </div>
+          <h3>Expert Support</h3>
+          <p>Get help from qualified tutors and join study groups with fellow JAMB candidates</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon">
+            <i class="fas fa-mobile-alt"></i>
+          </div>
+          <h3>Learn Anywhere</h3>
+          <p>Study on any device - mobile, tablet, or computer with offline download options</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Testimonials -->
+  <section class="testimonials" id="testimonials">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-badge">Success Stories</span>
+        <h2>What Our Students Say</h2>
+        <p>Real results from real students who achieved their JAMB dreams with Rakspark</p>
+      </div>
+
+      <div class="testimonial-slider">
+        <div class="quote-icon">
+          <i class="fas fa-quote-left"></i>
+        </div>
+
+        <!-- Testimonial Slides -->
+        <div class="slide active">
+          <div class="stars">⭐⭐⭐⭐⭐</div>
+          <p class="testimonial-text">"I improved from 198 to 323 in just 4 months! The video lessons and practice tests were exactly what I needed. Rakspark is truly a game-changer!"</p>
+          <div class="testimonial-author">
+            <div class="author-avatar">CO</div>
+            <div class="author-info">
+              <strong>Chidera Okeke</strong>
+              <span>JAMB Score: 323</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="slide">
+          <div class="stars">⭐⭐⭐⭐⭐</div>
+          <p class="testimonial-text">"The structured learning path helped me stay focused and consistent throughout my preparation. Best investment I made for my future!"</p>
+          <div class="testimonial-author">
+            <div class="author-avatar">HE</div>
+            <div class="author-info">
+              <strong>Hannah Edet</strong>
+              <span>JAMB Score: 315</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="slide">
+          <div class="stars">⭐⭐⭐⭐⭐</div>
+          <p class="testimonial-text">"Excellent video lessons with clear explanations. The mock exams prepared me perfectly for the real test environment."</p>
+          <div class="testimonial-author">
+            <div class="author-avatar">SA</div>
+            <div class="author-info">
+              <strong>Samuel Adeyemi</strong>
+              <span>JAMB Score: 310</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="slide">
+          <div class="stars">⭐⭐⭐⭐⭐</div>
+          <p class="testimonial-text">"Affordable, comprehensive, and result-driven. I couldn't have asked for a better platform for my JAMB preparation."</p>
+          <div class="testimonial-author">
+            <div class="author-avatar">FB</div>
+            <div class="author-info">
+              <strong>Fatima Bello</strong>
+              <span>JAMB Score: 328</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="slide">
+          <div class="stars">⭐⭐⭐⭐⭐</div>
+          <p class="testimonial-text">"I finally scored above 320 thanks to Rakspark's comprehensive study materials and supportive community!"</p>
+          <div class="testimonial-author">
+            <div class="author-avatar">MJ</div>
+            <div class="author-info">
+              <strong>Michael Johnson</strong>
+              <span>JAMB Score: 321</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="slide">
+          <div class="stars">⭐⭐⭐⭐⭐</div>
+          <p class="testimonial-text">"The instructors are supportive and the practice tests are extremely helpful. This platform gave me the confidence I needed."</p>
+          <div class="testimonial-author">
+            <div class="author-avatar">AM</div>
+            <div class="author-info">
+              <strong>Aisha Musa</strong>
+              <span>JAMB Score: 318</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="slide">
+          <div class="stars">⭐⭐⭐⭐⭐</div>
+          <p class="testimonial-text">"I recommend Rakspark to every JAMB aspirant. The quality of content and support is unmatched!"</p>
+          <div class="testimonial-author">
+            <div class="author-avatar">DO</div>
+            <div class="author-info">
+              <strong>David Obi</strong>
+              <span>JAMB Score: 312</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="slide">
+  <div class="stars">⭐⭐⭐⭐⭐</div>
+  <p class="testimonial-text">"I improved from 145 to 245 in just 3 months! The video lessons broke down every topic so simply. Rakspark changed my life!"</p>
+  <div class="testimonial-author">
+    <div class="author-avatar">CO</div>
+    <div class="author-info">
+      <strong>Chidera Okeke</strong>
+      <span>JAMB Score: 245</span>
+    </div>
+  </div>
+</div>
+
+<div class="slide">
+  <div class="stars">⭐⭐⭐⭐⭐</div>
+  <p class="testimonial-text">"The structured learning path helped me stay focused and consistent throughout my preparation. Best investment I made for my future!"</p>
+  <div class="testimonial-author">
+    <div class="author-avatar">HE</div>
+    <div class="author-info">
+      <strong>Hannah Edet</strong>
+      <span>JAMB Score: 238</span>
+    </div>
+  </div>
+</div>
+
+<div class="slide">
+  <div class="stars">⭐⭐⭐⭐⭐</div>
+  <p class="testimonial-text">"Excellent video lessons with clear explanations. The mock exams prepared me perfectly for the real test environment."</p>
+  <div class="testimonial-author">
+    <div class="author-avatar">SA</div>
+    <div class="author-info">
+      <strong>Samuel Adeyemi</strong>
+      <span>JAMB Score: 252</span>
+    </div>
+  </div>
+</div>
+
+<div class="slide">
+  <div class="stars">⭐⭐⭐⭐⭐</div>
+  <p class="testimonial-text">"Affordable, comprehensive, and result-driven. I couldn't have asked for a better platform for my JAMB preparation."</p>
+  <div class="testimonial-author">
+    <div class="author-avatar">FB</div>
+    <div class="author-info">
+      <strong>Fatima Bello</strong>
+      <span>JAMB Score: 268</span>
+    </div>
+  </div>
+</div>
+
+<div class="slide">
+  <div class="stars">⭐⭐⭐⭐⭐</div>
+  <p class="testimonial-text">"I finally scored above 250 thanks to Rakspark's comprehensive study materials and supportive community!"</p>
+  <div class="testimonial-author">
+    <div class="author-avatar">MJ</div>
+    <div class="author-info">
+      <strong>Michael Johnson</strong>
+      <span>JAMB Score: 261</span>
+    </div>
+  </div>
+</div>
+        
+        <div class="slide">
+  <div class="stars">⭐⭐⭐⭐⭐</div>
+  <p class="testimonial-text">"I loved the personalized study schedule. It adapted to my pace and helped me cover all topics systematically."</p>
+  <div class="testimonial-author">
+    <div class="author-avatar">ZM</div>
+    <div class="author-info">
+      <strong>Zainab Mohammed</strong>
+      <span>JAMB Score: 311</span>
+    </div>
+  </div>
+</div>
+
+<div class="slide">
+  <div class="stars">⭐⭐⭐⭐⭐</div>
+  <p class="testimonial-text">"The English and Literature resources are outstanding. I went from barely passing to scoring 85 in Use of English!"</p>
+  <div class="testimonial-author">
+    <div class="author-avatar">GA</div>
+    <div class="author-info">
+      <strong>Grace Aniebo</strong>
+      <span>JAMB Score: 316</span>
+    </div>
+  </div>
+</div>
+
+<div class="slide">
+  <div class="stars">⭐⭐⭐⭐⭐</div>
+  <p class="testimonial-text">"Rakspark gave me hope when I failed JAMB twice before. Third time was the charm - scored 327! Thank you!"</p>
+  <div class="testimonial-author">
+    <div class="author-avatar">PA</div>
+    <div class="author-info">
+      <strong>Peter Adamu</strong>
+      <span>JAMB Score: 327</span>
+    </div>
+  </div>
+</div>
+
+<div class="slide">
+  <div class="stars">⭐⭐⭐⭐⭐</div>
+  <p class="testimonial-text">"The chemistry section is top-notch! Detailed explanations and real-life examples made complex topics easy to understand."</p>
+  <div class="testimonial-author">
+    <div class="author-avatar">IO</div>
+    <div class="author-info">
+      <strong>Ifeanyi Okonkwo</strong>
+      <span>JAMB Score: 313</span>
+    </div>
+  </div>
+</div>
+
+<div class="slide">
+  <div class="stars">⭐⭐⭐⭐⭐</div>
+  <p class="testimonial-text">"Worth every penny! My parents are so proud. I got admission to study Medicine at UNILAG with my 335 score!"</p>
+  <div class="testimonial-author">
+    <div class="author-avatar">AD</div>
+    <div class="author-info">
+      <strong>Adaeze Dike</strong>
+      <span>JAMB Score: 335</span>
+    </div>
+  </div>
+</div>
+
+<div class="slide">
+  <div class="stars">⭐⭐⭐⭐⭐</div>
+  <p class="testimonial-text">"The live classes were incredible! Being able to ask questions in real-time made such a huge difference in my preparation."</p>
+  <div class="testimonial-author">
+    <div class="author-avatar">VO</div>
+    <div class="author-info">
+      <strong>Victor Okafor</strong>
+      <span>JAMB Score: 322</span>
+    </div>
+  </div>
+</div>
+        
+        <div class="slider-controls">
+          <div class="slider-dots" id="dotsContainer"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Final CTA -->
+  <section class="final-cta" id="cta">
+    <div class="final-cta-content">
+      <h2>Ready to Ace JAMB 2026?</h2>
+      <p>Join thousands of successful students and start your journey to a 300+ score today</p>
+      <div class="cta-buttons">
+        <button id="finalRegister" class="btn btn-accent">
+          <i class="fas fa-rocket"></i> Start Learning Free
+        </button>
+        <button id="finalLogin" class="btn btn-outline" style="background: transparent; border-color: white; color: white;">
+          <i class="fas fa-sign-in-alt"></i> Already a Member? Login
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    <div class="container">
+      <div class="footer-content">
+        <div class="footer-section">
+          <h3>Rakspark Academy</h3>
+          <p>Empowering Nigerian students to achieve academic excellence through quality education and innovative learning solutions.</p>
+          <div class="social-links">
+            <a href="#" class="social-link"><i class="fab fa-facebook-f"></i></a>
+            <a href="#" class="social-link"><i class="fab fa-twitter"></i></a>
+            <a href="#" class="social-link"><i class="fab fa-instagram"></i></a>
+            <a href="#" class="social-link"><i class="fab fa-youtube"></i></a>
+          </div>
+        </div>
+
+        <div class="footer-section">
+          <h3>Quick Links</h3>
+          <ul>
+            <li><a href="About.html">About Us</a></li>
+            <li><a href="#features">Our Features</a></li>
+            <li><a href="#testimonials">Success Stories</a></li>
+            <li><a href="#">Blog</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-section">
+          <h3>Support</h3>
+          <ul>
+            <li><a href="#">Help Center</a></li>
+            <li><a href="#">Contact Us</a></li>
+            <li><a href="#">FAQs</a></li>
+            <li><a href="terms.html">Terms of Service</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-section">
+          <h3>Contact</h3>
+          <ul>
+            <li><i class="fas fa-phone"></i> +234 904 000 9663</li>
+            <li><i class="fas fa-envelope"></i> hello@rakspark.com</li>
+            <li><i class="fas fa-map-marker-alt"></i> Lagos, Nigeria</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <p>&copy; 2025 <strong>Rakspark Academy</strong>. All rights reserved. Empowering Nigerian Students to Excellence.</p>
+      </div>
+    </div>
+  </footer>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js";
+  import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyDTDWqG_WAXZO7O6yAxV5lOHUkHZp-wwQk",
+    authDomain: "rackspark.firebaseapp.com",
+    projectId: "rackspark",
+    storageBucket: "rackspark.appspot.com",
+    messagingSenderId: "125488977166",
+    appId: "1:125488977166:web:b519b6871df21662c0f35f"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+
+  // Header scroll effect
+  const header = document.getElementById('header');
+  window.addEventListener('scroll', () => {
+    if (window.scrollY > 50) {
+      header.classList.add('scrolled');
+    } else {
+      header.classList.remove('scrolled');
+    }
+  });
+
+  // Button redirects
+  document.getElementById("loginBtn").onclick = () => location.href = "login.html";
+  document.getElementById("registerBtn").onclick = () => location.href = "register.html";
+  document.getElementById("heroRegister").onclick = () => location.href = "register.html";
+  document.getElementById("heroLogin").onclick = () => {
+    const videoSection = document.getElementById('video');
+    videoSection.scrollIntoView({ behavior: 'smooth' });
+  };
+  document.getElementById("finalRegister").onclick = () => location.href = "register.html";
+  document.getElementById("finalLogin").onclick = () => location.href = "login.html";
+
+  // Animated Counter Function
+  function animateCounter(element, target, duration = 2000) {
+    const start = 0;
+    const suffix = element.getAttribute('data-suffix') || '';
+    const increment = target / (duration / 16); // 60fps
+    let current = start;
+    
+    const timer = setInterval(() => {
+      current += increment;
+      if (current >= target) {
+        current = target;
+        clearInterval(timer);
+      }
+      
+      // Format the number based on the target
+      let displayValue;
+      if (target >= 1000) {
+        displayValue = Math.floor(current / 1000);
+      } else {
+        displayValue = Math.floor(current);
+      }
+      
+      element.textContent = displayValue + suffix;
+    }, 16);
+  }
+
+  // Intersection Observer for stats animation
+  const statsObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        const statValues = entry.target.querySelectorAll('.stat-value');
+        statValues.forEach(stat => {
+          const target = parseInt(stat.getAttribute('data-target'));
+          animateCounter(stat, target);
+        });
+        statsObserver.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.5 });
+
+  // Observe stats row
+  const statsRow = document.querySelector('.stats-row');
+  if (statsRow) {
+    statsObserver.observe(statsRow);
+  }
+
+  // Countdown Timer
+  const jambDate = new Date("2026-03-20T00:00:00").getTime();
+  
+  const updateCountdown = () => {
+    const now = new Date().getTime();
+    const distance = jambDate - now;
+    
+    if(distance > 0){
+      const days = Math.floor(distance / (1000*60*60*24));
+      const hours = Math.floor((distance % (1000*60*60*24)) / (1000*60*60));
+      const minutes = Math.floor((distance % (1000*60*60)) / (1000*60));
+      const seconds = Math.floor((distance % (1000*60)) / 1000);
+      
+      document.getElementById("days").textContent = days.toString().padStart(3, '0');
+      document.getElementById("hours").textContent = hours.toString().padStart(2, '0');
+      document.getElementById("minutes").textContent = minutes.toString().padStart(2, '0');
+      document.getElementById("seconds").textContent = seconds.toString().padStart(2, '0');
+    } else {
+      document.getElementById("days").textContent = "000";
+      document.getElementById("hours").textContent = "00";
+      document.getElementById("minutes").textContent = "00";
+      document.getElementById("seconds").textContent = "00";
+    }
+  };
+  
+  updateCountdown();
+  setInterval(updateCountdown, 1000);
+
+  // Testimonial Slider
+  const slides = document.querySelectorAll('.slide');
+  const dotsContainer = document.getElementById('dotsContainer');
+  let currentSlide = 0;
+
+  // Create dots
+  slides.forEach((_, i) => {
+    const dot = document.createElement('div');
+    dot.classList.add('dot');
+    if(i === 0) dot.classList.add('active');
+    dot.addEventListener('click', () => goToSlide(i));
+    dotsContainer.appendChild(dot);
+  });
+
+  const dots = document.querySelectorAll('.dot');
+
+  const goToSlide = (n) => {
+    slides[currentSlide].classList.remove('active');
+    dots[currentSlide].classList.remove('active');
+    currentSlide = n;
+    slides[currentSlide].classList.add('active');
+    dots[currentSlide].classList.add('active');
+  };
+
+  const nextSlide = () => goToSlide((currentSlide + 1) % slides.length);
+  setInterval(nextSlide, 5000);
+
+  // Auth state change
+  onAuthStateChanged(auth, (user) => {
+    if(user){
+      const firstName = user.displayName ? user.displayName.split(' ')[0] : 'Student';
+      const authButtons = document.querySelector('.auth-buttons');
+      authButtons.innerHTML = `
+        <span style="color: var(--primary); font-weight: 600; margin-right: 8px; font-size: 14px;">
+          <i class="fas fa-user-circle"></i> Hi, ${firstName}
+        </span>
+        <button class="btn btn-primary" style="background: #EF4444; padding: 10px 20px;" id="logoutBtn">
+          <i class="fas fa-sign-out-alt"></i> Logout
+        </button>
+      `;
+      
+      document.getElementById('logoutBtn').onclick = async () => {
+        try {
+          await signOut(auth);
+          location.reload();
+        } catch (error) {
+          console.error('Logout error:', error);
+        }
+      };
+    }
+  });
+
+  // Smooth scroll for anchor links
+  document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+    anchor.addEventListener('click', function (e) {
+      e.preventDefault();
+      const target = document.querySelector(this.getAttribute('href'));
+      if(target) {
+        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    });
+  });
+</script>
+
+</body>
+</html>
