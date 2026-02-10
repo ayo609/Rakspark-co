@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Dashboard • Rakspark Academy</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<style>
+:root{
+  --sky:#87CEEB;--navy:#001F3F;--gold:#FFD700;--green:#2ed573;--red:#ff4757;--white:#fff;--gray:#f8f9fa;--shadow:rgba(0,31,63,0.15)
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Poppins',sans-serif;background:var(--gray);min-height:100vh;color:#333}
+.container{max-width:1400px;margin:0 auto;padding:20px}
+.header-card{background:var(--white);border-radius:30px;padding:40px 50px;box-shadow:0 20px 60px var(--shadow);margin-bottom:40px}
+header{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:20px}
+header h1{font-size:3.2rem;color:var(--navy);font-weight:800}
+.user-info{display:flex;align-items:center;gap:20px}
+.avatar{width:80px;height:80px;border-radius:50%;background:var(--gold);color:var(--navy);font-size:3rem;font-weight:800;display:flex;align-items:center;justify-content:center}
+.user-details h3{font-size:1.8rem;font-weight:700;color:var(--navy)}
+.badge{padding:8px 24px;border-radius:50px;font-weight:700;font-size:1.1rem}
+.premium{background:var(--gold);color:var(--navy)}
+.free{background:var(--navy);color:white}
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:25px;margin:40px 0}
+.stat-card{background:var(--white);padding:30px;border-radius:24px;text-align:center;box-shadow:0 15px 40px var(--shadow)}
+.stat-card h3{font-size:3rem;font-weight:800;color:var(--navy)}
+.stat-card p{font-size:1.3rem;color:#555;margin-top:8px}
+.quote{background:linear-gradient(135deg,var(--navy),#002b55);color:white;padding:50px;border-radius:30px;text-align:center;font-size:1.8rem;font-style:italic;margin:60px 0;box-shadow:0 20px 50px rgba(0,0,0,0.2)}
+.subjects-section{background:var(--white);border-radius:30px;padding:50px;box-shadow:0 20px 60px var(--shadow);margin-bottom:40px}
+.subjects-section h2{font-size:2.8rem;color:var(--navy);text-align:center;margin-bottom:50px;font-weight:800}
+.subjects-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:30px}
+.subject{background:var(--gray);border-radius:24px;padding:35px;transition:all 0.4s;position:relative;overflow:hidden;text-align:center}
+.subject:hover{transform:translateY(-10px);box-shadow:0 20px 50px var(--shadow)}
+.subject h3{font-size:1.8rem;font-weight:700;color:var(--navy);margin-bottom:15px}
+.subject a{display:block;margin-top:15px;padding:12px 0;background:var(--navy);color:white;border-radius:50px;font-weight:600;text-decoration:none;transition:0.3s}
+.subject a:hover{background:#001233;transform:scale(1.05)}
+.lock-overlay{position:absolute;inset:0;background:rgba(255,255,255,0.95);display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--red);font-size:1.6rem;font-weight:700;z-index:10;border-radius:24px;cursor:pointer}
+.lock-overlay i{font-size:4.5rem;margin-bottom:20px}
+.upgrade-banner{background:linear-gradient(135deg,var(--gold),#ffb300);padding:60px;border-radius:30px;text-align:center;margin:60px 0;box-shadow:0 20px 60px rgba(255,215,0,0.4)}
+.upgrade-banner h3{font-size:2.8rem;font-weight:800;color:var(--navy);margin-bottom:15px}
+.upgrade-banner p{font-size:1.5rem;color:var(--navy);margin:20px 0}
+.upgrade-btn{display:inline-block;padding:20px 70px;background:var(--navy);color:white;border:none;border-radius:50px;font-size:1.6rem;font-weight:700;cursor:pointer;transition:all 0.4s}
+.upgrade-btn:hover{background:#001233;transform:scale(1.05)}
+.quick-links{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:25px;margin:60px 0}
+.link-btn{padding:30px;background:var(--gold);color:var(--navy);border-radius:24px;font-weight:700;font-size:1.4rem;text-align:center;transition:all 0.4s;display:flex;align-items:center;justify-content:center;gap:15px;text-decoration:none}
+.link-btn:hover{transform:translateY(-10px);box-shadow:0 20px 50px rgba(255,215,0,0.4)}
+.logout-btn{display:block;width:100%;max-width:400px;margin:60px auto;padding:20px;background:var(--red);color:white;border:none;border-radius:50px;font-size:1.6rem;font-weight:700;cursor:pointer;transition:all 0.4s}
+.logout-btn:hover{background:#c0392b;transform:scale(1.05)}
+@media (max-width:768px){
+header h1{font-size:2.8rem}
+.stats-grid{grid-template-columns:repeat(2,1fr)}
+.subjects-grid{grid-template-columns:1fr}
+.quick-links{grid-template-columns:1fr}
+.header-card,.subjects-section,.upgrade-banner{padding:40px 30px}
+.logout-btn{max-width:100%}
+}
+@media (max-width:480px){
+.stats-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header-card">
+    <header>
+      <h1>My Dashboard</h1>
+      <div class="user-info">
+        <div class="avatar" id="avatar">R</div>
+        <div class="user-details">
+          <h3 id="userName">Loading...</h3>
+          <div class="badge free" id="badge">Free Account</div>
+        </div>
+      </div>
+    </header>
+  </div>
+
+  <div class="stats-grid">
+    <div class="stat-card"><h3 id="totalScore">0</h3><p>Total Score</p></div>
+    <div class="stat-card"><h3 id="examsTaken">0</h3><p>Exams Taken</p></div>
+    <div class="stat-card"><h3 id="avgScore">0%</h3><p>Average Score</p></div>
+    <div class="stat-card"><h3 id="targetScore">300+</h3><p>Target Score</p></div>
+  </div>
+
+  <div class="quote" id="quote">Loading motivational quote...</div>
+
+  <div class="subjects-section">
+    <h2>JAMB Subjects</h2>
+    <div class="subjects-grid" id="subjectsGrid"></div>
+  </div>
+
+  <div class="upgrade-banner" id="upgradeBanner">
+    <h3>Unlock Full Access to All 22 Subjects!</h3>
+    <p>Upgrade to Premium and get unlimited exams, live classes, and more.</p>
+    <a href="upgrade.html" class="upgrade-btn">Upgrade to Premium Now</a>
+  </div>
+
+  <div class="quick-links">
+    <a href="past-questions.html" class="link-btn"><i class="fas fa-book-open"></i> Past Questions</a>
+    <a href="flashcards.html" class="link-btn"><i class="fas fa-brain"></i> Flashcards</a>
+    <a href="videos.html" class="link-btn"><i class="fas fa-video"></i> Video Lessons</a>
+    <a href="live.html" class="link-btn"><i class="fas fa-chalkboard-teacher"></i> Live Classes</a>
+  </div>
+
+  <button class="logout-btn" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Logout</button>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js";
+import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js";
+import { getFirestore, doc, updateDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDTDWqG_WAXZO7O6yAxV5lOHUkHZp-wwQk",
+  authDomain: "rackspark.firebaseapp.com",
+  projectId: "rackspark",
+  storageBucket: "rackspark.firebasestorage.app",
+  messagingSenderId: "125488977166",
+  appId: "1:125488977166:web:b519b6871df21662c0f35f"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+const allSubjects = [
+"English","Mathematics","Physics","Chemistry","Biology",
+"Literature in English","Government","Economics","Commerce","Accounting",
+"Geography","Agricultural Science","Fine Arts","Music","History",
+"CRS","IRK","French","Computer Studies","Yoruba","Igbo","Hausa", "Marketing"
+];
+
+const motivationalQuotes = [
+"Excellence is never an accident. It is always the result of high intention, sincere effort, and intelligent execution.",
+"Success is the sum of small efforts repeated day in and day out.",
+"The future belongs to those who believe in the beauty of their dreams.",
+"Your only limit is the one you set for yourself.",
+"Hard work beats talent when talent doesn't work hard.",
+"Believe you can and you're halfway there."
+];
+
+function showLockedModal() {
+  Swal.fire({
+    icon: 'warning',
+    title: 'Premium Required',
+    html: '<p style="font-size:1.5rem">This subject is locked for free accounts.</p><p style="color:#666">Upgrade to Premium to unlock all 22 subjects!</p>',
+    confirmButtonText: 'Upgrade Now',
+    cancelButtonText: 'Later',
+    showCancelButton: true,
+    confirmButtonColor: '#001F3F'
+  }).then(r => r.isConfirmed && (location.href = "upgrade.html"));
+}
+
+onAuthStateChanged(auth, async (user) => {
+  if(!user) return location.href="login.html";
+  const userRef = doc(db, "users", user.uid);
+
+  // Real-time listener for user stats & data
+  onSnapshot(userRef, async (snap) => {
+    if(!snap.exists()) return location.href="login.html";
+    const data = snap.data();
+
+    const fullName = typeof data.fullName === "string" ? data.fullName : "Student";
+    const firstName = fullName.split(' ')[0];
+    document.getElementById('userName').textContent = firstName;
+    document.getElementById('avatar').textContent = firstName[0].toUpperCase();
+
+    const badge = document.getElementById('badge');
+    badge.textContent = data.isPremium ? "Premium Member" : "Free Account";
+    badge.className = data.isPremium ? "badge premium" : "badge free";
+
+    // Real-time stats display
+    document.getElementById('totalScore').textContent = data.totalScore || 0;
+    document.getElementById('examsTaken').textContent = data.examsTaken || 0;
+    document.getElementById('avgScore').textContent = (data.avgScore || 0) + "%";
+    document.getElementById('targetScore').textContent = data.targetScore || "300+";
+
+    document.getElementById('upgradeBanner').style.display = data.isPremium ? "none" : "block";
+    document.getElementById('quote').textContent = motivationalQuotes[Math.floor(Math.random()*motivationalQuotes.length)];
+
+    // Free user subject selection
+    if(!data.isPremium && (!data.selectedSubjects || data.selectedSubjects.length===0)){
+      const { value:selected } = await Swal.fire({
+        title:'Select Your 3 Free Subjects',
+        html:`<div style="max-height:400px;overflow-y:auto">${allSubjects.map(s=>`<label style="display:block;margin:12px 0"><input type="checkbox" value="${s}" style="margin-right:12px;transform:scale(1.4)"><span style="font-size:1.3rem">${s}</span></label>`).join('')}</div>`,
+        confirmButtonText:'Confirm',
+        preConfirm:()=>{ 
+          const checked = document.querySelectorAll('input[type="checkbox"]:checked');
+          if(checked.length!==3){Swal.showValidationMessage('Select exactly 3 subjects'); return false;}
+          return Array.from(checked).map(c=>c.value);
+        },
+        allowOutsideClick:false,
+        showClass:{popup:'animate__animated animate__fadeInDown'},
+        hideClass:{popup:'animate__animated animate__fadeOutUp'}
+      });
+      if(selected) await updateDoc(userRef,{selectedSubjects:selected});
+    }
+
+    // Render subjects
+    const grid = document.getElementById('subjectsGrid');
+    grid.innerHTML="";
+    const selectedSubjects = data.selectedSubjects || [];
+    const progress = data.progress || {};
+    allSubjects.forEach(sub=>{
+      const slug=sub.toLowerCase().replace(/\s+/g,"-").replace(/[^a-z0-9-]/g,"");
+      const prog=progress[sub]||0;
+      const isUnlocked=data.isPremium || selectedSubjects.includes(sub);
+      const card = document.createElement('div'); card.className='subject';
+      card.innerHTML = `
+        <h3>${sub}</h3>
+        <a href="exam-${slug}.html" class="${!isUnlocked?'locked':''}">${isUnlocked?'Take Exam':'Locked'}</a>
+        ${!isUnlocked?`<div class="lock-overlay" onclick="showLockedModal()"><i class="fas fa-lock"></i><br>Premium Only</div>`:''}
+      `;
+      grid.appendChild(card);
+      setTimeout(()=>{
+        const bar=document.createElement('div');
+        bar.style.height='6px';
+        bar.style.width=prog+'%';
+        bar.style.backgroundColor='var(--green)';
+        bar.style.marginTop='10px';
+        card.appendChild(bar);
+      },200);
+    });
+  });
+});
+
+document.getElementById('logoutBtn').addEventListener('click',()=>{
+  Swal.fire({
+    title:'Logout?',
+    text:"You will be signed out",
+    icon:'question',
+    showCancelButton:true,
+    confirmButtonColor:'#001F3F',
+    cancelButtonColor:'#ff4757',
+    confirmButtonText:'Yes, Logout'
+  }).then(r=>r.isConfirmed && signOut(auth).then(()=>location.href="login.html"));
+});
+</script>
+</body>
+</html>
