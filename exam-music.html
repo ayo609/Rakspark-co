@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>JAMB CBT – Music </title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<!-- SweetAlert2 -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<!-- Google Font -->
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+:root{
+  --navy:#001f3f;
+  --sky:#eaf4ff;
+  --green:#2ed573;
+  --red:#ff4757;
+  --gold:#f1c40f;
+  --gray:#f5f5f5;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+  font-family:Poppins,sans-serif;
+  background:linear-gradient(135deg,#eaf4ff,#d6e9ff);
+  min-height:100vh;
+  padding:20px;
+}
+.container{
+  max-width:1100px;
+  margin:auto;
+  background:#fff;
+  border-radius:25px;
+  box-shadow:0 25px 70px rgba(0,0,0,.15);
+  overflow:hidden;
+}
+header{
+  background:var(--navy);
+  color:#fff;
+  padding:25px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+header h2{font-size:1.6rem}
+#timer{
+  background:#fff;
+  color:var(--navy);
+  padding:8px 18px;
+  border-radius:20px;
+  font-weight:700;
+}
+#freeNote{
+  background:#fff3cd;
+  color:#856404;
+  padding:12px;
+  text-align:center;
+  font-weight:600;
+  display:none;
+}
+.main{
+  padding:30px;
+}
+#progress{
+  height:10px;
+  background:#eee;
+  border-radius:10px;
+  overflow:hidden;
+  margin-bottom:20px;
+}
+#progressFill{
+  height:100%;
+  width:0%;
+  background:linear-gradient(90deg,var(--green),var(--gold));
+}
+#qText{
+  font-size:1.3rem;
+  font-weight:600;
+  margin-bottom:20px;
+}
+.option{
+  background:var(--gray);
+  padding:15px 18px;
+  border-radius:15px;
+  margin-bottom:12px;
+  cursor:pointer;
+  transition:.3s;
+}
+.option:hover{background:#e0e0e0}
+.option.selected{
+  background:var(--navy);
+  color:#fff;
+}
+.nav-btns{
+  display:flex;
+  justify-content:space-between;
+  margin-top:25px;
+}
+button{
+  padding:12px 30px;
+  border:none;
+  border-radius:30px;
+  font-weight:600;
+  cursor:pointer;
+}
+#backBtn{background:#ccc}
+#nextBtn{background:var(--navy);color:#fff}
+#submitBtn{
+  background:var(--green);
+  color:#fff;
+}
+#qNav{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(45px,1fr));
+  gap:10px;
+  margin-top:30px;
+}
+.qbtn{
+  padding:10px;
+  border-radius:10px;
+  border:none;
+  cursor:pointer;
+  font-weight:600;
+}
+.qbtn.current{background:var(--navy);color:#fff}
+.qbtn.answered{background:var(--green);color:#fff}
+.qbtn.locked{background:#ddd;color:#999;cursor:not-allowed}
+.review{
+  display:none;
+  padding:30px;
+}
+.review h2{text-align:center;margin-bottom:20px}
+.score-box{
+  display:flex;
+  justify-content:space-around;
+  margin-bottom:25px;
+  flex-wrap:wrap;
+}
+.score-card{
+  background:var(--gray);
+  padding:20px;
+  border-radius:20px;
+  text-align:center;
+  min-width:160px;
+}
+.correct{color:var(--green);font-weight:700}
+.wrong{color:var(--red);font-weight:700}
+.review-q{
+  background:#f9f9f9;
+  padding:15px;
+  border-radius:15px;
+  margin-bottom:15px;
+}
+.review-q p{margin:6px 0}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<header>
+  <h2>JAMB CBT – Music</h2>
+  <div id="timer">00:00</div>
+</header>
+
+<div id="freeNote">
+  Free users can attempt only <b>25 questions</b>. Upgrade to Premium for all 99+.
+</div>
+
+<div class="main" id="examSection">
+  <div id="progress"><div id="progressFill"></div></div>
+  <div id="qText"></div>
+  <div id="optionsWrap"></div>
+
+  <div class="nav-btns">
+    <button id="backBtn">Back</button>
+    <button id="nextBtn">Next</button>
+    <button id="submitBtn">Submit</button>
+  </div>
+
+  <div id="qNav"></div>
+</div>
+
+<div class="review" id="reviewSection">
+  <h2>Exam Review</h2>
+  <div class="score-box">
+    <div class="score-card">Score<br><span id="rScore"></span></div>
+    <div class="score-card">Failed<br><span id="rFail"></span></div>
+    <div class="score-card">Percentage<br><span id="rPercent"></span></div>
+  </div>
+  <div id="reviewList"></div>
+</div>
+
+</div>
+
+<script type="module">
+/* ================= FIREBASE ================= */
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js";
+import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDTDWqG_WAXZO7O6yAxV5lOHUkHZp-wwQk",
+  authDomain: "rackspark.firebaseapp.com",
+  projectId: "rackspark",
+  storageBucket: "rackspark.firebasestorage.app",
+  messagingSenderId: "125488977166",
+  appId: "1:125488977166:web:b519b6871df21662c0f35f"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+/* ================= QUESTIONS ================= */
+const QUESTIONS = [
+
+/* ===================== 1–10 ===================== */
+{q:"Music is primarily the art of arranging sounds in time through the elements of pitch, rhythm, and?", o:["Harmony","Poetry","Dance","Drama"], a:0, y:2021},
+{q:"The symbol used to indicate the pitch and duration of a musical sound is called?", o:["Note","Clef","Rest","Staff"], a:0, y:2021},
+{q:"Which of these is a percussion instrument?", o:["Drum","Violin","Flute","Trumpet"], a:0, y:2022},
+{q:"The speed of a piece of music is referred to as?", o:["Tempo","Pitch","Tone","Volume"], a:0, y:2022},
+{q:"A sequence of notes that is musically satisfying is called a?", o:["Melody","Chord","Interval","Rest"], a:0, y:2023},
+{q:"The distance between two pitches is called?", o:["Interval","Scale","Chord","Tone"], a:0, y:2023},
+{q:"A combination of three or more notes sounded together is called a?", o:["Chord","Scale","Melody","Beat"], a:0, y:2021},
+{q:"Which of these is a string instrument?", o:["Guitar","Trumpet","Saxophone","Timpani"], a:0, y:2022},
+{q:"The pattern of beats in music is called?", o:["Rhythm","Harmony","Tempo","Dynamics"], a:0, y:2023},
+{q:"The symbol placed at the beginning of the staff to indicate pitch is called?", o:["Clef","Rest","Note","Staff"], a:0, y:2023},
+
+/* ===================== 11–20 ===================== */
+{q:"The arrangement of notes in ascending or descending order is called a?", o:["Scale","Chord","Interval","Melody"], a:0, y:2021},
+{q:"The highest male singing voice is called?", o:["Tenor","Baritone","Bass","Alto"], a:0, y:2021},
+{q:"The lowest female singing voice is called?", o:["Contralto","Soprano","Mezzo-soprano","Alto"], a:0, y:2022},
+{q:"The pace at which a piece of music is performed is called?", o:["Tempo","Pitch","Beat","Note"], a:0, y:2022},
+{q:"A group of singers performing together is called a?", o:["Choir","Orchestra","Solo","Ensemble"], a:0, y:2023},
+{q:"Music written for an orchestra is called?", o:["Orchestral music","Choral music","Folk music","Popular music"], a:0, y:2023},
+{q:"The loudness or softness of a musical sound is called?", o:["Dynamics","Rhythm","Pitch","Tempo"], a:0, y:2021},
+{q:"A repeated pattern in music is known as?", o:["Motif","Chord","Scale","Note"], a:0, y:2022},
+{q:"Which instrument belongs to the brass family?", o:["Trumpet","Flute","Violin","Drum"], a:0, y:2023},
+{q:"The speed of vibration of a musical note determines its?", o:["Pitch","Tone","Duration","Volume"], a:0, y:2023},
+
+/* ===================== 21–30 ===================== */
+{q:"The study of the structure of music and its elements is called?", o:["Music theory","Ethnomusicology","Composition","Performance"], a:0, y:2021},
+{q:"A musical composition for a solo instrument with orchestral accompaniment is called?", o:["Concerto","Symphony","Opera","Sonata"], a:0, y:2021},
+{q:"The principal string instrument in a classical orchestra is?", o:["Violin","Trumpet","Timpani","Oboe"], a:0, y:2022},
+{q:"A group of instruments playing together in a structured form is called?", o:["Orchestra","Choir","Band","Quartet"], a:0, y:2022},
+{q:"The term for gradually getting louder in music is?", o:["Crescendo","Diminuendo","Forte","Piano"], a:0, y:2023},
+{q:"The term for gradually getting softer in music is?", o:["Diminuendo","Crescendo","Forte","Mezzo"], a:0, y:2023},
+{q:"Which instrument belongs to the woodwind family?", o:["Clarinet","Trumpet","Violin","Timpani"], a:0, y:2021},
+{q:"The musical sign that indicates silence is called?", o:["Rest","Note","Clef","Beat"], a:0, y:2022},
+{q:"The vertical lines on a musical staff that separate measures are called?", o:["Bar lines","Clefs","Notes","Rests"], a:0, y:2023},
+{q:"A piece of music with a story told through singing is called?", o:["Opera","Symphony","Concerto","Sonata"], a:0, y:2023},
+
+/* ===================== 31–40 ===================== */
+{q:"Which instrument is part of the percussion family?", o:["Xylophone","Violin","Flute","Guitar"], a:0, y:2021},
+{q:"The speed of a song is measured by its?", o:["Tempo","Pitch","Scale","Chord"], a:0, y:2021},
+{q:"A set of pitches arranged in order forms a?", o:["Scale","Chord","Interval","Harmony"], a:0, y:2022},
+{q:"Harmony refers to?", o:["Combination of notes","Melody only","Beat","Rhythm"], a:0, y:2022},
+{q:"The texture of music that has one melody without accompaniment is called?", o:["Monophonic","Polyphonic","Homophonic","Heterophonic"], a:0, y:2023},
+{q:"The texture of music with multiple independent melodies is called?", o:["Polyphonic","Monophonic","Homophonic","Heterophonic"], a:0, y:2023},
+{q:"The Italian term for very soft is?", o:["Pianissimo","Forte","Mezzo","Crescendo"], a:0, y:2021},
+{q:"The Italian term for very loud is?", o:["Fortissimo","Piano","Mezzo","Diminuendo"], a:0, y:2022},
+{q:"The symbol used to raise a note by a semitone is called?", o:["Sharp","Flat","Natural","Clef"], a:0, y:2023},
+{q:"The symbol used to lower a note by a semitone is called?", o:["Flat","Sharp","Natural","Clef"], a:0, y:2023},
+
+/* ===================== 41–50 ===================== */
+{q:"The treble clef is also called?", o:["G clef","F clef","C clef","Neutral clef"], a:0, y:2021},
+{q:"The bass clef is also called?", o:["F clef","G clef","C clef","Neutral clef"], a:0, y:2021},
+{q:"Which of these is a keyboard instrument?", o:["Piano","Violin","Flute","Trumpet"], a:0, y:2022},
+{q:"The Italian word 'Allegro' indicates a?", o:["Fast tempo","Slow tempo","Medium tempo","Very slow tempo"], a:0, y:2022},
+{q:"The Italian word 'Adagio' indicates a?", o:["Slow tempo","Fast tempo","Medium tempo","Very fast tempo"], a:0, y:2023},
+{q:"A song that tells a story is called a?", o:["Ballad","Hymn","Chorus","Anthem"], a:0, y:2023},
+{q:"Which instrument uses a bow to play?", o:["Violin","Trumpet","Xylophone","Flute"], a:0, y:2021},
+{q:"The main melody in a song is called?", o:["Theme","Harmony","Rhythm","Beat"], a:0, y:2022},
+{q:"The accompaniment that supports the melody is called?", o:["Harmony","Counterpoint","Theme","Motif"], a:0, y:2023},
+{q:"The repeating musical idea in a composition is called?", o:["Motif","Melody","Chord","Beat"], a:0, y:2023},
+
+/* ===================== 51–60 ===================== */
+{q:"Music performed without any instruments is called?", o:["A cappella","Instrumental","Orchestral","Choral"], a:0, y:2021},
+{q:"Which instrument is both a percussion and a keyboard instrument?", o:["Piano","Drum","Xylophone","Organ"], a:0, y:2021},
+{q:"The speed of a beat is indicated by?", o:["Tempo","Pitch","Harmony","Chord"], a:0, y:2022},
+{q:"The organization of beats into regular groups is called?", o:["Meter","Rhythm","Tempo","Dynamics"], a:0, y:2022},
+{q:"The pattern of stressed and unstressed beats is called?", o:["Rhythm","Harmony","Tempo","Pitch"], a:0, y:2023},
+{q:"The study of music from different cultures is called?", o:["Ethnomusicology","Music theory","Composition","Performance"], a:0, y:2023},
+{q:"Which of these is a woodwind instrument?", o:["Oboe","Trumpet","Timpani","Guitar"], a:0, y:2021},
+{q:"A short, recurring musical idea in a piece is called?", o:["Motif","Theme","Chord","Scale"], a:0, y:2022},
+{q:"The main sections of a symphony are called?", o:["Movements","Verses","Choruses","Phrases"], a:0, y:2023},
+{q:"The highness or lowness of a musical sound is called?", o:["Pitch","Tempo","Rhythm","Dynamics"], a:0, y:2023},
+
+/* ===================== 61–70 ===================== */
+{q:"A musical scale with seven different notes is called?", o:["Heptatonic","Pentatonic","Chromatic","Diatonic"], a:0, y:2021},
+{q:"A musical scale with five different notes is called?", o:["Pentatonic","Heptatonic","Chromatic","Diatonic"], a:0, y:2021},
+{q:"The arrangement of notes to create a pleasing sound is called?", o:["Harmony","Rhythm","Tempo","Pitch"], a:0, y:2022},
+{q:"The use of two or more melodies simultaneously is called?", o:["Polyphony","Monophony","Homophony","Heterophony"], a:0, y:2022},
+{q:"Which instrument is part of the brass family?", o:["Trombone","Violin","Flute","Guitar"], a:0, y:2023},
+{q:"The study of sounds, their production and perception is called?", o:["Acoustics","Music theory","Composition","Ethnomusicology"], a:0, y:2023},
+{q:"The Italian term 'Fortissimo' means?", o:["Very loud","Very soft","Medium loud","Crescendo"], a:0, y:2021},
+{q:"The Italian term 'Pianissimo' means?", o:["Very soft","Very loud","Medium soft","Crescendo"], a:0, y:2022},
+{q:"The set of notes used in a piece of music is called?", o:["Key","Chord","Scale","Tone"], a:0, y:2023},
+{q:"The repetition of a musical phrase at a different pitch is called?", o:["Sequence","Harmony","Motif","Beat"], a:0, y:2023},
+
+/* ===================== 71–80 ===================== */
+{q:"A short, independent piece for a solo instrument is called?", o:["Etude","Concerto","Symphony","Sonata"], a:0, y:2021},
+{q:"Music written for voices without instruments is called?", o:["A cappella","Orchestral","Instrumental","Choral"], a:0, y:2021},
+{q:"The principal instrument of the string family is the?", o:["Violin","Trumpet","Flute","Timpani"], a:0, y:2022},
+{q:"The staff is made up of how many lines?", o:["Five","Four","Six","Seven"], a:0, y:2022},
+{q:"The time signature 4/4 indicates how many beats per measure?", o:["Four","Three","Two","One"], a:0, y:2023},
+{q:"The tempo marking 'Andante' indicates a?", o:["Moderate walking pace","Very fast pace","Very slow pace","Extremely fast"], a:0, y:2023},
+{q:"A series of chords played in succession is called a?", o:["Chord progression","Scale","Melody","Motif"], a:0, y:2021},
+{q:"A short melodic or rhythmic idea that is repeated is called a?", o:["Motif","Theme","Chord","Scale"], a:0, y:2022},
+{q:"The term 'Allegretto' indicates a tempo that is?", o:["Moderately fast","Very fast","Very slow","Extremely fast"], a:0, y:2023},
+{q:"The term 'Lento' indicates a tempo that is?", o:["Slow","Fast","Moderate","Variable"], a:0, y:2023},
+
+/* ===================== 81–90 ===================== */
+{q:"The repetition of a melody at a higher or lower pitch is called?", o:["Sequence","Motif","Chord","Harmony"], a:0, y:2021},
+{q:"The distance between two pitches is called?", o:["Interval","Scale","Chord","Rhythm"], a:0, y:2021},
+{q:"The main theme in a fugue is called?", o:["Subject","Motif","Chord","Scale"], a:0, y:2022},
+{q:"The simultaneous combination of notes is called?", o:["Harmony","Melody","Rhythm","Tempo"], a:0, y:2022},
+{q:"The texture of a piece with one melody and accompaniment is called?", o:["Homophony","Monophony","Polyphony","Heterophony"], a:0, y:2023},
+{q:"The musical term for gradually getting louder is?", o:["Crescendo","Diminuendo","Forte","Piano"], a:0, y:2023},
+{q:"The musical term for gradually getting softer is?", o:["Diminuendo","Crescendo","Forte","Piano"], a:0, y:2021},
+{q:"Which of these is a pitched percussion instrument?", o:["Xylophone","Snare drum","Tambourine","Cymbals"], a:0, y:2022},
+{q:"The Italian term for moderately soft is?", o:["Mezzo piano","Mezzo forte","Pianissimo","Forte"], a:0, y:2023},
+{q:"The Italian term for moderately loud is?", o:["Mezzo forte","Mezzo piano","Forte","Piano"], a:0, y:2023},
+
+/* ===================== 91–100 ===================== */
+{q:"The term 'Syncopation' refers to?", o:["Shifting the accent to weak beats","Strong beats","Tempo","Melody"], a:0, y:2021},
+{q:"The Italian term 'Staccato' indicates notes should be played?", o:["Detached and short","Smooth and connected","Fast","Loud"], a:0, y:2021},
+{q:"The Italian term 'Legato' indicates notes should be played?", o:["Smooth and connected","Detached","Fast","Slow"], a:0, y:2022},
+{q:"The written symbols representing music sounds are called?", o:["Notation","Clef","Rest","Staff"], a:0, y:2022},
+{q:"Which of these instruments is commonly used in jazz?", o:["Saxophone","Violin","Timpani","Oboe"], a:0, y:2023},
+{q:"The main theme or tune in a piece of music is called?", o:["Melody","Chord","Motif","Beat"], a:0, y:2023},
+{q:"A musical composition for full orchestra without voices is called?", o:["Symphony","Opera","Chorale","Concerto"], a:0, y:2021},
+{q:"The Italian term 'Vivace' indicates a tempo that is?", o:["Lively and fast","Slow and gentle","Moderate","Very slow"], a:0, y:2022},
+{q:"The main pattern of beats in music is called?", o:["Meter","Rhythm","Harmony","Tempo"], a:0, y:2023},
+{q:"A musical work for voice and piano based on a poem is called?", o:["Art song","Chorale","Oratorio","Cantata"], a:0, y:2023}
+
+];
+
+/* ================= VARIABLES ================= */
+let current = 0;
+let answers = [];
+let isPremium = false;
+let time = 0;          // exam duration in seconds
+let selectedMinutes = 0;
+let timerInt;
+let timerStarted = false;
+
+const qText = document.getElementById("qText");
+const optionsWrap = document.getElementById("optionsWrap");
+const qNav = document.getElementById("qNav");
+const progressFill = document.getElementById("progressFill");
+const timerEl = document.getElementById("timer");
+
+/* ================= UTILITY ================= */
+function shuffle(array){
+  for(let i=array.length-1;i>0;i--){
+    const j=Math.floor(Math.random()*(i+1));
+    [array[i],array[j]]=[array[j],array[i]];
+  }
+}
+
+/* ================= RENDER QUESTIONS ================= */
+function render(){
+  const q = QUESTIONS[current];
+  qText.innerHTML = `${current+1}. ${q.q} <small>${q.y ? "(Year "+q.y+")":""}</small>`;
+  optionsWrap.innerHTML="";
+  q.o.forEach((op,i)=>{
+    const d=document.createElement("div");
+    d.className="option";
+    if(answers[current]===i) d.classList.add("selected");
+    d.innerText=op;
+    d.onclick=()=>{answers[current]=i; render();};
+    optionsWrap.appendChild(d);
+  });
+  progressFill.style.width=((answers.filter(a=>a!==null).length/QUESTIONS.length)*100)+"%";
+  buildNav();
+}
+
+function buildNav(){
+  qNav.innerHTML="";
+  for(let i=0;i<QUESTIONS.length;i++){
+    const b=document.createElement("button");
+    b.className="qbtn";
+    if(i===current) b.classList.add("current");
+    if(answers[i]!=null) b.classList.add("answered");
+    if(!isPremium && i>=25){
+      b.classList.add("locked");
+      b.disabled=true;
+    }
+    b.innerText=i+1;
+    b.onclick=()=>{current=i; render();}
+    qNav.appendChild(b);
+  }
+}
+
+/* ================= TIMER ================= */
+async function chooseExamTime(){
+  const { value } = await Swal.fire({
+    title: "Select Exam Duration",
+    text: "Choose your preferred exam time",
+    icon: "info",
+    allowOutsideClick: false,
+    allowEscapeKey: false,
+    confirmButtonText: "Start Exam",
+    input: "radio",
+    inputOptions: {
+      20: "20 Minutes",
+      30: "30 Minutes",
+      40: "40 Minutes",
+      60: "60 Minutes"
+    },
+    inputValidator: (value) => {
+      if (!value) return "Please select a duration";
+    }
+  });
+
+  selectedMinutes = Number(value);
+  time = selectedMinutes * 60;
+}
+
+function startTimer(){
+  if(timerStarted) return;
+  timerStarted = true;
+
+  timerInt = setInterval(()=>{
+    let m = Math.floor(time / 60);
+    let s = time % 60;
+    timerEl.innerText = `${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}`;
+    time--;
+    if(time<0){
+      clearInterval(timerInt);
+      Swal.fire({
+        title:"Time Up!",
+        text:"Your exam has been submitted automatically.",
+        icon:"warning",
+        confirmButtonText:"View Result"
+      }).then(()=>showReview());
+    }
+  },1000);
+}
+
+/* ================= SUBMIT & REVIEW ================= */
+function submitExam(){
+  Swal.fire({
+    title:"Submit Exam?",
+    icon:"warning",
+    showCancelButton:true,
+    confirmButtonText:"Yes Submit"
+  }).then(r=>{
+    if(!r.isConfirmed) return;
+    showReview();
+  });
+}
+
+function showReview(){
+  clearInterval(timerInt);
+  document.getElementById("examSection").style.display="none";
+  document.getElementById("reviewSection").style.display="block";
+
+  const total = isPremium ? QUESTIONS.length : Math.min(25, QUESTIONS.length);
+  let score = 0;
+  const list = document.getElementById("reviewList");
+  list.innerHTML="";
+
+  for(let i=0;i<total;i++){
+    if(answers[i]===QUESTIONS[i].a) score++;
+    const div=document.createElement("div");
+    div.className="review-q";
+    div.innerHTML=`
+      <p><b>${i+1}. ${QUESTIONS[i].q}</b></p>
+      <p>Your Answer: <span class="${answers[i]===QUESTIONS[i].a?"correct":"wrong"}">${QUESTIONS[i].o[answers[i]]||"Not Answered"}</span></p>
+      <p>Correct Answer: ${QUESTIONS[i].o[QUESTIONS[i].a]}</p>
+    `;
+    list.appendChild(div);
+  }
+
+  document.getElementById("rScore").innerText = `${score}/${total}`;
+  document.getElementById("rFail").innerText = total-score;
+  document.getElementById("rPercent").innerText = ((score/total)*100).toFixed(1)+"%";
+}
+
+/* ================= BUTTONS ================= */
+document.getElementById("nextBtn").onclick=()=>{
+  if(!isPremium && current===24){
+    Swal.fire("Upgrade Required","Only 25 questions for free users","info");
+    return;
+  }
+  if(current<QUESTIONS.length-1){current++;render();}
+};
+document.getElementById("backBtn").onclick=()=>{if(current>0){current--;render();}};
+document.getElementById("submitBtn").onclick=submitExam;
+
+/* ================= AUTH & INIT ================= */
+onAuthStateChanged(auth, async(user)=>{
+  if(!user){ location.href="login.html"; return; }
+
+  const snap = await getDoc(doc(db,"users",user.uid));
+  isPremium = snap.exists() && snap.data().isPremium===true;
+  if(!isPremium) document.getElementById("freeNote").style.display="block";
+
+  // 1. Select exam time
+  await chooseExamTime();
+
+  // 2. Shuffle questions & init answers
+  shuffle(QUESTIONS);
+  answers = Array(QUESTIONS.length).fill(null);
+
+  // 3. Render and start timer
+  render();
+  startTimer();
+});
+</script>
+
+</body>
+</html>

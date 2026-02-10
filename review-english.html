@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>English Exam Review</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<style>
+/* ====== GENERAL STYLING ====== */
+body {
+  font-family: 'Poppins', sans-serif;
+  background: linear-gradient(120deg, #f0f4f8, #d9e2ec);
+  margin: 0;
+  padding: 20px;
+}
+
+.container {
+  max-width: 950px;
+  margin: auto;
+  background: #fff;
+  padding: 30px;
+  border-radius: 25px;
+  box-shadow: 0 25px 60px rgba(0,0,0,0.15);
+  animation: fadeInUp 0.6s ease forwards;
+}
+
+h1 {
+  text-align: center;
+  margin-bottom: 25px;
+  font-weight: 600;
+  background: linear-gradient(90deg,#1E3C72,#2A5298);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-size: 2.3rem;
+}
+
+.summary {
+  display: flex;
+  justify-content: space-between;
+  text-align: center;
+  margin-bottom: 25px;
+  flex-wrap: wrap;
+  gap: 15px;
+}
+
+.summary div {
+  flex: 1;
+  min-width: 120px;
+  padding: 15px 0;
+  border-radius: 15px;
+  color: #fff;
+  font-weight: 600;
+  font-size: 1rem;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.summary div:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+}
+
+.correct-summary { background: #28a745; }
+.wrong-summary { background: #dc3545; }
+.percentage-summary { background: #FFD700; color: #001F3F; }
+
+/* ====== QUESTION CARDS ====== */
+.question-card {
+  padding: 20px;
+  margin-bottom: 15px;
+  border-radius: 20px;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  animation: fadeIn 0.5s ease forwards;
+  background: #f8f9fa;
+}
+
+.question-card.correct { border-left: 8px solid #28a745; box-shadow: 0 8px 15px rgba(40,167,69,0.2);}
+.question-card.wrong { border-left: 8px solid #dc3545; box-shadow: 0 8px 15px rgba(220,53,69,0.2);}
+
+.question-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 12px 25px rgba(0,0,0,0.2);
+}
+
+span.letter {
+  font-weight: 700;
+  margin-right: 8px;
+  color: #2A5298;
+}
+
+/* ====== ANIMATIONS ====== */
+@keyframes fadeIn { from {opacity: 0; transform: translateY(15px);} to {opacity: 1; transform: translateY(0);} }
+@keyframes fadeInUp { from {opacity: 0; transform: translateY(30px);} to {opacity: 1; transform: translateY(0);} }
+
+/* ====== COLLAPSE/EXPAND BUTTON ====== */
+#toggleBtn {
+  display: block;
+  margin: 0 auto 20px auto;
+  padding: 10px 25px;
+  background: linear-gradient(90deg,#1E3C72,#2A5298);
+  color: #fff;
+  border: none;
+  border-radius: 15px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+#toggleBtn:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 15px rgba(0,0,0,0.2);
+}
+</style>
+</head>
+<body>
+<div class="container">
+<h1>Exam Review</h1>
+<div class="summary">
+  <div class="correct-summary" id="totalCorrect">Correct: 0</div>
+  <div class="wrong-summary" id="totalWrong">Wrong: 0</div>
+  <div class="percentage-summary" id="percentage">Score: 0%</div>
+</div>
+
+<button id="toggleBtn">Collapse/Expand All Answers</button>
+<div id="review"></div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js";
+import { getAuth,onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js";
+import { getFirestore,doc,getDoc } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey:"AIzaSyDTDWqG_WAXZO7O6yAxV5lOHUkHZp-wwQk",
+  authDomain:"rackspark.firebaseapp.com",
+  projectId:"rackspark"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+const QUESTIONS = [
+/* Your 100 questions here */
+];
+
+const CORRECT = [
+/* Correct answers here */
+];
+
+onAuthStateChanged(auth, async u => {
+  if(!u) return location.href='login.html';
+  const snap = await getDoc(doc(db,'users',u.uid,'exams','english'));
+  const a = snap.data().answers || [];
+
+  let totalCorrect = 0;
+  let totalWrong = 0;
+
+  let html = "";
+  QUESTIONS.forEach((q,i)=>{
+    const correct = CORRECT[i];
+    const user = a[i]||"-";
+    const cls = user===correct?'correct':'wrong';
+    if(user===correct) totalCorrect++; else totalWrong++;
+    html += `<div class="question-card ${cls}">
+      <p><span class="letter">${i+1}.</span>${q.q}</p>
+      <p class="answer-detail">Your Answer: <b>${user}</b> | Correct: <b>${correct}</b></p>
+    </div>`;
+  });
+
+  document.getElementById('review').innerHTML = html;
+
+  const percentage = ((totalCorrect/QUESTIONS.length)*100).toFixed(2);
+  document.getElementById('totalCorrect').textContent = "Correct: " + totalCorrect;
+  document.getElementById('totalWrong').textContent = "Wrong: " + totalWrong;
+  document.getElementById('percentage').textContent = "Score: " + percentage + "%";
+
+  // SweetAlert2 summary popup
+  Swal.fire({
+    title: 'Exam Completed!',
+    html: `You scored <b>${totalCorrect}/${QUESTIONS.length}</b><br>
+           Wrong: <b>${totalWrong}</b><br>
+           Percentage: <b>${percentage}%</b>`,
+    icon: 'success',
+    confirmButtonText: 'View Details'
+  });
+
+  // Collapse/Expand all answers
+  const toggleBtn = document.getElementById('toggleBtn');
+  let collapsed = false;
+  toggleBtn.addEventListener('click',()=>{
+    document.querySelectorAll('.answer-detail').forEach(p=>{
+      p.style.display = collapsed ? 'block' : 'none';
+    });
+    collapsed = !collapsed;
+  });
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>JAMB CBT – English Language</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<!-- SweetAlert2 -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<!-- Google Font -->
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+:root{
+  --navy:#001f3f;
+  --sky:#eaf4ff;
+  --green:#2ed573;
+  --red:#ff4757;
+  --gold:#f1c40f;
+  --gray:#f5f5f5;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+  font-family:Poppins,sans-serif;
+  background:linear-gradient(135deg,#eaf4ff,#d6e9ff);
+  min-height:100vh;
+  padding:20px;
+}
+.container{
+  max-width:1100px;
+  margin:auto;
+  background:#fff;
+  border-radius:25px;
+  box-shadow:0 25px 70px rgba(0,0,0,.15);
+  overflow:hidden;
+}
+header{
+  background:var(--navy);
+  color:#fff;
+  padding:25px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+header h2{font-size:1.6rem}
+#timer{
+  background:#fff;
+  color:var(--navy);
+  padding:8px 18px;
+  border-radius:20px;
+  font-weight:700;
+}
+#freeNote{
+  background:#fff3cd;
+  color:#856404;
+  padding:12px;
+  text-align:center;
+  font-weight:600;
+  display:none;
+}
+.main{
+  padding:30px;
+}
+#progress{
+  height:10px;
+  background:#eee;
+  border-radius:10px;
+  overflow:hidden;
+  margin-bottom:20px;
+}
+#progressFill{
+  height:100%;
+  width:0%;
+  background:linear-gradient(90deg,var(--green),var(--gold));
+}
+#qText{
+  font-size:1.3rem;
+  font-weight:600;
+  margin-bottom:20px;
+}
+.option{
+  background:var(--gray);
+  padding:15px 18px;
+  border-radius:15px;
+  margin-bottom:12px;
+  cursor:pointer;
+  transition:.3s;
+}
+.option:hover{background:#e0e0e0}
+.option.selected{
+  background:var(--navy);
+  color:#fff;
+}
+.nav-btns{
+  display:flex;
+  justify-content:space-between;
+  margin-top:25px;
+}
+button{
+  padding:12px 30px;
+  border:none;
+  border-radius:30px;
+  font-weight:600;
+  cursor:pointer;
+}
+#backBtn{background:#ccc}
+#nextBtn{background:var(--navy);color:#fff}
+#submitBtn{
+  background:var(--green);
+  color:#fff;
+}
+#qNav{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(45px,1fr));
+  gap:10px;
+  margin-top:30px;
+}
+.qbtn{
+  padding:10px;
+  border-radius:10px;
+  border:none;
+  cursor:pointer;
+  font-weight:600;
+}
+.qbtn.current{background:var(--navy);color:#fff}
+.qbtn.answered{background:var(--green);color:#fff}
+.qbtn.locked{background:#ddd;color:#999;cursor:not-allowed}
+.review{
+  display:none;
+  padding:30px;
+}
+.review h2{text-align:center;margin-bottom:20px}
+.score-box{
+  display:flex;
+  justify-content:space-around;
+  margin-bottom:25px;
+  flex-wrap:wrap;
+}
+.score-card{
+  background:var(--gray);
+  padding:20px;
+  border-radius:20px;
+  text-align:center;
+  min-width:160px;
+}
+.correct{color:var(--green);font-weight:700}
+.wrong{color:var(--red);font-weight:700}
+.review-q{
+  background:#f9f9f9;
+  padding:15px;
+  border-radius:15px;
+  margin-bottom:15px;
+}
+.review-q p{margin:6px 0}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<header>
+  <h2>JAMB CBT – English</h2>
+  <div id="timer">00:00</div>
+</header>
+
+<div id="freeNote">
+  Free users can attempt only <b>25 questions</b>. Upgrade to Premium for all 99+.
+</div>
+
+<div class="main" id="examSection">
+  <div id="progress"><div id="progressFill"></div></div>
+  <div id="qText"></div>
+  <div id="optionsWrap"></div>
+
+  <div class="nav-btns">
+    <button id="backBtn">Back</button>
+    <button id="nextBtn">Next</button>
+    <button id="submitBtn">Submit</button>
+  </div>
+
+  <div id="qNav"></div>
+</div>
+
+<div class="review" id="reviewSection">
+  <h2>Exam Review</h2>
+  <div class="score-box">
+    <div class="score-card">Score<br><span id="rScore"></span></div>
+    <div class="score-card">Failed<br><span id="rFail"></span></div>
+    <div class="score-card">Percentage<br><span id="rPercent"></span></div>
+  </div>
+  <div id="reviewList"></div>
+</div>
+
+</div>
+
+<script type="module">
+/* ================= FIREBASE ================= */
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js";
+import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDTDWqG_WAXZO7O6yAxV5lOHUkHZp-wwQk",
+  authDomain: "rackspark.firebaseapp.com",
+  projectId: "rackspark",
+  storageBucket: "rackspark.firebasestorage.app",
+  messagingSenderId: "125488977166",
+  appId: "1:125488977166:web:b519b6871df21662c0f35f"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+/* ================= QUESTIONS ================= */
+const QUESTIONS = [
+/* ===================== 1–10 ===================== */
+{q:"Choose the word opposite in meaning to 'gregarious'.", o:["Friendly","Sociable","Reserved","Outgoing"], a:2, y:2021},
+{q:"Synonym of 'circumspect'.", o:["Careless","Cautious","Reckless","Hasty"], a:1, y:2021},
+{q:"Correct spelling:", o:["Entreprenure","Entrepreneur","Enterprenure","Enterpreneur"], a:1, y:2021},
+{q:"He would have succeeded if he ___ harder.", o:["Worked","Has worked","Had worked","Works"], a:2, y:2021},
+{q:"Meaning of 'placate'.", o:["Provoke","Calm","Anger","Disturb"], a:1, y:2021},
+{q:"She insisted ___ paying the bill.", o:["In","On","At","For"], a:1, y:2022},
+{q:"Opposite of 'lucid'.", o:["Clear","Bright","Obscure","Plain"], a:2, y:2022},
+{q:"The jury ___ divided in their opinion.", o:["Are","Were","Is","Be"], a:2, y:2022},
+{q:"Synonym of 'sporadic'.", o:["Regular","Occasional","Constant","Frequent"], a:1, y:2022},
+{q:"Meaning of 'a blessing in disguise'.", o:["Hidden danger","Unexpected benefit","Total loss","Punishment"], a:1, y:2022},
+
+/* ===================== 11–20 ===================== */
+{q:"Choose the correct sentence.", o:["Neither of them are ready","Neither of them is ready","Neither of them were ready","Neither are them ready"], a:1, y:2021},
+{q:"Antonym of 'alleviate'.", o:["Ease","Relieve","Aggravate","Reduce"], a:2, y:2021},
+{q:"Synonym of 'magnanimous'.", o:["Selfish","Generous","Mean","Cruel"], a:1, y:2021},
+{q:"If she ___ earlier, she would not have missed the train.", o:["Leaves","Left","Had left","Has left"], a:2, y:2022},
+{q:"Meaning of 'throw in the towel'.", o:["Surrender","Fight","Clean","Celebrate"], a:0, y:2022},
+{q:"Opposite of 'frivolous'.", o:["Serious","Playful","Funny","Light"], a:0, y:2022},
+{q:"The book, together with the pens, ___ missing.", o:["Are","Were","Is","Have"], a:2, y:2022},
+{q:"Synonym of 'tenacious'.", o:["Weak","Persistent","Lazy","Soft"], a:1, y:2023},
+{q:"Meaning of 'ubiquitous'.", o:["Rare","Everywhere","Scarce","Hidden"], a:1, y:2023},
+{q:"Correct stress pattern: 'photograph'.", o:["PHO-to-graph","pho-TO-graph","pho-to-GRAPH","PHO-TO-graph"], a:0, y:2023},
+
+/* ===================== 21–30 ===================== */
+{q:"Antonym of 'resilient'.", o:["Flexible","Elastic","Fragile","Strong"], a:2, y:2021},
+{q:"Synonym of 'cursory'.", o:["Detailed","Quick","Superficial","Careful"], a:2, y:2021},
+{q:"He is not accustomed ___ such treatment.", o:["With","For","To","At"], a:2, y:2021},
+{q:"Meaning of 'beat about the bush'.", o:["Speak indirectly","Run away","Fight","Hide"], a:0, y:2022},
+{q:"Opposite of 'exonerate'.", o:["Free","Absolve","Accuse","Forgive"], a:2, y:2022},
+{q:"The committee ___ reached a decision.", o:["Have","Are","Has","Were"], a:2, y:2022},
+{q:"Synonym of 'meticulous'.", o:["Careless","Precise","Sloppy","Untidy"], a:1, y:2023},
+{q:"Correct sentence:", o:["He don't know","He doesn't knows","He doesn't know","He don't knows"], a:2, y:2023},
+{q:"Meaning of 'at sixes and sevens'.", o:["Orderly","Confused","Peaceful","Angry"], a:1, y:2023},
+{q:"Vowel sound in 'bird'.", o:["/ɜ:/","/i:/","/e/","/ɔ:/"], a:0, y:2023},
+
+/* ===================== 31–40 ===================== */
+{q:"Antonym of 'parsimonious'.", o:["Greedy","Generous","Careful","Miserly"], a:1, y:2021},
+{q:"Synonym of 'arduous'.", o:["Easy","Strenuous","Simple","Light"], a:1, y:2021},
+{q:"She speaks English ___ than her sister.", o:["Most fluently","Fluent","More fluently","Much fluent"], a:2, y:2021},
+{q:"Meaning of 'call it a day'.", o:["Start work","Continue","Stop working","Celebrate"], a:2, y:2022},
+{q:"Opposite of 'prolific'.", o:["Productive","Fruitful","Barren","Active"], a:2, y:2022},
+{q:"The police ___ investigating the case.", o:["Is","Was","Are","Be"], a:2, y:2022},
+{q:"Synonym of 'enigmatic'.", o:["Clear","Mysterious","Open","Simple"], a:1, y:2023},
+{q:"Correct spelling:", o:["Consciencious","Conscientious","Conscentious","Consciencous"], a:1, y:2023},
+{q:"Meaning of 'once in a blue moon'.", o:["Often","Rarely","Always","Sometimes"], a:1, y:2023},
+{q:"Consonant sound in 'judge'.", o:["/ʃ/","/dʒ/","/g/","/ʒ/"], a:1, y:2023},
+
+/* ===================== 41–50 ===================== */
+{q:"Antonym of 'obsolete'.", o:["Outdated","Modern","Ancient","Old"], a:1, y:2021},
+{q:"Synonym of 'impeccable'.", o:["Faulty","Perfect","Poor","Weak"], a:1, y:2021},
+{q:"He denied ___ the money.", o:["To steal","Stealing","Steal","Stolen"], a:1, y:2021},
+{q:"Meaning of 'smell a rat'.", o:["See food","Suspect something","Run away","Catch animal"], a:1, y:2022},
+{q:"Opposite of 'affluent'.", o:["Wealthy","Rich","Poor","Prosperous"], a:2, y:2022},
+{q:"The team ___ winning the match.", o:["Is","Are","Were","Be"], a:1, y:2022},
+{q:"Synonym of 'docile'.", o:["Stubborn","Aggressive","Gentle","Wild"], a:2, y:2023},
+{q:"Correct sentence:", o:["He has finished yesterday","He finished yesterday","He finishes yesterday","He has finish yesterday"], a:1, y:2023},
+{q:"Meaning of 'barking up the wrong tree'.", o:["Correct approach","Wrong assumption","Angry","Confused"], a:1, y:2023},
+{q:"Stress on 'development'.", o:["DE-velop-ment","de-VE-lop-ment","de-ve-LOP-ment","de-ve-lop-MENT"], a:1, y:2023},
+
+/* ===================== 51–100 ===================== */
+{q:"Opposite of 'vindictive'.", o:["Forgiving","Revengeful","Cruel","Malicious"], a:0, y:2021},
+{q:"Synonym of 'prosaic'.", o:["Poetic","Imaginative","Ordinary","Creative"], a:2, y:2021},
+{q:"She prevented him ___ entering the room.", o:["From","By","At","In"], a:0, y:2022},
+{q:"Meaning of 'cut corners'.", o:["Save time dishonestly","Take shortcuts legally","Run away","Be careful"], a:0, y:2022},
+{q:"Antonym of 'plausible'.", o:["Believable","Convincing","Doubtful","Reasonable"], a:2, y:2022},
+{q:"The cattle ___ grazing.", o:["Is","Was","Are","Be"], a:2, y:2022},
+{q:"Synonym of 'austere'.", o:["Harsh","Luxurious","Comfortable","Pleasant"], a:0, y:2023},
+{q:"Correct sentence:", o:["Scarcely had he arrived than it rained","Scarcely he arrived when it rained","Scarcely had he arrived when it rained","Scarcely he had arrived than it rained"], a:2, y:2023},
+{q:"Meaning of 'hit the nail on the head'.", o:["Miss the point","Speak wrongly","Say exactly right","Make noise"], a:2, y:2023},
+{q:"Vowel sound in 'cup'.", o:["/ʌ/","/a:/","/ɔ:/","/u:/"], a:0, y:2023},
+{q:"Antonym of 'reticent'.", o:["Silent","Reserved","Talkative","Shy"], a:2, y:2021},
+{q:"Synonym of 'obstinate'.", o:["Flexible","Stubborn","Gentle","Kind"], a:1, y:2021},
+{q:"He succeeded ___ hard work.", o:["By","Through","With","For"], a:1, y:2021},
+{q:"Meaning of 'on thin ice'.", o:["In danger","Safe","Celebrating","Relaxing"], a:0, y:2022},
+{q:"Opposite of 'benevolent'.", o:["Kind","Charitable","Malevolent","Helpful"], a:2, y:2022},
+{q:"The staff ___ unhappy about the decision.", o:["Is","Was","Are","Be"], a:2, y:2022},
+{q:"Synonym of 'taciturn'.", o:["Talkative","Silent","Cheerful","Noisy"], a:1, y:2023},
+{q:"Correct spelling:", o:["Pronounciation","Pronunciation","Pronounciashun","Pronounciate"], a:1, y:2023},
+{q:"Meaning of 'add fuel to the fire'.", o:["Calm situation","Worsen situation","Ignore problem","Solve problem"], a:1, y:2023},
+{q:"Consonant sound in 'measure'.", o:["/s/","/ʃ/","/ʒ/","/z/"], a:2, y:2023},
+{q:"Antonym of 'loquacious'.", o:["Talkative","Quiet","Noisy","Chatty"], a:1, y:2021},
+{q:"Synonym of 'spurious'.", o:["Genuine","False","Real","Correct"], a:1, y:2021},
+{q:"She is senior ___ me.", o:["Than","To","With","From"], a:1, y:2021},
+{q:"Meaning of 'beyond the pale'.", o:["Acceptable","Unacceptable","Normal","Common"], a:1, y:2022},
+{q:"Opposite of 'concur'.", o:["Agree","Accept","Dissent","Support"], a:2, y:2022},
+{q:"The audience ___ applauding loudly.", o:["Is","Was","Are","Be"], a:2, y:2022},
+{q:"Synonym of 'precarious'.", o:["Safe","Dangerous","Stable","Secure"], a:1, y:2023},
+{q:"Correct sentence:", o:["Hardly had she entered when the phone rang","Hardly she entered when the phone rang","Hardly had she entered than the phone rang","Hardly she had entered than the phone rang"], a:0, y:2023},
+{q:"Meaning of 'a feather in one’s cap'.", o:["Failure","Achievement","Punishment","Insult"], a:1, y:2023},
+{q:"Stress pattern of 'economics'.", o:["E-co-no-mics","e-CO-no-mics","e-co-NO-mics","e-co-no-MICS"], a:1, y:2023},
+{q:"Antonym of 'fortuitous'.", o:["Accidental","Planned","Lucky","Unexpected"], a:1, y:2021},
+{q:"Synonym of 'pragmatic'.", o:["Theoretical","Practical","Idealistic","Dreamy"], a:1, y:2021},
+{q:"He refrained ___ making comments.", o:["From","By","At","In"], a:0, y:2021},
+{q:"Meaning of 'spill the beans'.", o:["Cook food","Reveal secret","Make noise","Waste time"], a:1, y:2022},
+{q:"Opposite of 'coherent'.", o:["Logical","Clear","Confusing","Connected"], a:2, y:2022},
+{q:"The police ___ arrested the suspect.", o:["Has","Is","Have","Was"], a:2, y:2022},
+{q:"Synonym of 'deride'.", o:["Praise","Mock","Respect","Support"], a:1, y:2023},
+{q:"Correct spelling:", o:["Indispensible","Indespensable","Indispensable","Indispensiblee"], a:2, y:2023},
+{q:"Meaning of 'take with a pinch of salt'.", o:["Believe fully","Doubt","Ignore","Reject"], a:1, y:2023},
+{q:"Vowel sound in 'goat'.", o:["/ɒ/","/əʊ/","/ɔ:/","/u:/"], a:1, y:2023},
+{q:"Antonym of 'succinct'.", o:["Brief","Concise","Verbose","Short"], a:2, y:2021},
+{q:"Synonym of 'belligerent'.", o:["Peaceful","Aggressive","Calm","Friendly"], a:1, y:2021},
+{q:"She objected ___ the proposal.", o:["Against","With","To","At"], a:2, y:2021},
+{q:"Meaning of 'burn the midnight oil'.", o:["Sleep early","Study late","Relax","Party"], a:1, y:2022},
+{q:"Opposite of 'candid'.", o:["Frank","Honest","Secretive","Open"], a:2, y:2022},
+{q:"The flock ___ scattered.", o:["Is","Was","Are","Be"], a:0, y:2022},
+{q:"Synonym of 'lethargic'.", o:["Active","Energetic","Lazy","Vigorous"], a:2, y:2023},
+{q:"Correct sentence:", o:["No sooner had he arrived than it started","No sooner he arrived when it started","No sooner had he arrived when it started","No sooner he had arrived than it started"], a:0, y:2023},
+{q:"Meaning of 'keep one’s fingers crossed'.", o:["Hope for luck","Hide","Pray","Wait"], a:0, y:2023},
+{q:"Stress on 'examination'.", o:["EX-a-mi-na-tion","ex-A-mi-na-tion","ex-a-MI-na-tion","ex-a-mi-NA-tion"], a:2, y:2023}
+];
+
+/* ================= VARIABLES ================= */
+let current = 0;
+let answers = [];
+let isPremium = false;
+let time = 0;          // exam duration in seconds
+let selectedMinutes = 0;
+let timerInt;
+let timerStarted = false;
+
+const qText = document.getElementById("qText");
+const optionsWrap = document.getElementById("optionsWrap");
+const qNav = document.getElementById("qNav");
+const progressFill = document.getElementById("progressFill");
+const timerEl = document.getElementById("timer");
+
+/* ================= UTILITY ================= */
+function shuffle(array){
+  for(let i=array.length-1;i>0;i--){
+    const j=Math.floor(Math.random()*(i+1));
+    [array[i],array[j]]=[array[j],array[i]];
+  }
+}
+
+/* ================= RENDER QUESTIONS ================= */
+function render(){
+  const q = QUESTIONS[current];
+  qText.innerHTML = `${current+1}. ${q.q} <small>${q.y ? "(Year "+q.y+")":""}</small>`;
+  optionsWrap.innerHTML="";
+  q.o.forEach((op,i)=>{
+    const d=document.createElement("div");
+    d.className="option";
+    if(answers[current]===i) d.classList.add("selected");
+    d.innerText=op;
+    d.onclick=()=>{answers[current]=i; render();};
+    optionsWrap.appendChild(d);
+  });
+  progressFill.style.width=((answers.filter(a=>a!==null).length/QUESTIONS.length)*100)+"%";
+  buildNav();
+}
+
+function buildNav(){
+  qNav.innerHTML="";
+  for(let i=0;i<QUESTIONS.length;i++){
+    const b=document.createElement("button");
+    b.className="qbtn";
+    if(i===current) b.classList.add("current");
+    if(answers[i]!=null) b.classList.add("answered");
+    if(!isPremium && i>=25){
+      b.classList.add("locked");
+      b.disabled=true;
+    }
+    b.innerText=i+1;
+    b.onclick=()=>{current=i; render();}
+    qNav.appendChild(b);
+  }
+}
+
+/* ================= TIMER ================= */
+async function chooseExamTime(){
+  const { value } = await Swal.fire({
+    title: "Select Exam Duration",
+    text: "Choose your preferred exam time",
+    icon: "info",
+    allowOutsideClick: false,
+    allowEscapeKey: false,
+    confirmButtonText: "Start Exam",
+    input: "radio",
+    inputOptions: {
+      20: "20 Minutes",
+      30: "30 Minutes",
+      40: "40 Minutes",
+      60: "60 Minutes"
+    },
+    inputValidator: (value) => {
+      if (!value) return "Please select a duration";
+    }
+  });
+
+  selectedMinutes = Number(value);
+  time = selectedMinutes * 60;
+}
+
+function startTimer(){
+  if(timerStarted) return;
+  timerStarted = true;
+
+  timerInt = setInterval(()=>{
+    let m = Math.floor(time / 60);
+    let s = time % 60;
+    timerEl.innerText = `${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}`;
+    time--;
+    if(time<0){
+      clearInterval(timerInt);
+      Swal.fire({
+        title:"Time Up!",
+        text:"Your exam has been submitted automatically.",
+        icon:"warning",
+        confirmButtonText:"View Result"
+      }).then(()=>showReview());
+    }
+  },1000);
+}
+
+/* ================= SUBMIT & REVIEW ================= */
+function submitExam(){
+  Swal.fire({
+    title:"Submit Exam?",
+    icon:"warning",
+    showCancelButton:true,
+    confirmButtonText:"Yes Submit"
+  }).then(r=>{
+    if(!r.isConfirmed) return;
+    showReview();
+  });
+}
+
+function showReview(){
+  clearInterval(timerInt);
+  document.getElementById("examSection").style.display="none";
+  document.getElementById("reviewSection").style.display="block";
+
+  const total = isPremium ? QUESTIONS.length : Math.min(25, QUESTIONS.length);
+  let score = 0;
+  const list = document.getElementById("reviewList");
+  list.innerHTML="";
+
+  for(let i=0;i<total;i++){
+    if(answers[i]===QUESTIONS[i].a) score++;
+    const div=document.createElement("div");
+    div.className="review-q";
+    div.innerHTML=`
+      <p><b>${i+1}. ${QUESTIONS[i].q}</b></p>
+      <p>Your Answer: <span class="${answers[i]===QUESTIONS[i].a?"correct":"wrong"}">${QUESTIONS[i].o[answers[i]]||"Not Answered"}</span></p>
+      <p>Correct Answer: ${QUESTIONS[i].o[QUESTIONS[i].a]}</p>
+    `;
+    list.appendChild(div);
+  }
+
+  document.getElementById("rScore").innerText = `${score}/${total}`;
+  document.getElementById("rFail").innerText = total-score;
+  document.getElementById("rPercent").innerText = ((score/total)*100).toFixed(1)+"%";
+}
+
+/* ================= BUTTONS ================= */
+document.getElementById("nextBtn").onclick=()=>{
+  if(!isPremium && current===24){
+    Swal.fire("Upgrade Required","Only 25 questions for free users","info");
+    return;
+  }
+  if(current<QUESTIONS.length-1){current++;render();}
+};
+document.getElementById("backBtn").onclick=()=>{if(current>0){current--;render();}};
+document.getElementById("submitBtn").onclick=submitExam;
+
+/* ================= AUTH & INIT ================= */
+onAuthStateChanged(auth, async(user)=>{
+  if(!user){ location.href="login.html"; return; }
+
+  const snap = await getDoc(doc(db,"users",user.uid));
+  isPremium = snap.exists() && snap.data().isPremium===true;
+  if(!isPremium) document.getElementById("freeNote").style.display="block";
+
+  // 1. Select exam time
+  await chooseExamTime();
+
+  // 2. Shuffle questions & init answers
+  shuffle(QUESTIONS);
+  answers = Array(QUESTIONS.length).fill(null);
+
+  // 3. Render and start timer
+  render();
+  startTimer();
+});
+</script>
+
+</body>
+</html>

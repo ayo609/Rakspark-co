@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Videos • Rakspark Academy</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+
+  <style>
+    :root{--sky:#87CEEB;--navy:#001F3F;--gold:#FFD700;--green:#2ed573;--red:#ff4757;--white:#fff;--shadow:rgba(0,31,63,0.25)}
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:'Poppins',sans-serif;background:linear-gradient(135deg,var(--sky),#5dade2);min-height:100vh;padding:20px 10px;color:#333}
+    .container{max-width:1200px;margin:0 auto}
+    .card{background:white;border-radius:40px;padding:40px 30px;box-shadow:0 35px 100px var(--shadow);margin:20px auto}
+    .header{text-align:center;margin-bottom:40px}
+    .header h1{font-size:2.8rem;color:var(--navy);font-weight:800;margin-bottom:15px}
+    .header p{font-size:1.2rem;color:#444;max-width:700px;margin:0 auto}
+    .videos-grid{
+      display:grid;
+      grid-template-columns:repeat(auto-fill,minmax(320px,1fr));
+      gap:30px;
+      margin-top:20px
+    }
+    @media (max-width:768px){
+      .videos-grid{grid-template-columns:1fr;gap:25px}
+      .header h1{font-size:2.4rem}
+      .card{padding:30px 20px}
+    }
+    @media (min-width:769px) and (max-width:1024px){
+      .videos-grid{grid-template-columns:repeat(2,1fr)}
+    }
+    .video-card{
+      background:white;
+      border-radius:25px;
+      overflow:hidden;
+      box-shadow:0 10px 40px rgba(0,0,0,0.12);
+      transition:all .4s ease;
+      border:2px solid transparent
+    }
+    .video-card:hover{
+      transform:translateY(-10px);
+      box-shadow:0 25px 60px rgba(0,0,0,0.2);
+      border-color:var(--gold)
+    }
+    .video-header{
+      background:var(--navy);
+      padding:20px;
+      color:white;
+      text-align:center;
+      position:relative
+    }
+    .video-header i{
+      font-size:1.8rem;
+      margin-bottom:10px;
+      color:var(--gold);
+      display:block
+    }
+    .video-header h3{font-size:1.35rem;margin:10px 0 8px;line-height:1.3}
+    .video-header small{
+      font-size:1rem;
+      opacity:0.9;
+      background:rgba(255,215,0,0.2);
+      padding:4px 12px;
+      border-radius:20px
+    }
+    .video-body{padding:20px}
+    .video-player{
+      position:relative;
+      padding-bottom:56.25%;
+      height:0;
+      overflow:hidden;
+      border-radius:15px;
+      background:#000
+    }
+    .video-player iframe{
+      position:absolute;
+      top:0;left:0;
+      width:100%;height:100%;
+      border:0
+    }
+    .back-btn{
+      display:block;
+      text-align:center;
+      margin-top:50px;
+      font-size:1.4rem;
+      font-weight:600;
+      color:var(--navy);
+      text-decoration:none
+    }
+    .back-btn:hover{color:var(--gold)}
+  </style>
+</head>
+
+<body>
+<div class="container">
+  <div class="card">
+    <div class="header">
+      <h1>Tutorial Videos</h1>
+      <p>Free high-quality JAMB preparation videos for all users — master every subject with expert tutorials!</p>
+    </div>
+
+    <div class="videos-grid">
+      <!-- 1. Use of English -->
+      <div class="video-card">
+        <div class="video-header">
+          <i class="fas fa-book-open"></i>
+          <h3>Lexis & Structure Masterclass</h3>
+          <small>Use of English</small>
+        </div>
+        <div class="video-body">
+          <div class="video-player">
+            <iframe loading="lazy" src="https://www.youtube.com/embed/qdQqQqJcBKU" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. Mathematics -->
+      <div class="video-card">
+        <div class="video-header">
+          <i class="fas fa-calculator"></i>
+          <h3>Probability Made Easy</h3>
+          <small>Mathematics</small>
+        </div>
+        <div class="video-body">
+          <div class="video-player">
+            <iframe loading="lazy" src="https://www.youtube.com/embed/BKHx-zdLSYo" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3. Physics -->
+      <div class="video-card">
+        <div class="video-header">
+          <i class="fas fa-atom"></i>
+          <h3>Equations of Motion Explained</h3>
+          <small>Physics</small>
+        </div>
+        <div class="video-body">
+          <div class="video-player">
+            <iframe loading="lazy" src="https://www.youtube.com/embed/6riGLsl9ijc" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+          </div>
+        </div>
+      </div>
+
+      <!-- 4. Chemistry -->
+      <div class="video-card">
+        <div class="video-header">
+          <i class="fas fa-flask"></i>
+          <h3>Rate of Reaction Mastery</h3>
+          <small>Chemistry</small>
+        </div>
+        <div class="video-body">
+          <div class="video-player">
+            <iframe loading="lazy" src="https://www.youtube.com/embed/8TX8vWb4jE4" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+          </div>
+        </div>
+      </div>
+
+      <!-- 5. Biology -->
+      <div class="video-card">
+        <div class="video-header">
+          <i class="fas fa-leaf"></i>
+          <h3>Aerobic & Anaerobic Respiration</h3>
+          <small>Biology</small>
+        </div>
+        <div class="video-body">
+          <div class="video-player">
+            <iframe loading="lazy" src="https://www.youtube.com/embed/Z0HKMWFdySo" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+          </div>
+        </div>
+      </div>
+
+      <!-- 6. Government -->
+      <div class="video-card">
+        <div class="video-header">
+          <i class="fas fa-landmark"></i>
+          <h3>Constitution & Federalism</h3>
+          <small>Government</small>
+        </div>
+        <div class="video-body">
+          <div class="video-player">
+            <iframe loading="lazy" src="https://www.youtube.com/embed/FRD1D0DGVh0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+          </div>
+        </div>
+      </div>
+
+      <!-- 7. Maths 2 -->
+      <div class="video-card">
+        <div class="video-header">
+          <i class="fas fa-chart-line"></i>
+          <h3>Variation Questions Solved</h3>
+          <small>Mathematics</small>
+        </div>
+        <div class="video-body">
+          <div class="video-player">
+            <iframe loading="lazy" src="https://www.youtube.com/embed/tcbW05cJyto" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+          </div>
+        </div>
+      </div>
+
+      <!-- 8. Physics 2 -->
+      <div class="video-card">
+        <div class="video-header">
+          <i class="fas fa-bolt"></i>
+          <h3>Momentum & Impulse</h3>
+          <small>Physics</small>
+        </div>
+        <div class="video-body">
+          <div class="video-player">
+            <iframe loading="lazy" src="https://www.youtube.com/embed/POq4xE1fzkc" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+          </div>
+        </div>
+      </div>
+
+      <!-- 9. Exam Tips 1 -->
+      <div class="video-card">
+        <div class="video-header">
+          <i class="fas fa-lightbulb"></i>
+          <h3>How to Score 300+ in JAMB</h3>
+          <small>Exam Strategy</small>
+        </div>
+        <div class="video-body">
+          <div class="video-player">
+            <iframe loading="lazy" src="https://www.youtube.com/embed/3pflvDVrZbc" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+          </div>
+        </div>
+      </div>
+
+      <!-- 10. Exam Tips 2 -->
+      <div class="video-card">
+        <div class="video-header">
+          <i class="fas fa-trophy"></i>
+          <h3>Exam Hall Tips & Time Management</h3>
+          <small>Exam Strategy</small>
+        </div>
+        <div class="video-body">
+          <div class="video-player">
+            <iframe loading="lazy" src="https://www.youtube.com/embed/znjv1f8ALiw" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <a href="dashboard.html" class="back-btn">← Back to Dashboard</a>
+  </div>
+</div>
+
+<script>
+  // Enhanced staggered fade-in animation
+  window.addEventListener('load', () => {
+    const cards = document.querySelectorAll('.video-card');
+    cards.forEach((card, i) => {
+      card.style.opacity = 0;
+      card.style.transform = 'translateY(30px)';
+      setTimeout(() => {
+        card.style.transition = 'all 0.7s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+        card.style.opacity = 1;
+        card.style.transform = 'translateY(0)';
+      }, i * 150);
+    });
+  });
+
+  // Optional: Add play icon overlay if you want (for extra polish)
+</script>
+
+</body>
+</html>

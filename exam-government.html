@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>JAMB CBT – Government</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<!-- SweetAlert2 -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<!-- Google Font -->
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+:root{
+  --navy:#001f3f;
+  --sky:#eaf4ff;
+  --green:#2ed573;
+  --red:#ff4757;
+  --gold:#f1c40f;
+  --gray:#f5f5f5;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+  font-family:Poppins,sans-serif;
+  background:linear-gradient(135deg,#eaf4ff,#d6e9ff);
+  min-height:100vh;
+  padding:20px;
+}
+.container{
+  max-width:1100px;
+  margin:auto;
+  background:#fff;
+  border-radius:25px;
+  box-shadow:0 25px 70px rgba(0,0,0,.15);
+  overflow:hidden;
+}
+header{
+  background:var(--navy);
+  color:#fff;
+  padding:25px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+header h2{font-size:1.6rem}
+#timer{
+  background:#fff;
+  color:var(--navy);
+  padding:8px 18px;
+  border-radius:20px;
+  font-weight:700;
+}
+#freeNote{
+  background:#fff3cd;
+  color:#856404;
+  padding:12px;
+  text-align:center;
+  font-weight:600;
+  display:none;
+}
+.main{
+  padding:30px;
+}
+#progress{
+  height:10px;
+  background:#eee;
+  border-radius:10px;
+  overflow:hidden;
+  margin-bottom:20px;
+}
+#progressFill{
+  height:100%;
+  width:0%;
+  background:linear-gradient(90deg,var(--green),var(--gold));
+}
+#qText{
+  font-size:1.3rem;
+  font-weight:600;
+  margin-bottom:20px;
+}
+.option{
+  background:var(--gray);
+  padding:15px 18px;
+  border-radius:15px;
+  margin-bottom:12px;
+  cursor:pointer;
+  transition:.3s;
+}
+.option:hover{background:#e0e0e0}
+.option.selected{
+  background:var(--navy);
+  color:#fff;
+}
+.nav-btns{
+  display:flex;
+  justify-content:space-between;
+  margin-top:25px;
+}
+button{
+  padding:12px 30px;
+  border:none;
+  border-radius:30px;
+  font-weight:600;
+  cursor:pointer;
+}
+#backBtn{background:#ccc}
+#nextBtn{background:var(--navy);color:#fff}
+#submitBtn{
+  background:var(--green);
+  color:#fff;
+}
+#qNav{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(45px,1fr));
+  gap:10px;
+  margin-top:30px;
+}
+.qbtn{
+  padding:10px;
+  border-radius:10px;
+  border:none;
+  cursor:pointer;
+  font-weight:600;
+}
+.qbtn.current{background:var(--navy);color:#fff}
+.qbtn.answered{background:var(--green);color:#fff}
+.qbtn.locked{background:#ddd;color:#999;cursor:not-allowed}
+.review{
+  display:none;
+  padding:30px;
+}
+.review h2{text-align:center;margin-bottom:20px}
+.score-box{
+  display:flex;
+  justify-content:space-around;
+  margin-bottom:25px;
+  flex-wrap:wrap;
+}
+.score-card{
+  background:var(--gray);
+  padding:20px;
+  border-radius:20px;
+  text-align:center;
+  min-width:160px;
+}
+.correct{color:var(--green);font-weight:700}
+.wrong{color:var(--red);font-weight:700}
+.review-q{
+  background:#f9f9f9;
+  padding:15px;
+  border-radius:15px;
+  margin-bottom:15px;
+}
+.review-q p{margin:6px 0}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<header>
+  <h2>JAMB CBT – Government</h2>
+  <div id="timer">00:00</div>
+</header>
+
+<div id="freeNote">
+  Free users can attempt only <b>25 questions</b>. Upgrade to Premium for all 99+.
+</div>
+
+<div class="main" id="examSection">
+  <div id="progress"><div id="progressFill"></div></div>
+  <div id="qText"></div>
+  <div id="optionsWrap"></div>
+
+  <div class="nav-btns">
+    <button id="backBtn">Back</button>
+    <button id="nextBtn">Next</button>
+    <button id="submitBtn">Submit</button>
+  </div>
+
+  <div id="qNav"></div>
+</div>
+
+<div class="review" id="reviewSection">
+  <h2>Exam Review</h2>
+  <div class="score-box">
+    <div class="score-card">Score<br><span id="rScore"></span></div>
+    <div class="score-card">Failed<br><span id="rFail"></span></div>
+    <div class="score-card">Percentage<br><span id="rPercent"></span></div>
+  </div>
+  <div id="reviewList"></div>
+</div>
+
+</div>
+
+<script type="module">
+/* ================= FIREBASE ================= */
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js";
+import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDTDWqG_WAXZO7O6yAxV5lOHUkHZp-wwQk",
+  authDomain: "rackspark.firebaseapp.com",
+  projectId: "rackspark",
+  storageBucket: "rackspark.firebasestorage.app",
+  messagingSenderId: "125488977166",
+  appId: "1:125488977166:web:b519b6871df21662c0f35f"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+/* ================= QUESTIONS ================= */
+
+const QUESTIONS = [
+
+/* ===================== 1–10 ===================== */
+{q:"Government is best defined as?", o:["An institution that makes and enforces laws","A political party","The judiciary alone","Military rule"], a:0, y:2021},
+{q:"Which arm of government interprets the law?", o:["Judiciary","Legislature","Executive","Police"], a:0, y:2021},
+{q:"The main function of the legislature is to?", o:["Make laws","Execute laws","Interpret laws","Enforce laws"], a:0, y:2021},
+{q:"The executive arm is headed by the?", o:["President","Chief Judge","Speaker","Senate President"], a:0, y:2022},
+{q:"Which arm enforces the laws of the state?", o:["Executive","Judiciary","Legislature","Electoral body"], a:0, y:2022},
+{q:"The Nigerian constitution was last amended in?", o:["1999","1979","1989","1963"], a:0, y:2023},
+{q:"A constitution is best described as?", o:["The supreme law of the land","A court judgment","A party manifesto","Military decree"], a:0, y:2023},
+{q:"Which constitution introduced federalism in Nigeria?", o:["Lyttleton Constitution","Macpherson Constitution","Clifford Constitution","Richards Constitution"], a:0, y:2021},
+{q:"Federalism involves?", o:["Division of powers","Centralized power","Military rule","Unitary control"], a:0, y:2022},
+{q:"Nigeria operates which system of government?", o:["Presidential","Parliamentary","Monarchical","Confederal"], a:0, y:2023},
+
+/* ===================== 11–20 ===================== */
+{q:"The head of government in Nigeria is the?", o:["President","Prime Minister","Governor-General","Chief Justice"], a:0, y:2021},
+{q:"Which principle allows sharing of power among arms?", o:["Separation of powers","Rule of law","Checks and balances","Federalism"], a:0, y:2021},
+{q:"Checks and balances prevent?", o:["Abuse of power","Election","Democracy","Federalism"], a:0, y:2022},
+{q:"Rule of law means?", o:["Equality before the law","Military authority","Party supremacy","Executive power"], a:0, y:2022},
+{q:"Which body conducts elections in Nigeria?", o:["INEC","NPC","EFCC","ICPC"], a:0, y:2023},
+{q:"The highest court in Nigeria is the?", o:["Supreme Court","Court of Appeal","High Court","Sharia Court"], a:0, y:2023},
+{q:"Who appoints Supreme Court judges?", o:["President","Senate","Chief Justice","INEC"], a:0, y:2021},
+{q:"A bill becomes law after?", o:["Presidential assent","Judicial review","Public debate","Party approval"], a:0, y:2022},
+{q:"The Nigerian legislature is called?", o:["National Assembly","Federal Council","House of Lords","Parliament"], a:0, y:2022},
+{q:"The National Assembly consists of?", o:["Senate and House of Reps","Judiciary and Executive","Council and Cabinet","Ministers only"], a:0, y:2023},
+
+/* ===================== 21–30 ===================== */
+{q:"How many senators does Nigeria have?", o:["109","360","774","36"], a:0, y:2021},
+{q:"Members of the House of Representatives are?", o:["360","109","774","108"], a:0, y:2021},
+{q:"A senator represents?", o:["A senatorial district","A local government","A ward","A state only"], a:0, y:2022},
+{q:"Who presides over the Senate?", o:["Senate President","Speaker","President","Chief Justice"], a:0, y:2022},
+{q:"The Speaker heads the?", o:["House of Representatives","Senate","Judiciary","Executive"], a:0, y:2023},
+{q:"Which system allows fusion of powers?", o:["Parliamentary","Presidential","Federal","Unitary"], a:0, y:2023},
+{q:"In a parliamentary system, head of government is?", o:["Prime Minister","President","Governor","Monarch"], a:0, y:2021},
+{q:"Nigeria practiced parliamentary system between?", o:["1960–1966","1979–1983","1999–Present","1985–1993"], a:0, y:2022},
+{q:"A unitary system concentrates power at?", o:["Centre","States","Local governments","Communities"], a:0, y:2022},
+{q:"Confederation gives most power to?", o:["States","Central government","Judiciary","Military"], a:0, y:2023},
+
+/* ===================== 31–40 ===================== */
+{q:"Citizenship can be acquired by?", o:["Birth","Registration","Naturalization","All of the above"], a:3, y:2021},
+{q:"A citizen enjoys?", o:["Political rights","No obligations","Only civil duties","Military authority"], a:0, y:2021},
+{q:"Which is NOT a civic duty?", o:["Voting","Tax evasion","Law obedience","National service"], a:1, y:2022},
+{q:"Fundamental human rights include?", o:["Right to life","Right to steal","Right to violence","Right to corruption"], a:0, y:2022},
+{q:"Which right allows free expression?", o:["Freedom of speech","Right to vote","Right to property","Right to movement"], a:0, y:2023},
+{q:"A political party aims to?", o:["Win elections","Interpret laws","Judge cases","Control courts"], a:0, y:2023},
+{q:"Which party ruled Nigeria in 2015?", o:["APC","PDP","ANPP","AD"], a:0, y:2021},
+{q:"Opposition party means?", o:["Party not in power","Illegal party","Ruling party","Military party"], a:0, y:2022},
+{q:"Pressure groups seek to?", o:["Influence government","Overthrow government","Rule country","Conduct elections"], a:0, y:2022},
+{q:"Trade unions are examples of?", o:["Pressure groups","Political parties","Judicial bodies","Electoral bodies"], a:0, y:2023},
+
+/* ===================== 41–50 ===================== */
+{q:"Public opinion refers to?", o:["Views of the people","Court rulings","Party manifesto","Military orders"], a:0, y:2021},
+{q:"Mass media helps democracy by?", o:["Educating citizens","Judging criminals","Making laws","Conducting elections"], a:0, y:2021},
+{q:"Which is NOT a mass media?", o:["Court","Radio","Television","Newspaper"], a:0, y:2022},
+{q:"Election is the process of?", o:["Choosing leaders","Judging cases","Making laws","Enforcing rules"], a:0, y:2022},
+{q:"Voting age in Nigeria is?", o:["18 years","21 years","25 years","30 years"], a:0, y:2023},
+{q:"Secret ballot ensures?", o:["Free voting","Rigging","Intimidation","Bias"], a:0, y:2023},
+{q:"Electoral malpractice includes?", o:["Ballot stuffing","Free voting","Counting votes","Voter education"], a:0, y:2021},
+{q:"Which body registers political parties?", o:["INEC","NPC","EFCC","Code of Conduct"], a:0, y:2022},
+{q:"Democracy means government by?", o:["The people","The military","The elite","The judges"], a:0, y:2022},
+{q:"Military rule is characterized by?", o:["Suspension of constitution","Free elections","Rule of law","Separation of powers"], a:0, y:2023},
+
+/* ===================== 51–60 ===================== */
+{q:"The head of state during military rule is?", o:["Head of State","President","Prime Minister","Governor"], a:0, y:2021},
+{q:"Coup d’état is?", o:["Illegal takeover of power","Election","Impeachment","Federalism"], a:0, y:2021},
+{q:"Public service refers to?", o:["Government workers","Political parties","Private companies","Judiciary"], a:0, y:2022},
+{q:"Civil servants are expected to be?", o:["Neutral","Partisan","Political","Activists"], a:0, y:2022},
+{q:"Which ministry handles education?", o:["Ministry of Education","Ministry of Health","Ministry of Works","Ministry of Defense"], a:0, y:2023},
+{q:"Local government is the?", o:["Third tier of government","First tier","Second tier","Judicial arm"], a:0, y:2023},
+{q:"Chairman heads the?", o:["Local government","State government","Federal government","Judiciary"], a:0, y:2021},
+{q:"Revenue allocation means?", o:["Sharing national revenue","Tax payment","Budget approval","Loan repayment"], a:0, y:2022},
+{q:"Which commission fights corruption?", o:["EFCC","INEC","NPC","FRSC"], a:0, y:2022},
+{q:"ICPC stands for?", o:["Independent Corrupt Practices Commission","International Crime Police Commission","Internal Control Police Council","Independent Crime Prevention Council"], a:0, y:2023},
+
+/* ===================== 61–70 ===================== */
+{q:"Nigeria is a member of?", o:["ECOWAS","EU","NATO","AU only"], a:0, y:2021},
+{q:"ECOWAS promotes?", o:["Economic cooperation","Military takeover","Judicial control","Election rigging"], a:0, y:2021},
+{q:"AU stands for?", o:["African Union","African Unity","Allied Union","African United Nations"], a:0, y:2022},
+{q:"UNO headquarters is in?", o:["New York","Geneva","London","Paris"], a:0, y:2022},
+{q:"The main organ of UN is?", o:["General Assembly","ECOWAS","AU","Commonwealth"], a:0, y:2023},
+{q:"Nigeria joined UN in?", o:["1960","1957","1975","1963"], a:0, y:2023},
+{q:"Commonwealth is headed by?", o:["British Monarch","UN Secretary","AU Chairman","Nigerian President"], a:0, y:2021},
+{q:"Foreign policy deals with?", o:["External relations","Internal affairs","Local government","Judiciary"], a:0, y:2022},
+{q:"Diplomacy involves?", o:["Peaceful negotiation","War","Coup","Sanctions"], a:0, y:2022},
+{q:"Nigeria practices non-alignment meaning?", o:["No military alliance","No trade","No diplomacy","No democracy"], a:0, y:2023},
+
+/* ===================== 71–80 ===================== */
+{q:"National interest means?", o:["Benefits of the country","Party interest","Foreign control","Military rule"], a:0, y:2021},
+{q:"Ambassador represents a country in?", o:["Another country","His state","Local government","Court"], a:0, y:2021},
+{q:"Treaty is an agreement between?", o:["Countries","Political parties","States","Local councils"], a:0, y:2022},
+{q:"Which promotes peace among nations?", o:["United Nations","Military coup","Colonialism","Dictatorship"], a:0, y:2022},
+{q:"A referendum allows citizens to?", o:["Vote directly","Choose judges","Make laws alone","Rule country"], a:0, y:2023},
+{q:"Recall allows voters to?", o:["Remove elected officials","Elect president","Amend constitution","Create parties"], a:0, y:2023},
+{q:"Impeachment is removal of?", o:["Public officer","Citizen","Judge","Voter"], a:0, y:2021},
+{q:"Which body impeaches the president?", o:["National Assembly","Supreme Court","INEC","Police"], a:0, y:2022},
+{q:"Good governance includes?", o:["Transparency","Corruption","Secrecy","Oppression"], a:0, y:2022},
+{q:"Accountability means?", o:["Answering for actions","No control","Military power","Judicial review"], a:0, y:2023},
+
+/* ===================== 81–90 ===================== */
+{q:"Political apathy means?", o:["Lack of interest in politics","Active participation","Voting regularly","Party loyalty"], a:0, y:2021},
+{q:"Political socialization is learning?", o:["Political values","Maths","Religion","Science"], a:0, y:2021},
+{q:"Agents of political socialization include?", o:["Family","Court","Army","Police only"], a:0, y:2022},
+{q:"Which discourages democracy?", o:["Rigging","Free election","Rule of law","Transparency"], a:0, y:2022},
+{q:"A constitution can be amended by?", o:["Legislature","Judiciary","Executive","INEC"], a:0, y:2023},
+{q:"Written constitution is?", o:["Documented","Unwritten","Customary","Oral"], a:0, y:2023},
+{q:"Nigeria has how many states?", o:["36","30","24","40"], a:0, y:2021},
+{q:"The Federal Capital Territory is?", o:["Abuja","Lagos","Kaduna","Ibadan"], a:0, y:2022},
+{q:"Which arm controls public funds?", o:["Legislature","Executive","Judiciary","Police"], a:0, y:2022},
+{q:"Budget is prepared by the?", o:["Executive","Judiciary","INEC","Local council"], a:0, y:2023},
+
+/* ===================== 91–100 ===================== */
+{q:"Budget approval is done by?", o:["Legislature","Executive","Judiciary","Auditor-General"], a:0, y:2021},
+{q:"Auditor-General checks?", o:["Government accounts","Court cases","Elections","Police duties"], a:0, y:2021},
+{q:"Public corporation is owned by?", o:["Government","Individuals","Foreigners","NGOs"], a:0, y:2022},
+{q:"Privatization means?", o:["Transfer to private sector","Government takeover","Nationalization","Military control"], a:0, y:2022},
+{q:"Nationalization means?", o:["Government ownership","Private ownership","Foreign control","Local control"], a:0, y:2023},
+{q:"Which promotes unity?", o:["Federal character","Nepotism","Tribalism","Corruption"], a:0, y:2023},
+{q:"Federal character ensures?", o:["Fair representation","Dictatorship","Military rule","Centralization"], a:0, y:2024},
+{q:"Which symbol represents authority?", o:["Coat of arms","Flag","Anthem","Currency"], a:0, y:2024},
+{q:"National anthem promotes?", o:["Patriotism","Rebellion","Corruption","Apathy"], a:0, y:2025},
+{q:"Patriotism means?", o:["Love for country","Hatred","Neutrality","Oppression"], a:0, y:2025}
+
+];
+/* ================= VARIABLES ================= */
+let current = 0;
+let answers = [];
+let isPremium = false;
+let time = 0;          // exam duration in seconds
+let selectedMinutes = 0;
+let timerInt;
+let timerStarted = false;
+
+const qText = document.getElementById("qText");
+const optionsWrap = document.getElementById("optionsWrap");
+const qNav = document.getElementById("qNav");
+const progressFill = document.getElementById("progressFill");
+const timerEl = document.getElementById("timer");
+
+/* ================= UTILITY ================= */
+function shuffle(array){
+  for(let i=array.length-1;i>0;i--){
+    const j=Math.floor(Math.random()*(i+1));
+    [array[i],array[j]]=[array[j],array[i]];
+  }
+}
+
+/* ================= RENDER QUESTIONS ================= */
+function render(){
+  const q = QUESTIONS[current];
+  qText.innerHTML = `${current+1}. ${q.q} <small>${q.y ? "(Year "+q.y+")":""}</small>`;
+  optionsWrap.innerHTML="";
+  q.o.forEach((op,i)=>{
+    const d=document.createElement("div");
+    d.className="option";
+    if(answers[current]===i) d.classList.add("selected");
+    d.innerText=op;
+    d.onclick=()=>{answers[current]=i; render();};
+    optionsWrap.appendChild(d);
+  });
+  progressFill.style.width=((answers.filter(a=>a!==null).length/QUESTIONS.length)*100)+"%";
+  buildNav();
+}
+
+function buildNav(){
+  qNav.innerHTML="";
+  for(let i=0;i<QUESTIONS.length;i++){
+    const b=document.createElement("button");
+    b.className="qbtn";
+    if(i===current) b.classList.add("current");
+    if(answers[i]!=null) b.classList.add("answered");
+    if(!isPremium && i>=25){
+      b.classList.add("locked");
+      b.disabled=true;
+    }
+    b.innerText=i+1;
+    b.onclick=()=>{current=i; render();}
+    qNav.appendChild(b);
+  }
+}
+
+/* ================= TIMER ================= */
+async function chooseExamTime(){
+  const { value } = await Swal.fire({
+    title: "Select Exam Duration",
+    text: "Choose your preferred exam time",
+    icon: "info",
+    allowOutsideClick: false,
+    allowEscapeKey: false,
+    confirmButtonText: "Start Exam",
+    input: "radio",
+    inputOptions: {
+      20: "20 Minutes",
+      30: "30 Minutes",
+      40: "40 Minutes",
+      60: "60 Minutes"
+    },
+    inputValidator: (value) => {
+      if (!value) return "Please select a duration";
+    }
+  });
+
+  selectedMinutes = Number(value);
+  time = selectedMinutes * 60;
+}
+
+function startTimer(){
+  if(timerStarted) return;
+  timerStarted = true;
+
+  timerInt = setInterval(()=>{
+    let m = Math.floor(time / 60);
+    let s = time % 60;
+    timerEl.innerText = `${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}`;
+    time--;
+    if(time<0){
+      clearInterval(timerInt);
+      Swal.fire({
+        title:"Time Up!",
+        text:"Your exam has been submitted automatically.",
+        icon:"warning",
+        confirmButtonText:"View Result"
+      }).then(()=>showReview());
+    }
+  },1000);
+}
+
+/* ================= SUBMIT & REVIEW ================= */
+function submitExam(){
+  Swal.fire({
+    title:"Submit Exam?",
+    icon:"warning",
+    showCancelButton:true,
+    confirmButtonText:"Yes Submit"
+  }).then(r=>{
+    if(!r.isConfirmed) return;
+    showReview();
+  });
+}
+
+function showReview(){
+  clearInterval(timerInt);
+  document.getElementById("examSection").style.display="none";
+  document.getElementById("reviewSection").style.display="block";
+
+  const total = isPremium ? QUESTIONS.length : Math.min(25, QUESTIONS.length);
+  let score = 0;
+  const list = document.getElementById("reviewList");
+  list.innerHTML="";
+
+  for(let i=0;i<total;i++){
+    if(answers[i]===QUESTIONS[i].a) score++;
+    const div=document.createElement("div");
+    div.className="review-q";
+    div.innerHTML=`
+      <p><b>${i+1}. ${QUESTIONS[i].q}</b></p>
+      <p>Your Answer: <span class="${answers[i]===QUESTIONS[i].a?"correct":"wrong"}">${QUESTIONS[i].o[answers[i]]||"Not Answered"}</span></p>
+      <p>Correct Answer: ${QUESTIONS[i].o[QUESTIONS[i].a]}</p>
+    `;
+    list.appendChild(div);
+  }
+
+  document.getElementById("rScore").innerText = `${score}/${total}`;
+  document.getElementById("rFail").innerText = total-score;
+  document.getElementById("rPercent").innerText = ((score/total)*100).toFixed(1)+"%";
+}
+
+/* ================= BUTTONS ================= */
+document.getElementById("nextBtn").onclick=()=>{
+  if(!isPremium && current===24){
+    Swal.fire("Upgrade Required","Only 25 questions for free users","info");
+    return;
+  }
+  if(current<QUESTIONS.length-1){current++;render();}
+};
+document.getElementById("backBtn").onclick=()=>{if(current>0){current--;render();}};
+document.getElementById("submitBtn").onclick=submitExam;
+
+/* ================= AUTH & INIT ================= */
+onAuthStateChanged(auth, async(user)=>{
+  if(!user){ location.href="login.html"; return; }
+
+  const snap = await getDoc(doc(db,"users",user.uid));
+  isPremium = snap.exists() && snap.data().isPremium===true;
+  if(!isPremium) document.getElementById("freeNote").style.display="block";
+
+  // 1. Select exam time
+  await chooseExamTime();
+
+  // 2. Shuffle questions & init answers
+  shuffle(QUESTIONS);
+  answers = Array(QUESTIONS.length).fill(null);
+
+  // 3. Render and start timer
+  render();
+  startTimer();
+});
+</script>
+
+</body>
+</html>

@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>JAMB CBT – Commerce </title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<!-- SweetAlert2 -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<!-- Google Font -->
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+:root{
+  --navy:#001f3f;
+  --sky:#eaf4ff;
+  --green:#2ed573;
+  --red:#ff4757;
+  --gold:#f1c40f;
+  --gray:#f5f5f5;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+  font-family:Poppins,sans-serif;
+  background:linear-gradient(135deg,#eaf4ff,#d6e9ff);
+  min-height:100vh;
+  padding:20px;
+}
+.container{
+  max-width:1100px;
+  margin:auto;
+  background:#fff;
+  border-radius:25px;
+  box-shadow:0 25px 70px rgba(0,0,0,.15);
+  overflow:hidden;
+}
+header{
+  background:var(--navy);
+  color:#fff;
+  padding:25px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+header h2{font-size:1.6rem}
+#timer{
+  background:#fff;
+  color:var(--navy);
+  padding:8px 18px;
+  border-radius:20px;
+  font-weight:700;
+}
+#freeNote{
+  background:#fff3cd;
+  color:#856404;
+  padding:12px;
+  text-align:center;
+  font-weight:600;
+  display:none;
+}
+.main{
+  padding:30px;
+}
+#progress{
+  height:10px;
+  background:#eee;
+  border-radius:10px;
+  overflow:hidden;
+  margin-bottom:20px;
+}
+#progressFill{
+  height:100%;
+  width:0%;
+  background:linear-gradient(90deg,var(--green),var(--gold));
+}
+#qText{
+  font-size:1.3rem;
+  font-weight:600;
+  margin-bottom:20px;
+}
+.option{
+  background:var(--gray);
+  padding:15px 18px;
+  border-radius:15px;
+  margin-bottom:12px;
+  cursor:pointer;
+  transition:.3s;
+}
+.option:hover{background:#e0e0e0}
+.option.selected{
+  background:var(--navy);
+  color:#fff;
+}
+.nav-btns{
+  display:flex;
+  justify-content:space-between;
+  margin-top:25px;
+}
+button{
+  padding:12px 30px;
+  border:none;
+  border-radius:30px;
+  font-weight:600;
+  cursor:pointer;
+}
+#backBtn{background:#ccc}
+#nextBtn{background:var(--navy);color:#fff}
+#submitBtn{
+  background:var(--green);
+  color:#fff;
+}
+#qNav{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(45px,1fr));
+  gap:10px;
+  margin-top:30px;
+}
+.qbtn{
+  padding:10px;
+  border-radius:10px;
+  border:none;
+  cursor:pointer;
+  font-weight:600;
+}
+.qbtn.current{background:var(--navy);color:#fff}
+.qbtn.answered{background:var(--green);color:#fff}
+.qbtn.locked{background:#ddd;color:#999;cursor:not-allowed}
+.review{
+  display:none;
+  padding:30px;
+}
+.review h2{text-align:center;margin-bottom:20px}
+.score-box{
+  display:flex;
+  justify-content:space-around;
+  margin-bottom:25px;
+  flex-wrap:wrap;
+}
+.score-card{
+  background:var(--gray);
+  padding:20px;
+  border-radius:20px;
+  text-align:center;
+  min-width:160px;
+}
+.correct{color:var(--green);font-weight:700}
+.wrong{color:var(--red);font-weight:700}
+.review-q{
+  background:#f9f9f9;
+  padding:15px;
+  border-radius:15px;
+  margin-bottom:15px;
+}
+.review-q p{margin:6px 0}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<header>
+  <h2>JAMB CBT – Commerce</h2>
+  <div id="timer">00:00</div>
+</header>
+
+<div id="freeNote">
+  Free users can attempt only <b>25 questions</b>. Upgrade to Premium for all 99+.
+</div>
+
+<div class="main" id="examSection">
+  <div id="progress"><div id="progressFill"></div></div>
+  <div id="qText"></div>
+  <div id="optionsWrap"></div>
+
+  <div class="nav-btns">
+    <button id="backBtn">Back</button>
+    <button id="nextBtn">Next</button>
+    <button id="submitBtn">Submit</button>
+  </div>
+
+  <div id="qNav"></div>
+</div>
+
+<div class="review" id="reviewSection">
+  <h2>Exam Review</h2>
+  <div class="score-box">
+    <div class="score-card">Score<br><span id="rScore"></span></div>
+    <div class="score-card">Failed<br><span id="rFail"></span></div>
+    <div class="score-card">Percentage<br><span id="rPercent"></span></div>
+  </div>
+  <div id="reviewList"></div>
+</div>
+
+</div>
+
+<script type="module">
+/* ================= FIREBASE ================= */
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js";
+import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDTDWqG_WAXZO7O6yAxV5lOHUkHZp-wwQk",
+  authDomain: "rackspark.firebaseapp.com",
+  projectId: "rackspark",
+  storageBucket: "rackspark.firebasestorage.app",
+  messagingSenderId: "125488977166",
+  appId: "1:125488977166:web:b519b6871df21662c0f35f"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+/* ================= QUESTIONS ================= */
+const QUESTIONS = [
+
+/* ===================== 1–10 ===================== */
+{q:"Commerce is concerned with?", o:["Distribution of goods and services","Production only","Consumption only","Manufacturing"], a:0, y:2021},
+{q:"Trade refers to?", o:["Buying and selling","Manufacturing","Advertising","Warehousing"], a:0, y:2021},
+{q:"Commerce consists of?", o:["Trade and aids to trade","Production and consumption","Industry and farming","Banking only"], a:0, y:2022},
+{q:"Which is NOT an aid to trade?", o:["Mining","Transportation","Insurance","Advertising"], a:0, y:2022},
+{q:"Industry is concerned with?", o:["Production of goods","Distribution","Consumption","Exchange"], a:0, y:2023},
+{q:"Trade can be divided into?", o:["Home and foreign trade","Retail and wholesale","Import and export","Buying and selling"], a:0, y:2023},
+{q:"Home trade is trade within?", o:["A country","Two countries","A continent","The world"], a:0, y:2021},
+{q:"Foreign trade involves?", o:["Trade between countries","Local trade","Village trade","Retail trade"], a:0, y:2022},
+{q:"Import trade means?", o:["Buying goods from abroad","Selling goods abroad","Selling locally","Buying locally"], a:0, y:2023},
+{q:"Export trade means?", o:["Selling goods to other countries","Buying goods abroad","Local buying","Local selling"], a:0, y:2023},
+
+/* ===================== 11–20 ===================== */
+{q:"Wholesale trade involves?", o:["Buying in bulk","Selling in small units","Selling to consumers","Retailing"], a:0, y:2021},
+{q:"Retail trade involves selling?", o:["To final consumers","In bulk","To wholesalers","To manufacturers"], a:0, y:2021},
+{q:"Which is a retailer?", o:["Supermarket","Importer","Wholesaler","Manufacturer"], a:0, y:2022},
+{q:"Which is a wholesaler?", o:["Distributor","Consumer","User","Retailer"], a:0, y:2022},
+{q:"Retailer performs which function?", o:["Breaking bulk","Manufacturing","Importing","Mining"], a:0, y:2023},
+{q:"Wholesalers sell mainly to?", o:["Retailers","Consumers","Producers","Farmers"], a:0, y:2023},
+{q:"A multiple shop is also known as?", o:["Chain store","Departmental store","Supermarket","Hawker"], a:0, y:2021},
+{q:"Departmental store sells?", o:["Wide variety of goods","One product","Raw materials","Only food"], a:0, y:2022},
+{q:"A supermarket mainly sells?", o:["Self-service consumer goods","Capital goods","Industrial goods","Raw materials"], a:0, y:2023},
+{q:"Hawking involves selling?", o:["From place to place","In shops","In bulk","Online"], a:0, y:2023},
+
+/* ===================== 21–30 ===================== */
+{q:"A sole proprietorship is owned by?", o:["One person","Two people","Government","Shareholders"], a:0, y:2021},
+{q:"Partnership business has?", o:["Two to twenty partners","One owner","Unlimited owners","Government owners"], a:0, y:2021},
+{q:"Limited liability company owners are?", o:["Shareholders","Directors","Managers","Workers"], a:0, y:2022},
+{q:"Main feature of sole proprietorship?", o:["Unlimited liability","Limited liability","Separate legal entity","Perpetual succession"], a:0, y:2022},
+{q:"Unlimited liability means?", o:["Owner bears all losses","Loss is shared","Government bears loss","No loss"], a:0, y:2023},
+{q:"A company is a?", o:["Separate legal entity","Partnership","Sole business","Government firm"], a:0, y:2023},
+{q:"Perpetual succession means?", o:["Business continues despite death","Business ends at death","Temporary business","Seasonal trade"], a:0, y:2021},
+{q:"A cooperative society is owned by?", o:["Members","Government","One person","Shareholders"], a:0, y:2022},
+{q:"Main objective of cooperatives?", o:["Service to members","Maximum profit","Tax evasion","Monopoly"], a:0, y:2023},
+{q:"Public corporation is owned by?", o:["Government","Individuals","Foreigners","Shareholders"], a:0, y:2023},
+
+/* ===================== 31–40 ===================== */
+{q:"Aids to trade include all EXCEPT?", o:["Farming","Transportation","Banking","Insurance"], a:0, y:2021},
+{q:"Transportation helps trade by?", o:["Moving goods","Producing goods","Selling goods","Advertising goods"], a:0, y:2021},
+{q:"Banking aids trade by?", o:["Providing finance","Producing goods","Advertising","Transporting"], a:0, y:2022},
+{q:"Insurance helps trade by?", o:["Reducing risk","Producing goods","Buying goods","Selling goods"], a:0, y:2022},
+{q:"Advertising helps by?", o:["Creating awareness","Producing goods","Storing goods","Transporting"], a:0, y:2023},
+{q:"Warehousing helps trade by?", o:["Storing goods","Producing goods","Selling goods","Buying goods"], a:0, y:2023},
+{q:"Communication helps trade through?", o:["Information flow","Production","Consumption","Manufacturing"], a:0, y:2021},
+{q:"Which is NOT a function of wholesaler?", o:["Retailing","Bulk breaking","Risk bearing","Storage"], a:0, y:2022},
+{q:"Retailer performs which service?", o:["After-sales service","Manufacturing","Mining","Importing"], a:0, y:2023},
+{q:"Middlemen exist to?", o:["Link producers and consumers","Produce goods","Consume goods","Fix prices"], a:0, y:2023},
+
+/* ===================== 41–50 ===================== */
+{q:"E-commerce means?", o:["Online buying and selling","Retailing","Wholesale trade","Barter"], a:0, y:2021},
+{q:"Which is an example of e-commerce?", o:["Online shopping","Hawking","Market stall","Roadside selling"], a:0, y:2021},
+{q:"Trade by sample involves?", o:["Showing samples","Door to door selling","Online selling","Auction"], a:0, y:2022},
+{q:"Mail order business uses?", o:["Catalogues","Showrooms","Markets","Stalls"], a:0, y:2022},
+{q:"Auction involves selling to?", o:["Highest bidder","Lowest bidder","Middleman","Retailer"], a:0, y:2023},
+{q:"Hire purchase involves?", o:["Payment by installments","Cash only","Barter","Auction"], a:0, y:2023},
+{q:"Credit sale means?", o:["Paying later","Immediate payment","Free goods","Barter"], a:0, y:2021},
+{q:"Cash sale means?", o:["Immediate payment","Deferred payment","Installments","Credit"], a:0, y:2022},
+{q:"Trade discount is given to?", o:["Wholesalers","Consumers","Workers","Government"], a:0, y:2023},
+{q:"Cash discount encourages?", o:["Prompt payment","Late payment","Credit sale","Installment"], a:0, y:2023},
+
+/* ===================== 51–60 ===================== */
+{q:"Invoice is a?", o:["Seller’s bill","Buyer’s receipt","Cheque","Receipt only"], a:0, y:2021},
+{q:"Receipt is issued by?", o:["Seller","Buyer","Bank","Transporter"], a:0, y:2021},
+{q:"A cheque is drawn on?", o:["Bank","Company","Market","Government"], a:0, y:2022},
+{q:"Draft is used for?", o:["Safe payment","Advertising","Transportation","Insurance"], a:0, y:2022},
+{q:"Means of payment include?", o:["Cash and cheque","Goods only","Services only","Labour"], a:0, y:2023},
+{q:"Money facilitates trade as?", o:["Medium of exchange","Factor of production","Aid to trade","Capital"], a:0, y:2023},
+{q:"Advertising media include all EXCEPT?", o:["Bank","Radio","Television","Newspaper"], a:0, y:2021},
+{q:"Packaging helps trade by?", o:["Protecting goods","Producing goods","Buying goods","Selling services"], a:0, y:2022},
+{q:"Branding helps by?", o:["Product identification","Production","Transportation","Storage"], a:0, y:2023},
+{q:"Labelling provides?", o:["Product information","Price control","Insurance","Transport"], a:0, y:2023},
+
+/* ===================== 61–70 ===================== */
+{q:"Public relations deals with?", o:["Company image","Production","Transportation","Consumption"], a:0, y:2021},
+{q:"Marketing involves?", o:["All activities from production to consumption","Only selling","Only advertising","Only buying"], a:0, y:2021},
+{q:"Market refers to?", o:["Buyers and sellers","A building","A shop","A road"], a:0, y:2022},
+{q:"Consumer is one who?", o:["Uses goods","Produces goods","Sells goods","Distributes goods"], a:0, y:2022},
+{q:"Producer is one who?", o:["Makes goods","Buys goods","Uses goods","Consumes goods"], a:0, y:2023},
+{q:"Goods meant for further production are?", o:["Capital goods","Consumer goods","Luxury goods","Free goods"], a:0, y:2023},
+{q:"Goods for direct use are?", o:["Consumer goods","Capital goods","Intermediate goods","Raw materials"], a:0, y:2021},
+{q:"Trade union protects?", o:["Workers","Employers","Consumers","Banks"], a:0, y:2022},
+{q:"Chamber of commerce protects?", o:["Businessmen","Workers","Consumers","Farmers"], a:0, y:2023},
+{q:"A trademark protects?", o:["Brand name","Consumer","Worker","Government"], a:0, y:2023},
+
+/* ===================== 71–80 ===================== */
+{q:"Patent protects?", o:["Inventions","Workers","Retailers","Banks"], a:0, y:2021},
+{q:"Copyright protects?", o:["Literary works","Goods","Trade","Industry"], a:0, y:2021},
+{q:"Insurance premium is?", o:["Payment by insured","Claim","Bonus","Profit"], a:0, y:2022},
+{q:"Insured is the?", o:["Person covered","Insurance company","Bank","Agent"], a:0, y:2022},
+{q:"Underwriting is done by?", o:["Insurance companies","Banks","Retailers","Wholesalers"], a:0, y:2023},
+{q:"Marine insurance covers?", o:["Sea risks","Fire","Accidents","Life"], a:0, y:2023},
+{q:"Fire insurance covers?", o:["Fire losses","Marine losses","Life","Theft"], a:0, y:2021},
+{q:"Life insurance covers?", o:["Human life","Goods","Vehicles","Houses"], a:0, y:2022},
+{q:"Reinsurance means?", o:["Insurance of insurance companies","Double insurance","Fake insurance","Invalid insurance"], a:0, y:2023},
+{q:"Bank overdraft allows customer to?", o:["Withdraw beyond balance","Save money","Insure goods","Trade online"], a:0, y:2023},
+
+/* ===================== 81–90 ===================== */
+{q:"Savings account encourages?", o:["Saving money","Borrowing","Spending","Trading"], a:0, y:2021},
+{q:"Current account is mainly for?", o:["Businessmen","Students","Children","Farmers"], a:0, y:2021},
+{q:"Fixed deposit involves?", o:["Keeping money for a period","Daily withdrawal","No interest","Free access"], a:0, y:2022},
+{q:"Commercial banks aim to?", o:["Make profit","Provide free services","Control money supply","Issue currency"], a:0, y:2022},
+{q:"Central bank issues?", o:["Currency","Cheques","Drafts","Receipts"], a:0, y:2023},
+{q:"Exchange rate is?", o:["Value of one currency in terms of another","Interest rate","Inflation rate","Tax rate"], a:0, y:2023},
+{q:"Balance of trade compares?", o:["Exports and imports","Savings and investment","Revenue and cost","Demand and supply"], a:0, y:2021},
+{q:"A favourable balance of trade occurs when?", o:["Exports exceed imports","Imports exceed exports","They are equal","No trade"], a:0, y:2022},
+{q:"Custom duties are charged on?", o:["Imports and exports","Local goods","Services","Labour"], a:0, y:2023},
+{q:"Quota is a?", o:["Limit on imports","Tax","Subsidy","Loan"], a:0, y:2023},
+
+/* ===================== 91–100 ===================== */
+{q:"Subsidy is financial aid given by?", o:["Government","Banks","Consumers","Firms"], a:0, y:2021},
+{q:"Smuggling is?", o:["Illegal trade","Legal trade","Home trade","Retail trade"], a:0, y:2021},
+{q:"Entrepreneur is a?", o:["Risk bearer","Worker","Consumer","Middleman"], a:0, y:2022},
+{q:"Profit is reward for?", o:["Risk bearing","Labour","Land","Capital"], a:0, y:2022},
+{q:"Loss occurs when?", o:["Cost exceeds revenue","Revenue exceeds cost","Demand exceeds supply","Supply exceeds demand"], a:0, y:2023},
+{q:"Marketing mix includes all EXCEPT?", o:["Population","Product","Price","Promotion"], a:0, y:2023},
+{q:"Consumer protection ensures?", o:["Safety of consumers","Profit for firms","Government revenue","Market control"], a:0, y:2024},
+{q:"Nigerian consumer protection agency is?", o:["FCCPC","CBN","EFCC","INEC"], a:0, y:2024},
+{q:"Trade helps economy by?", o:["Creating employment","Increasing scarcity","Reducing output","Discouraging production"], a:0, y:2025},
+{q:"Commerce helps link?", o:["Producers and consumers","Workers and employers","Banks and government","Land and labour"], a:0, y:2025}
+
+];
+
+/* ================= VARIABLES ================= */
+let current = 0;
+let answers = [];
+let isPremium = false;
+let time = 0;          // exam duration in seconds
+let selectedMinutes = 0;
+let timerInt;
+let timerStarted = false;
+
+const qText = document.getElementById("qText");
+const optionsWrap = document.getElementById("optionsWrap");
+const qNav = document.getElementById("qNav");
+const progressFill = document.getElementById("progressFill");
+const timerEl = document.getElementById("timer");
+
+/* ================= UTILITY ================= */
+function shuffle(array){
+  for(let i=array.length-1;i>0;i--){
+    const j=Math.floor(Math.random()*(i+1));
+    [array[i],array[j]]=[array[j],array[i]];
+  }
+}
+
+/* ================= RENDER QUESTIONS ================= */
+function render(){
+  const q = QUESTIONS[current];
+  qText.innerHTML = `${current+1}. ${q.q} <small>${q.y ? "(Year "+q.y+")":""}</small>`;
+  optionsWrap.innerHTML="";
+  q.o.forEach((op,i)=>{
+    const d=document.createElement("div");
+    d.className="option";
+    if(answers[current]===i) d.classList.add("selected");
+    d.innerText=op;
+    d.onclick=()=>{answers[current]=i; render();};
+    optionsWrap.appendChild(d);
+  });
+  progressFill.style.width=((answers.filter(a=>a!==null).length/QUESTIONS.length)*100)+"%";
+  buildNav();
+}
+
+function buildNav(){
+  qNav.innerHTML="";
+  for(let i=0;i<QUESTIONS.length;i++){
+    const b=document.createElement("button");
+    b.className="qbtn";
+    if(i===current) b.classList.add("current");
+    if(answers[i]!=null) b.classList.add("answered");
+    if(!isPremium && i>=25){
+      b.classList.add("locked");
+      b.disabled=true;
+    }
+    b.innerText=i+1;
+    b.onclick=()=>{current=i; render();}
+    qNav.appendChild(b);
+  }
+}
+
+/* ================= TIMER ================= */
+async function chooseExamTime(){
+  const { value } = await Swal.fire({
+    title: "Select Exam Duration",
+    text: "Choose your preferred exam time",
+    icon: "info",
+    allowOutsideClick: false,
+    allowEscapeKey: false,
+    confirmButtonText: "Start Exam",
+    input: "radio",
+    inputOptions: {
+      20: "20 Minutes",
+      30: "30 Minutes",
+      40: "40 Minutes",
+      60: "60 Minutes"
+    },
+    inputValidator: (value) => {
+      if (!value) return "Please select a duration";
+    }
+  });
+
+  selectedMinutes = Number(value);
+  time = selectedMinutes * 60;
+}
+
+function startTimer(){
+  if(timerStarted) return;
+  timerStarted = true;
+
+  timerInt = setInterval(()=>{
+    let m = Math.floor(time / 60);
+    let s = time % 60;
+    timerEl.innerText = `${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}`;
+    time--;
+    if(time<0){
+      clearInterval(timerInt);
+      Swal.fire({
+        title:"Time Up!",
+        text:"Your exam has been submitted automatically.",
+        icon:"warning",
+        confirmButtonText:"View Result"
+      }).then(()=>showReview());
+    }
+  },1000);
+}
+
+/* ================= SUBMIT & REVIEW ================= */
+function submitExam(){
+  Swal.fire({
+    title:"Submit Exam?",
+    icon:"warning",
+    showCancelButton:true,
+    confirmButtonText:"Yes Submit"
+  }).then(r=>{
+    if(!r.isConfirmed) return;
+    showReview();
+  });
+}
+
+function showReview(){
+  clearInterval(timerInt);
+  document.getElementById("examSection").style.display="none";
+  document.getElementById("reviewSection").style.display="block";
+
+  const total = isPremium ? QUESTIONS.length : Math.min(25, QUESTIONS.length);
+  let score = 0;
+  const list = document.getElementById("reviewList");
+  list.innerHTML="";
+
+  for(let i=0;i<total;i++){
+    if(answers[i]===QUESTIONS[i].a) score++;
+    const div=document.createElement("div");
+    div.className="review-q";
+    div.innerHTML=`
+      <p><b>${i+1}. ${QUESTIONS[i].q}</b></p>
+      <p>Your Answer: <span class="${answers[i]===QUESTIONS[i].a?"correct":"wrong"}">${QUESTIONS[i].o[answers[i]]||"Not Answered"}</span></p>
+      <p>Correct Answer: ${QUESTIONS[i].o[QUESTIONS[i].a]}</p>
+    `;
+    list.appendChild(div);
+  }
+
+  document.getElementById("rScore").innerText = `${score}/${total}`;
+  document.getElementById("rFail").innerText = total-score;
+  document.getElementById("rPercent").innerText = ((score/total)*100).toFixed(1)+"%";
+}
+
+/* ================= BUTTONS ================= */
+document.getElementById("nextBtn").onclick=()=>{
+  if(!isPremium && current===24){
+    Swal.fire("Upgrade Required","Only 25 questions for free users","info");
+    return;
+  }
+  if(current<QUESTIONS.length-1){current++;render();}
+};
+document.getElementById("backBtn").onclick=()=>{if(current>0){current--;render();}};
+document.getElementById("submitBtn").onclick=submitExam;
+
+/* ================= AUTH & INIT ================= */
+onAuthStateChanged(auth, async(user)=>{
+  if(!user){ location.href="login.html"; return; }
+
+  const snap = await getDoc(doc(db,"users",user.uid));
+  isPremium = snap.exists() && snap.data().isPremium===true;
+  if(!isPremium) document.getElementById("freeNote").style.display="block";
+
+  // 1. Select exam time
+  await chooseExamTime();
+
+  // 2. Shuffle questions & init answers
+  shuffle(QUESTIONS);
+  answers = Array(QUESTIONS.length).fill(null);
+
+  // 3. Render and start timer
+  render();
+  startTimer();
+});
+</script>
+
+</body>
+</html>

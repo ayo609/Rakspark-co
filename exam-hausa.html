@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>JAMB CBT – Hausa </title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<!-- SweetAlert2 -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<!-- Google Font -->
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+:root{
+  --navy:#001f3f;
+  --sky:#eaf4ff;
+  --green:#2ed573;
+  --red:#ff4757;
+  --gold:#f1c40f;
+  --gray:#f5f5f5;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+  font-family:Poppins,sans-serif;
+  background:linear-gradient(135deg,#eaf4ff,#d6e9ff);
+  min-height:100vh;
+  padding:20px;
+}
+.container{
+  max-width:1100px;
+  margin:auto;
+  background:#fff;
+  border-radius:25px;
+  box-shadow:0 25px 70px rgba(0,0,0,.15);
+  overflow:hidden;
+}
+header{
+  background:var(--navy);
+  color:#fff;
+  padding:25px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+header h2{font-size:1.6rem}
+#timer{
+  background:#fff;
+  color:var(--navy);
+  padding:8px 18px;
+  border-radius:20px;
+  font-weight:700;
+}
+#freeNote{
+  background:#fff3cd;
+  color:#856404;
+  padding:12px;
+  text-align:center;
+  font-weight:600;
+  display:none;
+}
+.main{
+  padding:30px;
+}
+#progress{
+  height:10px;
+  background:#eee;
+  border-radius:10px;
+  overflow:hidden;
+  margin-bottom:20px;
+}
+#progressFill{
+  height:100%;
+  width:0%;
+  background:linear-gradient(90deg,var(--green),var(--gold));
+}
+#qText{
+  font-size:1.3rem;
+  font-weight:600;
+  margin-bottom:20px;
+}
+.option{
+  background:var(--gray);
+  padding:15px 18px;
+  border-radius:15px;
+  margin-bottom:12px;
+  cursor:pointer;
+  transition:.3s;
+}
+.option:hover{background:#e0e0e0}
+.option.selected{
+  background:var(--navy);
+  color:#fff;
+}
+.nav-btns{
+  display:flex;
+  justify-content:space-between;
+  margin-top:25px;
+}
+button{
+  padding:12px 30px;
+  border:none;
+  border-radius:30px;
+  font-weight:600;
+  cursor:pointer;
+}
+#backBtn{background:#ccc}
+#nextBtn{background:var(--navy);color:#fff}
+#submitBtn{
+  background:var(--green);
+  color:#fff;
+}
+#qNav{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(45px,1fr));
+  gap:10px;
+  margin-top:30px;
+}
+.qbtn{
+  padding:10px;
+  border-radius:10px;
+  border:none;
+  cursor:pointer;
+  font-weight:600;
+}
+.qbtn.current{background:var(--navy);color:#fff}
+.qbtn.answered{background:var(--green);color:#fff}
+.qbtn.locked{background:#ddd;color:#999;cursor:not-allowed}
+.review{
+  display:none;
+  padding:30px;
+}
+.review h2{text-align:center;margin-bottom:20px}
+.score-box{
+  display:flex;
+  justify-content:space-around;
+  margin-bottom:25px;
+  flex-wrap:wrap;
+}
+.score-card{
+  background:var(--gray);
+  padding:20px;
+  border-radius:20px;
+  text-align:center;
+  min-width:160px;
+}
+.correct{color:var(--green);font-weight:700}
+.wrong{color:var(--red);font-weight:700}
+.review-q{
+  background:#f9f9f9;
+  padding:15px;
+  border-radius:15px;
+  margin-bottom:15px;
+}
+.review-q p{margin:6px 0}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<header>
+  <h2>JAMB CBT – Hausa</h2>
+  <div id="timer">00:00</div>
+</header>
+
+<div id="freeNote">
+  Free users can attempt only <b>25 questions</b>. Upgrade to Premium for all 99+.
+</div>
+
+<div class="main" id="examSection">
+  <div id="progress"><div id="progressFill"></div></div>
+  <div id="qText"></div>
+  <div id="optionsWrap"></div>
+
+  <div class="nav-btns">
+    <button id="backBtn">Back</button>
+    <button id="nextBtn">Next</button>
+    <button id="submitBtn">Submit</button>
+  </div>
+
+  <div id="qNav"></div>
+</div>
+
+<div class="review" id="reviewSection">
+  <h2>Exam Review</h2>
+  <div class="score-box">
+    <div class="score-card">Score<br><span id="rScore"></span></div>
+    <div class="score-card">Failed<br><span id="rFail"></span></div>
+    <div class="score-card">Percentage<br><span id="rPercent"></span></div>
+  </div>
+  <div id="reviewList"></div>
+</div>
+
+</div>
+
+<script type="module">
+/* ================= FIREBASE ================= */
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js";
+import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDTDWqG_WAXZO7O6yAxV5lOHUkHZp-wwQk",
+  authDomain: "rackspark.firebaseapp.com",
+  projectId: "rackspark",
+  storageBucket: "rackspark.firebasestorage.app",
+  messagingSenderId: "125488977166",
+  appId: "1:125488977166:web:b519b6871df21662c0f35f"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+/* ================= QUESTIONS ================= */
+
+const QUESTIONS = [
+
+/* ===================== 1–10 ===================== */
+{q:"Menene ma’anar kalmar 'gida' a Hausa?", o:["Home","School","Market","Farm"], a:0, y:2021},
+{q:"Wanne daga cikin wadannan jumloli ne ke daidai da nahawu?", o:["Ina zuwa kasuwa","Zan tafiya kasuwa","Kasuwar na zuwa","Na tafiya kasuwa"], a:0, y:2021},
+{q:"Wane ne mawakin Hausa da aka fi sani da waka ta gargajiya?", o:["Umar M Shareef","Ali Jita","Adam A Zango","Naziru M Ahmad"], a:0, y:2022},
+{q:"Kalmar 'rariya' tana nufin?", o:["Rice husk","Corn","Yam","Millet"], a:0, y:2022},
+{q:"Wane salo ne littafin Hausa mai dogon labari yake dauke da shi?", o:["Labari mai tsawo","Waka","Raina","Kalmomi"], a:0, y:2023},
+{q:"Menene ma’anar 'lafiya lau'?", o:["Fine/Healthy","Sick","Tired","Sad"], a:0, y:2023},
+{q:"Wane daga cikin wadannan na nuna kalmar tambaya ce?", o:["Ina","Gida","Abinci","Kasuwa"], a:0, y:2021},
+{q:"Menene ma’anar 'ƙauye'?", o:["Village","Town","City","Farm"], a:0, y:2022},
+{q:"Wane ne marubucin Hausa na zamani da ya shahara da littafin 'Ruwan Bagaja'?", o:["Abubakar Imam","Alhaji Sa’adu Zungur","Balaraba Ramat Yakubu","Ahmad Baba"], a:0, y:2023},
+{q:"Wace na’ura ce ake amfani da ita wajen rubuta littafi?", o:["Kwamfuta/Computer","Allura","Takalma","Hula"], a:0, y:2023},
+
+/* ===================== 11–20 ===================== */
+{q:"Kalmar 'yaro' tana nufin?", o:["Child","Man","Woman","Old man"], a:0, y:2021},
+{q:"Menene ma’anar jumlar 'Ina zuwa kasuwa yau'? ", o:["I am going to the market today","I went to the market yesterday","I will not go","I am tired"], a:0, y:2021},
+{q:"Wanne daga cikin wadannan ne nau’in adabin Hausa?", o:["Waka","Gida","Mota","Kasuwa"], a:0, y:2022},
+{q:"Menene ma’anar 'ƙwarai' a Hausa?", o:["Very/Well","Bad","Small","Poor"], a:0, y:2022},
+{q:"Kalmar 'farin ciki' tana nufin?", o:["Happiness","Sadness","Fear","Anger"], a:0, y:2023},
+{q:"Wane daga cikin wadannan jumloli ne ke nuna tambaya?", o:["Yaya kake?","Na gode","Ina gida","Na tafi kasuwa"], a:0, y:2023},
+{q:"Menene ma’anar 'zafi' a Hausa?", o:["Heat","Cold","Rain","Wind"], a:0, y:2021},
+{q:"Kalmar 'doki' tana nufin?", o:["Horse","Dog","Cat","Cow"], a:0, y:2022},
+{q:"Wane salon waka ne ake amfani da shi wajen karin magana a Hausa?", o:["Tatsuniya","Labarin gaskiya","Waka ta zamani","Raina"], a:0, y:2023},
+{q:"Menene ma’anar kalmar 'gari' a Hausa?", o:["Town","Village","City","Field"], a:0, y:2023},
+
+/* ===================== 21–30 ===================== */
+{q:"Kalmar 'ruwa' tana nufin?", o:["Water","Milk","Yam","Rice"], a:0, y:2021},
+{q:"Wane ne marubucin littafin Hausa 'Magana Jari Ce'?", o:["Abubakar Imam","Alhaji Sa’adu Zungur","Balaraba Ramat Yakubu","Ahmad Baba"], a:0, y:2021},
+{q:"Menene ma’anar 'lafiya'?", o:["Health","Sickness","Tiredness","Hunger"], a:0, y:2022},
+{q:"Kalmar 'suna' tana nufin?", o:["Name","Home","Food","Market"], a:0, y:2022},
+{q:"Wane nau’in adabi ne tatsuniya?", o:["Fiction/Fable","Non-fiction","Poetry","Essay"], a:0, y:2023},
+{q:"Menene ma’anar kalmar 'ƙarfi'?", o:["Strength","Weakness","Smallness","Softness"], a:0, y:2023},
+{q:"Kalmar 'gwarzaye' tana nufin?", o:["Brave people","Lazy people","Old people","Young children"], a:0, y:2021},
+{q:"Wace kalma ta fi dacewa da jumlar 'Ya ci abinci sosai'?", o:["Soo much/eaten a lot","Eaten a little","Not eaten","Tired"], a:0, y:2022},
+{q:"Menene ma’anar 'ƙasa' a Hausa?", o:["Earth/land","Sky","River","Tree"], a:0, y:2023},
+{q:"Kalmar 'ƙarfi' tana nufin?", o:["Strength","Weakness","Softness","Size"], a:0, y:2023},
+
+/* ===================== 31–40 ===================== */
+{q:"Wane marubuci ya rubuta 'In da So da Kauna'?", o:["Abubakar Imam","Balaraba Ramat Yakubu","Alhaji Sa’adu Zungur","Ahmad Baba"], a:1, y:2021},
+{q:"Kalmar 'duniya' tana nufin?", o:["World","Village","Home","Market"], a:0, y:2021},
+{q:"Menene ma’anar jumlar 'Na tafi kasuwa da safe'?", o:["I went to the market in the morning","I am going to school","I stayed at home","I am eating"], a:0, y:2022},
+{q:"Kalmar 'aboki' tana nufin?", o:["Friend","Enemy","Brother","Father"], a:0, y:2022},
+{q:"Wane daga cikin wadannan ne nau’in waka?", o:["Kabila","Waka ta gargajiya","Gida","Labarin gaskiya"], a:1, y:2023},
+{q:"Menene ma’anar 'ƙauna' a Hausa?", o:["Love","Hate","Fear","Anger"], a:0, y:2023},
+{q:"Kalmar 'gari' tana nufin?", o:["Town","Village","City","Field"], a:0, y:2021},
+{q:"Wanne ne mafi dacewa da kalmar 'ƙasa'?", o:["Earth/land","Sky","River","Tree"], a:0, y:2022},
+{q:"Menene ma’anar kalmar 'ɗalibi'?", o:["Student","Teacher","Parent","Worker"], a:0, y:2023},
+{q:"Kalmar 'hannu' tana nufin?", o:["Hand","Leg","Head","Foot"], a:0, y:2023},
+
+/* ===================== 41–50 ===================== */
+{q:"Wane ne mawaki wanda ya shahara da waka a Hausa?", o:["Umar M Shareef","Ali Jita","Adam A Zango","Naziru M Ahmad"], a:0, y:2021},
+{q:"Kalmar 'baki' tana nufin?", o:["Mouth","Hand","Leg","Eye"], a:0, y:2021},
+{q:"Menene ma’anar jumlar 'Zan je gida yau'?", o:["I will go home today","I am at home","I went to school","I am eating"], a:0, y:2022},
+{q:"Kalmar 'ƙofa' tana nufin?", o:["Door","Window","Wall","Roof"], a:0, y:2022},
+{q:"Wanne adabi ne ke dauke da labari mai tsawo?", o:["Littafi/Labari mai tsawo","Waka","Raira","Kalmomi"], a:0, y:2023},
+{q:"Menene ma’anar 'ƙwarai' a Hausa?", o:["Well/very","Bad","Poor","Small"], a:0, y:2023},
+{q:"Kalmar 'gida' tana nufin?", o:["Home","School","Market","Farm"], a:0, y:2021},
+{q:"Wanne ne mafi dacewa da kalmar 'ruwa'?", o:["Water","Milk","Rice","Yam"], a:0, y:2022},
+{q:"Menene ma’anar kalmar 'lafiya'?", o:["Health","Sickness","Hunger","Tiredness"], a:0, y:2023},
+{q:"Kalmar 'yaro' tana nufin?", o:["Child","Man","Woman","Old man"], a:0, y:2023},
+
+/* ===================== 51–60 ===================== */
+{q:"Wane ne marubucin littafin 'Magana Jari Ce'?", o:["Abubakar Imam","Alhaji Sa’adu Zungur","Balaraba Ramat Yakubu","Ahmad Baba"], a:0, y:2021},
+{q:"Kalmar 'ƙasa' tana nufin?", o:["Land/Earth","Sky","River","Tree"], a:0, y:2021},
+{q:"Menene ma’anar jumlar 'Na tafi kasuwa da safe'?", o:["I went to the market in the morning","I am going to school","I stayed at home","I am eating"], a:0, y:2022},
+{q:"Kalmar 'aboki' tana nufin?", o:["Friend","Enemy","Brother","Father"], a:0, y:2022},
+{q:"Wane daga cikin wadannan ne nau’in waka?", o:["Waka ta gargajiya","Kabila","Gida","Labarin gaskiya"], a:0, y:2023},
+{q:"Menene ma’anar 'ƙauna' a Hausa?", o:["Love","Hate","Fear","Anger"], a:0, y:2023},
+{q:"Kalmar 'ɗalibi' tana nufin?", o:["Student","Teacher","Parent","Worker"], a:0, y:2021},
+{q:"Wanne ne mafi dacewa da kalmar 'ƙarfi'?", o:["Strength","Weakness","Softness","Smallness"], a:0, y:2022},
+{q:"Menene ma’anar kalmar 'hannu'?", o:["Hand","Leg","Head","Foot"], a:0, y:2023},
+{q:"Kalmar 'ƙauna' tana nufin?", o:["Love","Hate","Fear","Anger"], a:0, y:2023},
+
+/* ===================== 61–70 ===================== */
+{q:"Kalmar 'ƙofa' tana nufin?", o:["Door","Window","Wall","Roof"], a:0, y:2021},
+{q:"Menene ma’anar 'lafiya lau'?", o:["Fine/Healthy","Sick","Tired","Sad"], a:0, y:2021},
+{q:"Wace kalma ta fi dacewa da jumlar 'Ya ci abinci sosai'?", o:["Eaten a lot","Eaten a little","Not eaten","Tired"], a:0, y:2022},
+{q:"Kalmar 'doki' tana nufin?", o:["Horse","Dog","Cat","Cow"], a:0, y:2022},
+{q:"Menene ma’anar kalmar 'rariya'?", o:["Rice husk","Corn","Yam","Millet"], a:0, y:2023},
+{q:"Wanne ne mawaki wanda ya shahara da waka a Hausa?", o:["Umar M Shareef","Ali Jita","Adam A Zango","Naziru M Ahmad"], a:0, y:2023},
+{q:"Kalmar 'gari' tana nufin?", o:["Town","Village","City","Field"], a:0, y:2021},
+{q:"Menene ma’anar 'ƙarfi' a Hausa?", o:["Strength","Weakness","Smallness","Softness"], a:0, y:2022},
+{q:"Kalmar 'farin ciki' tana nufin?", o:["Happiness","Sadness","Fear","Anger"], a:0, y:2023},
+{q:"Menene ma’anar 'ƙwarai'?", o:["Well/Very","Bad","Poor","Small"], a:0, y:2023},
+
+/* ===================== 71–80 ===================== */
+{q:"Kalmar 'gida' tana nufin?", o:["Home","School","Market","Farm"], a:0, y:2021},
+{q:"Menene ma’anar kalmar 'duniya'?", o:["World","Village","Home","Market"], a:0, y:2021},
+{q:"Wane ne marubucin littafin 'In da So da Kauna'?", o:["Balaraba Ramat Yakubu","Abubakar Imam","Alhaji Sa’adu Zungur","Ahmad Baba"], a:0, y:2022},
+{q:"Kalmar 'suna' tana nufin?", o:["Name","Home","Food","Market"], a:0, y:2022},
+{q:"Menene ma’anar kalmar 'ƙasa'?", o:["Land/Earth","Sky","River","Tree"], a:0, y:2023},
+{q:"Kalmar 'yaro' tana nufin?", o:["Child","Man","Woman","Old man"], a:0, y:2023},
+{q:"Menene ma’anar kalmar 'ruwa'?", o:["Water","Milk","Yam","Rice"], a:0, y:2021},
+{q:"Kalmar 'aboki' tana nufin?", o:["Friend","Enemy","Brother","Father"], a:0, y:2022},
+{q:"Menene ma’anar kalmar 'lafiya'?", o:["Health","Sickness","Tiredness","Hunger"], a:0, y:2023},
+{q:"Kalmar 'ƙauna' tana nufin?", o:["Love","Hate","Fear","Anger"], a:0, y:2023},
+
+/* ===================== 81–90 ===================== */
+{q:"Kalmar 'ƙwarai' tana nufin?", o:["Well/Very","Bad","Small","Poor"], a:0, y:2021},
+{q:"Menene ma’anar jumlar 'Ina zuwa kasuwa yau'? ", o:["I am going to the market today","I went to the market yesterday","I will not go","I am tired"], a:0, y:2021},
+{q:"Kalmar 'ƙarfi' tana nufin?", o:["Strength","Weakness","Softness","Size"], a:0, y:2022},
+{q:"Wane nau’in adabi ne tatsuniya?", o:["Fiction/Fable","Non-fiction","Poetry","Essay"], a:0, y:2022},
+{q:"Kalmar 'doki' tana nufin?", o:["Horse","Dog","Cat","Cow"], a:0, y:2023},
+{q:"Menene ma’anar kalmar 'lafiya lau'?", o:["Fine/Healthy","Sick","Tired","Sad"], a:0, y:2023},
+{q:"Kalmar 'gida' tana nufin?", o:["Home","School","Market","Farm"], a:0, y:2021},
+{q:"Menene ma’anar 'ƙauna' a Hausa?", o:["Love","Hate","Fear","Anger"], a:0, y:2022},
+{q:"Kalmar 'yaro' tana nufin?", o:["Child","Man","Woman","Old man"], a:0, y:2023},
+{q:"Menene ma’anar jumlar 'Na tafi kasuwa da safe'?", o:["I went to the market in the morning","I am going to school","I stayed at home","I am eating"], a:0, y:2023},
+
+/* ===================== 91–100 ===================== */
+{q:"Kalmar 'ƙofa' tana nufin?", o:["Door","Window","Wall","Roof"], a:0, y:2021},
+{q:"Kalmar 'gari' tana nufin?", o:["Town","Village","City","Field"], a:0, y:2021},
+{q:"Menene ma’anar 'lafiya'?", o:["Health","Sickness","Tiredness","Hunger"], a:0, y:2022},
+{q:"Kalmar 'ruwa' tana nufin?", o:["Water","Milk","Yam","Rice"], a:0, y:2022},
+{q:"Menene ma’anar kalmar 'duniya'?", o:["World","Village","Home","Market"], a:0, y:2023},
+{q:"Kalmar 'aboki' tana nufin?", o:["Friend","Enemy","Brother","Father"], a:0, y:2023},
+{q:"Menene ma’anar kalmar 'ƙwarai'?", o:["Well/Very","Bad","Small","Poor"], a:0, y:2021},
+{q:"Kalmar 'ƙarfi' tana nufin?", o:["Strength","Weakness","Softness","Size"], a:0, y:2022},
+{q:"Menene ma’anar kalmar 'hannu'?", o:["Hand","Leg","Head","Foot"], a:0, y:2023},
+{q:"Kalmar 'ƙauna' tana nufin?", o:["Love","Hate","Fear","Anger"], a:0, y:2023}
+
+];
+/* ================= VARIABLES ================= */
+let current = 0;
+let answers = [];
+let isPremium = false;
+let time = 0;          // exam duration in seconds
+let selectedMinutes = 0;
+let timerInt;
+let timerStarted = false;
+
+const qText = document.getElementById("qText");
+const optionsWrap = document.getElementById("optionsWrap");
+const qNav = document.getElementById("qNav");
+const progressFill = document.getElementById("progressFill");
+const timerEl = document.getElementById("timer");
+
+/* ================= UTILITY ================= */
+function shuffle(array){
+  for(let i=array.length-1;i>0;i--){
+    const j=Math.floor(Math.random()*(i+1));
+    [array[i],array[j]]=[array[j],array[i]];
+  }
+}
+
+/* ================= RENDER QUESTIONS ================= */
+function render(){
+  const q = QUESTIONS[current];
+  qText.innerHTML = `${current+1}. ${q.q} <small>${q.y ? "(Year "+q.y+")":""}</small>`;
+  optionsWrap.innerHTML="";
+  q.o.forEach((op,i)=>{
+    const d=document.createElement("div");
+    d.className="option";
+    if(answers[current]===i) d.classList.add("selected");
+    d.innerText=op;
+    d.onclick=()=>{answers[current]=i; render();};
+    optionsWrap.appendChild(d);
+  });
+  progressFill.style.width=((answers.filter(a=>a!==null).length/QUESTIONS.length)*100)+"%";
+  buildNav();
+}
+
+function buildNav(){
+  qNav.innerHTML="";
+  for(let i=0;i<QUESTIONS.length;i++){
+    const b=document.createElement("button");
+    b.className="qbtn";
+    if(i===current) b.classList.add("current");
+    if(answers[i]!=null) b.classList.add("answered");
+    if(!isPremium && i>=25){
+      b.classList.add("locked");
+      b.disabled=true;
+    }
+    b.innerText=i+1;
+    b.onclick=()=>{current=i; render();}
+    qNav.appendChild(b);
+  }
+}
+
+/* ================= TIMER ================= */
+async function chooseExamTime(){
+  const { value } = await Swal.fire({
+    title: "Select Exam Duration",
+    text: "Choose your preferred exam time",
+    icon: "info",
+    allowOutsideClick: false,
+    allowEscapeKey: false,
+    confirmButtonText: "Start Exam",
+    input: "radio",
+    inputOptions: {
+      20: "20 Minutes",
+      30: "30 Minutes",
+      40: "40 Minutes",
+      60: "60 Minutes"
+    },
+    inputValidator: (value) => {
+      if (!value) return "Please select a duration";
+    }
+  });
+
+  selectedMinutes = Number(value);
+  time = selectedMinutes * 60;
+}
+
+function startTimer(){
+  if(timerStarted) return;
+  timerStarted = true;
+
+  timerInt = setInterval(()=>{
+    let m = Math.floor(time / 60);
+    let s = time % 60;
+    timerEl.innerText = `${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}`;
+    time--;
+    if(time<0){
+      clearInterval(timerInt);
+      Swal.fire({
+        title:"Time Up!",
+        text:"Your exam has been submitted automatically.",
+        icon:"warning",
+        confirmButtonText:"View Result"
+      }).then(()=>showReview());
+    }
+  },1000);
+}
+
+/* ================= SUBMIT & REVIEW ================= */
+function submitExam(){
+  Swal.fire({
+    title:"Submit Exam?",
+    icon:"warning",
+    showCancelButton:true,
+    confirmButtonText:"Yes Submit"
+  }).then(r=>{
+    if(!r.isConfirmed) return;
+    showReview();
+  });
+}
+
+function showReview(){
+  clearInterval(timerInt);
+  document.getElementById("examSection").style.display="none";
+  document.getElementById("reviewSection").style.display="block";
+
+  const total = isPremium ? QUESTIONS.length : Math.min(25, QUESTIONS.length);
+  let score = 0;
+  const list = document.getElementById("reviewList");
+  list.innerHTML="";
+
+  for(let i=0;i<total;i++){
+    if(answers[i]===QUESTIONS[i].a) score++;
+    const div=document.createElement("div");
+    div.className="review-q";
+    div.innerHTML=`
+      <p><b>${i+1}. ${QUESTIONS[i].q}</b></p>
+      <p>Your Answer: <span class="${answers[i]===QUESTIONS[i].a?"correct":"wrong"}">${QUESTIONS[i].o[answers[i]]||"Not Answered"}</span></p>
+      <p>Correct Answer: ${QUESTIONS[i].o[QUESTIONS[i].a]}</p>
+    `;
+    list.appendChild(div);
+  }
+
+  document.getElementById("rScore").innerText = `${score}/${total}`;
+  document.getElementById("rFail").innerText = total-score;
+  document.getElementById("rPercent").innerText = ((score/total)*100).toFixed(1)+"%";
+}
+
+/* ================= BUTTONS ================= */
+document.getElementById("nextBtn").onclick=()=>{
+  if(!isPremium && current===24){
+    Swal.fire("Upgrade Required","Only 25 questions for free users","info");
+    return;
+  }
+  if(current<QUESTIONS.length-1){current++;render();}
+};
+document.getElementById("backBtn").onclick=()=>{if(current>0){current--;render();}};
+document.getElementById("submitBtn").onclick=submitExam;
+
+/* ================= AUTH & INIT ================= */
+onAuthStateChanged(auth, async(user)=>{
+  if(!user){ location.href="login.html"; return; }
+
+  const snap = await getDoc(doc(db,"users",user.uid));
+  isPremium = snap.exists() && snap.data().isPremium===true;
+  if(!isPremium) document.getElementById("freeNote").style.display="block";
+
+  // 1. Select exam time
+  await chooseExamTime();
+
+  // 2. Shuffle questions & init answers
+  shuffle(QUESTIONS);
+  answers = Array(QUESTIONS.length).fill(null);
+
+  // 3. Render and start timer
+  render();
+  startTimer();
+});
+</script>
+
+</body>
+</html>

@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard • Rakspark Academy</title>
+
+  <!-- Google Fonts & Font Awesome -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+
+  <!-- SweetAlert2 -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+  <style>
+    :root{
+      --navy:#001F3F;
+      --blue:#0a66c2;
+      --bg:#eef6ff;
+      --card:#ffffff;
+      --success:#2ed573;
+      --danger:#ff4757;
+      --shadow:rgba(0,31,63,0.12);
+    }
+
+    *{box-sizing:border-box;margin:0;padding:0;font-family:'Poppins',sans-serif}
+    body{background:var(--bg);min-height:100vh;padding:20px}
+
+    h1{color:var(--navy);margin-bottom:20px}
+    .header{display:flex;justify-content:space-between;align-items:center;margin-bottom:40px}
+    .header button{padding:10px 20px;border:none;border-radius:10px;background:var(--danger);color:white;cursor:pointer;font-weight:600}
+
+    .section{margin-bottom:50px}
+    .section h2{color:var(--navy);margin-bottom:20px;font-size:1.5rem}
+
+    /* Users table */
+    table{width:100%;border-collapse:collapse;background:var(--card);border-radius:12px;overflow:hidden;box-shadow:0 10px 30px var(--shadow)}
+    th, td{padding:14px 12px;text-align:left;border-bottom:1px solid #ddd;font-size:0.95rem}
+    th{background:var(--navy);color:white;font-weight:600}
+    td button{padding:6px 12px;border:none;border-radius:6px;color:white;cursor:pointer;font-weight:600;margin-right:6px;font-size:0.85rem}
+    .btn-view{background:#0a66c2}
+    .btn-upgrade{background:var(--success)}
+    .btn-downgrade{background:#ffa502}
+    .btn-delete{background:var(--danger)}
+
+    /* Live classes cards */
+    .classes-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:20px}
+    .class-card{background:var(--card);border-radius:20px;padding:20px;box-shadow:0 10px 30px var(--shadow);transition:transform .3s}
+    .class-card:hover{transform:translateY(-5px)}
+    .class-card h3{margin-bottom:10px;color:var(--navy)}
+    .class-card p{margin-bottom:8px;font-size:0.9rem;color:#555}
+    .class-card button{padding:6px 12px;border:none;border-radius:6px;background:var(--danger);color:white;cursor:pointer;font-weight:600;font-size:0.85rem;margin-top:10px}
+
+    .add-class-btn{padding:10px 20px;border:none;border-radius:12px;background:var(--blue);color:white;font-weight:600;cursor:pointer;margin-bottom:20px}
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <h1>Admin Dashboard</h1>
+    <button id="logoutBtn">Sign Out</button>
+  </div>
+
+  <!-- Users Section -->
+  <div class="section">
+    <h2>Registered Users</h2>
+    <table id="usersTable">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Email</th>
+          <th>Phone</th>
+          <th>Role</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <!-- Live Classes Section -->
+  <div class="section">
+    <h2>Live Classes</h2>
+    <button class="add-class-btn" id="addClassBtn">+ Add New Class</button>
+    <div class="classes-grid" id="classesGrid"></div>
+  </div>
+
+  <!-- Firebase & Dashboard Script -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js";
+    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js";
+    import { getFirestore, collection, getDocs, doc, deleteDoc, updateDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDTDWqG_WAXZO7O6yAxV5lOHUkHZp-wwQk",
+      authDomain: "rackspark.firebaseapp.com",
+      projectId: "rackspark",
+      storageBucket: "rackspark.appspot.com",
+      messagingSenderId: "125488977166",
+      appId: "1:125488977166:web:b519b6871df21662c0f35f"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    const usersTableBody = document.querySelector("#usersTable tbody");
+    const classesGrid = document.getElementById("classesGrid");
+    const logoutBtn = document.getElementById("logoutBtn");
+    const addClassBtn = document.getElementById("addClassBtn");
+
+    // Check admin login
+    onAuthStateChanged(auth, async user => {
+      if(!user) location.href="login.html";
+      const snap = await getDocs(collection(db, "users"));
+      const currentUserDoc = await getDocs(collection(db,"users"));
+      const userDoc = doc(db,"users",user.uid);
+      const userData = (await getDocs(collection(db,"users"))).docs.find(d=>d.id===user.uid)?.data();
+      if(!userData?.role || userData.role!=="admin") {
+        await signOut(auth);
+        Swal.fire("Access Denied","You are not an admin","error").then(()=>location.href="login.html");
+      } else {
+        loadUsers();
+        loadClasses();
+      }
+    });
+
+    // Logout
+    logoutBtn.addEventListener("click", ()=>signOut(auth).then(()=>location.href="admin-login.html"));
+
+    // Load users
+    async function loadUsers() {
+      usersTableBody.innerHTML = "";
+      const snapshot = await getDocs(collection(db,"users"));
+      snapshot.forEach(docSnap => {
+        const user = docSnap.data();
+        const tr = document.createElement("tr");
+
+        tr.innerHTML = `
+          <td>${user.fullName||"-"}</td>
+          <td>${user.email||"-"}</td>
+          <td>${user.phone||"-"}</td>
+          <td>${user.role||"-"}</td>
+          <td>${user.isPremium?"Premium":"Free"}</td>
+          <td>
+            <button class="btn-view">View</button>
+            ${user.isPremium
+              ? '<button class="btn-downgrade">Downgrade</button>'
+              : '<button class="btn-upgrade">Upgrade</button>'}
+            <button class="btn-delete">Delete</button>
+          </td>
+        `;
+        // View
+        tr.querySelector(".btn-view").addEventListener("click", ()=>{
+          Swal.fire({
+            title:`${user.fullName} Details`,
+            html:`
+              <p><strong>Email:</strong> ${user.email}</p>
+              <p><strong>Phone:</strong> ${user.phone}</p>
+              <p><strong>Role:</strong> ${user.role}</p>
+              <p><strong>Status:</strong> ${user.isPremium?"Premium":"Free"}</p>
+              <p><strong>Joined:</strong> ${user.joinedAt||"-"}</p>
+            `,
+            icon:"info"
+          });
+        });
+        // Upgrade
+        const upgradeBtn = tr.querySelector(".btn-upgrade");
+        if(upgradeBtn){
+          upgradeBtn.addEventListener("click", async ()=>{
+            const res = await Swal.fire({title:"Upgrade to Premium?",text:"This will give the user full access.",icon:"question",showCancelButton:true,confirmButtonText:"Upgrade"});
+            if(res.isConfirmed){
+              await updateDoc(doc(db,"users",docSnap.id),{isPremium:true});
+              Swal.fire("Upgraded!","User is now Premium","success");
+              loadUsers();
+            }
+          });
+        }
+        // Downgrade
+        const downgradeBtn = tr.querySelector(".btn-downgrade");
+        if(downgradeBtn){
+          downgradeBtn.addEventListener("click", async ()=>{
+            const res = await Swal.fire({title:"Downgrade to Free?",text:"This will remove premium access.",icon:"warning",showCancelButton:true,confirmButtonText:"Downgrade"});
+            if(res.isConfirmed){
+              await updateDoc(doc(db,"users",docSnap.id),{isPremium:false});
+              Swal.fire("Downgraded!","User is now Free","success");
+              loadUsers();
+            }
+          });
+        }
+        // Delete
+        tr.querySelector(".btn-delete").addEventListener("click", async ()=>{
+          const res = await Swal.fire({title:"Delete User?",text:"This will permanently delete the account.",icon:"error",showCancelButton:true,confirmButtonText:"Delete"});
+          if(res.isConfirmed){
+            await deleteDoc(doc(db,"users",docSnap.id));
+            Swal.fire("Deleted!","User has been removed","success");
+            loadUsers();
+          }
+        });
+
+        usersTableBody.appendChild(tr);
+      });
+    }
+
+    // Load live classes
+    async function loadClasses(){
+      classesGrid.innerHTML="";
+      const snapshot = await getDocs(collection(db,"liveClasses"));
+      if(snapshot.empty) classesGrid.innerHTML="<p>No live classes yet.</p>";
+      snapshot.forEach(docSnap=>{
+        const c = docSnap.data();
+        const div=document.createElement("div");
+        div.className="class-card";
+        div.innerHTML=`
+          <h3>${c.title||"Untitled"}</h3>
+          <p><strong>Subject:</strong> ${c.subject||"-"}</p>
+          <p><strong>Date:</strong> ${c.date||"-"}</p>
+          <p><strong>Time:</strong> ${c.time||"-"}</p>
+          <p><strong>Tutor:</strong> ${c.tutor||"-"}</p>
+          <button class="btn-delete-class">Delete Class</button>
+        `;
+        div.querySelector(".btn-delete-class").addEventListener("click", async ()=>{
+          const res=await Swal.fire({title:"Delete Class?",text:"This will remove the class for all users.",icon:"error",showCancelButton:true,confirmButtonText:"Delete"});
+          if(res.isConfirmed){
+            await deleteDoc(doc(db,"liveClasses",docSnap.id));
+            Swal.fire("Deleted!","Class removed successfully","success");
+            loadClasses();
+          }
+        });
+        classesGrid.appendChild(div);
+      });
+    }
+
+    // Add new live class
+    addClassBtn.addEventListener("click", async ()=>{
+      const { value: formValues } = await Swal.fire({
+        title: 'Add New Live Class',
+        html:
+          '<input id="swal-title" class="swal2-input" placeholder="Class Title">' +
+          '<input id="swal-subject" class="swal2-input" placeholder="Subject">' +
+          '<input id="swal-date" type="date" class="swal2-input" placeholder="Date">' +
+          '<input id="swal-time" type="time" class="swal2-input" placeholder="Time">' +
+          '<input id="swal-tutor" class="swal2-input" placeholder="Tutor Name">' +
+          '<input id="swal-link" class="swal2-input" placeholder="Meeting Link">',
+        focusConfirm: false,
+        preConfirm: () => {
+          return {
+            title: document.getElementById('swal-title').value,
+            subject: document.getElementById('swal-subject').value,
+            date: document.getElementById('swal-date').value,
+            time: document.getElementById('swal-time').value,
+            tutor: document.getElementById('swal-tutor').value,
+            link: document.getElementById('swal-link').value
+          }
+        }
+      });
+      if(formValues){
+        const newDoc = doc(collection(db,"liveClasses"));
+        await setDoc(newDoc, formValues);
+        Swal.fire("Added!","Live class created successfully","success");
+        loadClasses();
+      }
+    });
+
+  </script>
+</body>
+</html>

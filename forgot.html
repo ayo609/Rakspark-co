@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Reset Password • Rakspark Academy</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+  <style>
+    :root {
+      --sky: #87CEEB;
+      --navy: #001F3F;
+      --gold: #FFD700;
+      --white: #fff;
+      --success: #2ed573;
+      --danger: #ff4757;
+      --shadow: rgba(0,31,63,0.3);
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: linear-gradient(145deg, var(--sky) 0%, #5dade2 100%);
+      min-height: 100vh;
+      padding: 40px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow-y: auto;
+    }
+
+    .reset-wrapper {
+      width: 100%;
+      max-width: 520px;
+      background: white;
+      border-radius: 32px;
+      overflow: hidden;
+      box-shadow: 0 30px 90px var(--shadow);
+      animation: fadeInUp 1s ease-out;
+    }
+
+    .reset-header {
+      background: linear-gradient(135deg, var(--navy), #002b55);
+      color: white;
+      text-align: center;
+      padding: 70px 40px 50px;
+    }
+    .reset-header i {
+      font-size: 4.5rem;
+      margin-bottom: 20px;
+      color: var(--gold);
+    }
+    .reset-header h1 {
+      font-size: 2.8rem;
+      font-weight: 900;
+      margin-bottom: 15px;
+    }
+    .reset-header p {
+      font-size: 1.25rem;
+      opacity: 0.95;
+    }
+
+    .reset-body {
+      padding: 50px 60px 70px;
+      text-align: center;
+    }
+
+    .input-group {
+      position: relative;
+      margin-bottom: 30px;
+    }
+    .input-group i {
+      position: absolute;
+      left: 24px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--navy);
+      font-size: 1.4rem;
+    }
+    input {
+      width: 100%;
+      padding: 20px 20px 20px 65px;
+      border: 2.5px solid #e8ecf4;
+      border-radius: 18px;
+      font-size: 1.15rem;
+      background: #f8fbff;
+      transition: all 0.4s ease;
+    }
+    input:focus {
+      border-color: var(--navy);
+      background: white;
+      box-shadow: 0 0 0 7px rgba(0,31,63,0.1);
+      outline: none;
+    }
+
+    .btn {
+      width: 100%;
+      padding: 20px;
+      background: var(--navy);
+      color: white;
+      border: none;
+      border-radius: 18px;
+      font-size: 1.35rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.5s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      margin-top: 15px;
+    }
+    .btn:hover {
+      background: #001233;
+      transform: translateY(-5px);
+      box-shadow: 0 15px 35px rgba(0,31,63,0.35);
+    }
+
+    .back-link {
+      margin-top: 35px;
+      font-size: 1.15rem;
+      color: #555;
+    }
+    .back-link a {
+      color: var(--navy);
+      font-weight: 700;
+      text-decoration: none;
+    }
+
+    /* Toast */
+    .toast {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      min-width: 340px;
+      padding: 18px 28px;
+      border-radius: 18px;
+      color: white;
+      font-weight: 600;
+      font-size: 1.15rem;
+      box-shadow: 0 15px 45px rgba(0,0,0.35);
+      z-index: 10000;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.6s ease;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .toast.show {
+      opacity: 1;
+      visibility: visible;
+      top: 40px;
+    }
+    .toast.success { background: var(--success); }
+    .toast.error { background: var(--danger); }
+
+    .whatsapp-float {
+      position: fixed;
+      bottom: 30px;
+      right: 30px;
+      background: #25D366;
+      width: 65px;
+      height: 65px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 35px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+      z-index: 9999;
+      animation: float 3s ease-in-out infinite;
+    }
+    @keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-15px); } }
+
+    @media (max-width: 480px) {
+      .reset-wrapper { margin: 20px; border-radius: 24px; }
+      .reset-header, .reset-body { padding: 50px 30px; }
+      .reset-header h1 { font-size: 2.4rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Toast -->
+  <div class="toast" id="toast">
+    <i id="toastIcon"></i>
+    <span id="toastMessage"></span>
+  </div>
+
+  <!-- WhatsApp -->
+  <a href="https://wa.me/2348100000000" class="whatsapp-float" target="_blank">
+    <i class="fab fa-whatsapp"></i>
+  </a>
+
+  <div class="reset-wrapper animate__animated animate__fadeIn">
+    <div class="reset-header">
+      <i class="fas fa-key"></i>
+      <h1>Reset Password</h1>
+      <p>Enter your email and we’ll send you a link to reset your password</p>
+    </div>
+
+    <div class="reset-body">
+      <form id="resetForm">
+        <div class="input-group">
+          <i class="fas fa-envelope"></i>
+          <input type="email" id="email" placeholder="Your Email Address" required />
+        </div>
+
+        <button type="submit" class="btn">
+          <i class="fas fa-paper-plane"></i>
+          <span id="btnText">Send Reset Link</span>
+          <span id="loading" style="display:none;">Sending...</span>
+        </button>
+      </form>
+
+      <div class="back-link">
+        <a href="login.html">Back to Login</a>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js";
+    import { getAuth, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDTDWqG_WAXZO7O6yAxV5lOHUkHZp-wwQk",
+      authDomain: "rackspark.firebaseapp.com",
+      projectId: "rackspark",
+      storageBucket: "rackspark.firebasestorage.app",
+      messagingSenderId: "125488977166",
+      appId: "1:125488977166:web:b519b6871df21662c0f35f"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+
+    const toast = document.getElementById('toast');
+    const toastMsg = document.getElementById('toastMessage');
+    const toastIcon = document.getElementById('toastIcon');
+
+    function showToast(message, type = 'success') {
+      toastMsg.textContent = message;
+      toast.className = `toast ${type} show`;
+      toastIcon.className = type === 'success' ? 'fas fa-check-circle' : 'fas fa-exclamation-circle';
+      setTimeout(() => toast.classList.remove('show'), 6000);
+    }
+
+    document.getElementById('resetForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('email').value.trim();
+
+      if (!email) {
+        showToast('Please enter your email', 'error');
+        return;
+      }
+
+      document.getElementById('btnText').style.display = 'none';
+      document.getElementById('loading').style.display = 'inline';
+
+      try {
+        await sendPasswordResetEmail(auth, email);
+        showToast('Check your email! Reset link sent', 'success');
+        setTimeout(() => location.href = "login.html", 3000);
+      } catch (error) {
+        const msg = error.code === 'auth/user-not-found'
+          ? 'No account found with this email'
+          : error.message;
+        showToast(msg, 'error');
+        document.getElementById('btnText').style.display = 'inline';
+        document.getElementById('loading').style.display = 'none';
+      }
+    });
+  </script>
+</body>
+</html>

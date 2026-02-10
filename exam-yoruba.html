@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>JAMB CBT – Yoruba </title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<!-- SweetAlert2 -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<!-- Google Font -->
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+:root{
+  --navy:#001f3f;
+  --sky:#eaf4ff;
+  --green:#2ed573;
+  --red:#ff4757;
+  --gold:#f1c40f;
+  --gray:#f5f5f5;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+  font-family:Poppins,sans-serif;
+  background:linear-gradient(135deg,#eaf4ff,#d6e9ff);
+  min-height:100vh;
+  padding:20px;
+}
+.container{
+  max-width:1100px;
+  margin:auto;
+  background:#fff;
+  border-radius:25px;
+  box-shadow:0 25px 70px rgba(0,0,0,.15);
+  overflow:hidden;
+}
+header{
+  background:var(--navy);
+  color:#fff;
+  padding:25px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+header h2{font-size:1.6rem}
+#timer{
+  background:#fff;
+  color:var(--navy);
+  padding:8px 18px;
+  border-radius:20px;
+  font-weight:700;
+}
+#freeNote{
+  background:#fff3cd;
+  color:#856404;
+  padding:12px;
+  text-align:center;
+  font-weight:600;
+  display:none;
+}
+.main{
+  padding:30px;
+}
+#progress{
+  height:10px;
+  background:#eee;
+  border-radius:10px;
+  overflow:hidden;
+  margin-bottom:20px;
+}
+#progressFill{
+  height:100%;
+  width:0%;
+  background:linear-gradient(90deg,var(--green),var(--gold));
+}
+#qText{
+  font-size:1.3rem;
+  font-weight:600;
+  margin-bottom:20px;
+}
+.option{
+  background:var(--gray);
+  padding:15px 18px;
+  border-radius:15px;
+  margin-bottom:12px;
+  cursor:pointer;
+  transition:.3s;
+}
+.option:hover{background:#e0e0e0}
+.option.selected{
+  background:var(--navy);
+  color:#fff;
+}
+.nav-btns{
+  display:flex;
+  justify-content:space-between;
+  margin-top:25px;
+}
+button{
+  padding:12px 30px;
+  border:none;
+  border-radius:30px;
+  font-weight:600;
+  cursor:pointer;
+}
+#backBtn{background:#ccc}
+#nextBtn{background:var(--navy);color:#fff}
+#submitBtn{
+  background:var(--green);
+  color:#fff;
+}
+#qNav{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(45px,1fr));
+  gap:10px;
+  margin-top:30px;
+}
+.qbtn{
+  padding:10px;
+  border-radius:10px;
+  border:none;
+  cursor:pointer;
+  font-weight:600;
+}
+.qbtn.current{background:var(--navy);color:#fff}
+.qbtn.answered{background:var(--green);color:#fff}
+.qbtn.locked{background:#ddd;color:#999;cursor:not-allowed}
+.review{
+  display:none;
+  padding:30px;
+}
+.review h2{text-align:center;margin-bottom:20px}
+.score-box{
+  display:flex;
+  justify-content:space-around;
+  margin-bottom:25px;
+  flex-wrap:wrap;
+}
+.score-card{
+  background:var(--gray);
+  padding:20px;
+  border-radius:20px;
+  text-align:center;
+  min-width:160px;
+}
+.correct{color:var(--green);font-weight:700}
+.wrong{color:var(--red);font-weight:700}
+.review-q{
+  background:#f9f9f9;
+  padding:15px;
+  border-radius:15px;
+  margin-bottom:15px;
+}
+.review-q p{margin:6px 0}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<header>
+  <h2>JAMB CBT – Yoruba</h2>
+  <div id="timer">00:00</div>
+</header>
+
+<div id="freeNote">
+  Free users can attempt only <b>25 questions</b>. Upgrade to Premium for all 99+.
+</div>
+
+<div class="main" id="examSection">
+  <div id="progress"><div id="progressFill"></div></div>
+  <div id="qText"></div>
+  <div id="optionsWrap"></div>
+
+  <div class="nav-btns">
+    <button id="backBtn">Back</button>
+    <button id="nextBtn">Next</button>
+    <button id="submitBtn">Submit</button>
+  </div>
+
+  <div id="qNav"></div>
+</div>
+
+<div class="review" id="reviewSection">
+  <h2>Exam Review</h2>
+  <div class="score-box">
+    <div class="score-card">Score<br><span id="rScore"></span></div>
+    <div class="score-card">Failed<br><span id="rFail"></span></div>
+    <div class="score-card">Percentage<br><span id="rPercent"></span></div>
+  </div>
+  <div id="reviewList"></div>
+</div>
+
+</div>
+
+<script type="module">
+/* ================= FIREBASE ================= */
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js";
+import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDTDWqG_WAXZO7O6yAxV5lOHUkHZp-wwQk",
+  authDomain: "rackspark.firebaseapp.com",
+  projectId: "rackspark",
+  storageBucket: "rackspark.firebasestorage.app",
+  messagingSenderId: "125488977166",
+  appId: "1:125488977166:web:b519b6871df21662c0f35f"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+/* ================= QUESTIONS ================= */
+
+const QUESTIONS = [
+
+/* ===================== 1–10 ===================== */
+{q:"Báwo ni a ṣe ń sọ 'Good morning' ní èdè Yorùbá?", o:["Ẹ̀ káàárọ̀","Ẹ̀ káàsán","Ẹ̀ kúrọ́lẹ́","Ẹ n lẹ́"], a:0, y:2021},
+{q:"Kí ni itumọ̀ 'Omi' ní èdè Gẹ̀ẹ́sì?", o:["Water","Fire","Earth","Air"], a:0, y:2021},
+{q:"Báwo ni a ṣe ń sọ 'Thank you' ní Yorùbá?", o:["Ẹ ṣé","Ẹ káàbọ̀","Ẹ jókòó","Ẹ kú ọ̀sán"], a:0, y:2022},
+{q:"Kí ni itumọ̀ 'Oun'?", o:["Food","Drink","Clothes","House"], a:0, y:2022},
+{q:"Báwo ni a ṣe ń sọ 'I am hungry' ní Yorùbá?", o:["Ẹ jẹun mi","Mo ń lá ńlá","Mo ń jẹun","Mo ń sun"], a:0, y:2023},
+{q:"Kí ni itumọ̀ 'Ile'?", o:["House","School","Market","Road"], a:0, y:2023},
+{q:"Báwo ni a ṣe ń sọ 'Goodbye' ní Yorùbá?", o:["Odàbọ̀","Ẹ kú ọ̀sán","Ẹ káàárọ̀","Ẹ jókòó"], a:0, y:2021},
+{q:"Kí ni itumọ̀ 'Iwe'?", o:["Book","Pen","Table","Chair"], a:0, y:2022},
+{q:"Báwo ni a ṣe ń sọ 'Please' ní Yorùbá?", o:["Ẹ jọ̀ọ́","Ẹ ṣé","Ẹ jókòó","Ẹ kú ọ̀sán"], a:0, y:2023},
+{q:"Kí ni itumọ̀ 'Ile-iwe'?", o:["School","Hospital","Market","Library"], a:0, y:2023},
+
+/* ===================== 11–20 ===================== */
+{q:"Kí ni itumọ̀ 'Pupa'?", o:["Red","Blue","Green","Yellow"], a:0, y:2021},
+{q:"Kí ni itumọ̀ 'Àlàáfíà'?", o:["Peace","War","Hate","Love"], a:0, y:2021},
+{q:"Báwo ni a ṣe ń sọ 'I love you' ní Yorùbá?", o:["Mo nífẹ̀ẹ́ rẹ","Mo ní ìbànújẹ́","Mo ní ìbànújẹ́ rẹ","Mo fẹ́ o"], a:0, y:2022},
+{q:"Kí ni itumọ̀ 'Ajá'?", o:["Dog","Cat","Bird","Horse"], a:0, y:2022},
+{q:"Báwo ni a ṣe ń sọ 'I am tired' ní Yorùbá?", o:["Mo rẹ̀","Mo ń jẹun","Mo ní ìfẹ́","Mo ń sun"], a:0, y:2023},
+{q:"Kí ni itumọ̀ 'Wàrà'?", o:["Milk","Water","Juice","Wine"], a:0, y:2023},
+{q:"Kí ni itumọ̀ 'Omi'?", o:["Water","Juice","Milk","Wine"], a:0, y:2021},
+{q:"Báwo ni a ṣe ń sọ 'Excuse me' ní Yorùbá?", o:["Ẹ má bínú","Ẹ ṣé","Ẹ jókòó","Ẹ káàbọ̀"], a:0, y:2022},
+{q:"Kí ni itumọ̀ 'Ọkọ̀'?", o:["Car","Bus","Bike","Train"], a:0, y:2023},
+{q:"Kí ni itumọ̀ 'Odòdó'?", o:["Flower","Tree","Leaf","Fruit"], a:0, y:2023},
+
+/* ===================== 21–30 ===================== */
+{q:"Báwo ni a ṣe ń sọ 'Yes' ní Yorùbá?", o:["Bẹ́ẹ̀ni","Rárá","Ṣé","Ṣé bẹ́ẹ̀ni"], a:0, y:2021},
+{q:"Báwo ni a ṣe ń sọ 'No' ní Yorùbá?", o:["Rárá","Bẹ́ẹ̀ni","Ṣé","Ṣé bẹ́ẹ̀ni"], a:0, y:2021},
+{q:"Kí ni itumọ̀ 'Búrẹ́dì'?", o:["Bread","Butter","Milk","Cheese"], a:0, y:2022},
+{q:"Kí ni itumọ̀ 'Wàrà'?", o:["Milk","Water","Juice","Wine"], a:0, y:2022},
+{q:"Báwo ni a ṣe ń sọ 'Happy birthday' ní Yorùbá?", o:["Ẹ ku ọjọ́ ìbí","Ẹ ku ọjọ́","Ẹ kú ọjọ́ ayọ̀","Ẹ kú ọjọ́ ìdùnnú"], a:0, y:2023},
+{q:"Kí ni itumọ̀ 'Ilẹ̀'?", o:["Land","Water","Sky","Road"], a:0, y:2023},
+{q:"Kí ni itumọ̀ 'Fèrèsé'?", o:["Window","Door","Roof","Wall"], a:0, y:2021},
+{q:"Báwo ni a ṣe ń sọ 'Good night' ní Yorùbá?", o:["Ó dàbọ̀","Ẹ káàárọ̀","Ẹ kúrọ́lẹ́","Ẹ jókòó"], a:0, y:2022},
+{q:"Kí ni itumọ̀ 'Igbo'?", o:["Forest","Village","Town","River"], a:0, y:2023},
+{q:"Kí ni itumọ̀ 'Oòrùn'?", o:["Sun","Moon","Star","Cloud"], a:0, y:2023},
+
+/* ===================== 31–40 ===================== */
+{q:"Báwo ni a ṣe ń sọ 'I am happy' ní Yorùbá?", o:["Inú mi dùn","Mo rẹ̀","Mo ń jẹun","Mo ń sun"], a:0, y:2021},
+{q:"Kí ni itumọ̀ 'Osù'?", o:["Moon","Sun","Star","Sky"], a:0, y:2021},
+{q:"Kí ni itumọ̀ 'Ìràwọ̀'?", o:["Star","Moon","Sun","Cloud"], a:0, y:2022},
+{q:"Báwo ni a ṣe ń sọ 'I am sick' ní Yorùbá?", o:["Mo ń lèé","Mo rẹ̀","Inú mi bàjẹ́","Mo ń sun"], a:0, y:2022},
+{q:"Kí ni itumọ̀ 'Ẹṣin'?", o:["Horse","Dog","Cat","Bird"], a:0, y:2023},
+{q:"Kí ni itumọ̀ 'Adán'?", o:["Bird","Cat","Dog","Fish"], a:0, y:2023},
+{q:"Báwo ni a ṣe ń sọ 'I am thirsty' ní Yorùbá?", o:["Mo ń fẹ́ omi","Mo ń jẹun","Mo rẹ̀","Inú mi dùn"], a:0, y:2021},
+{q:"Kí ni itumọ̀ 'Òkun'?", o:["Sea","River","Lake","Ocean"], a:0, y:2022},
+{q:"Kí ni itumọ̀ 'Òkè'?", o:["Mountain","Hill","Valley","River"], a:0, y:2023},
+{q:"Báwo ni a ṣe ń sọ 'I am cold' ní Yorùbá?", o:["Mo ní ìtutu","Mo ní ìgbona","Mo rẹ̀","Inú mi dùn"], a:0, y:2023},
+
+/* ===================== 41–50 ===================== */
+{q:"Kí ni itumọ̀ 'Gbona'?", o:["Hot","Cold","Warm","Cool"], a:0, y:2021},
+{q:"Kí ni itumọ̀ 'Tutu'?", o:["Cold","Hot","Warm","Cool"], a:0, y:2021},
+{q:"Báwo ni a ṣe ń sọ 'I am happy to see you' ní Yorùbá?", o:["Inú mi dùn láti rí ẹ","Mo rẹ̀ láti rí ẹ","Mo ní ìbànújẹ́","Mo ń sun"], a:0, y:2022},
+{q:"Kí ni itumọ̀ 'Pupa'?", o:["Red","Blue","Green","Yellow"], a:0, y:2022},
+{q:"Kí ni itumọ̀ 'Búlúù'?", o:["Blue","Red","Green","Yellow"], a:0, y:2023},
+{q:"Báwo ni a ṣe ń sọ 'I don’t understand' ní Yorùbá?", o:["Mi ò mọ̀","Mo mọ̀","Mo fẹ́","Mo lè"], a:0, y:2023},
+{q:"Kí ni itumọ̀ 'Abúlé'?", o:["Village","City","Town","Street"], a:0, y:2021},
+{q:"Kí ni itumọ̀ 'Ìlú'?", o:["City","Village","Town","Street"], a:0, y:2022},
+{q:"Báwo ni a ṣe ń sọ 'I am lost' ní Yorùbá?", o:["Mo sọnù","Inú mi dùn","Mo rẹ̀","Mo ń jẹun"], a:0, y:2023},
+{q:"Kí ni itumọ̀ 'Ọ̀nà'?", o:["Road","Village","City","Town"], a:0, y:2023},
+
+/* ===================== 51–60 ===================== */
+{q:"Báwo ni a ṣe ń sọ 'I like' ní Yorùbá?", o:["Mo fẹ́","Mi ò fẹ́","Mo lè","Mo mọ̀"], a:0, y:2021},
+{q:"Kí ni itumọ̀ 'Ifẹ́'?", o:["Love","Hate","Friendship","Joy"], a:0, y:2021},
+{q:"Kí ni itumọ̀ 'Ọrẹ́'?", o:["Friend","Enemy","Father","Brother"], a:0, y:2022},
+{q:"Kí ni itumọ̀ 'Ìyá'?", o:["Mother","Father","Sister","Brother"], a:0, y:2022},
+{q:"Kí ni itumọ̀ 'Bàbá'?", o:["Father","Mother","Brother","Sister"], a:0, y:2023},
+{q:"Kí ni itumọ̀ 'Arákùnrin'?", o:["Brother","Sister","Father","Mother"], a:0, y:2023},
+{q:"Kí ni itumọ̀ 'Arábìnrin'?", o:["Sister","Brother","Mother","Father"], a:0, y:2021},
+{q:"Báwo ni a ṣe ń sọ 'I am going to school' ní Yorùbá?", o:["Mo ń lọ sí ile-iwe","Mo ń lọ sí ọjà","Mo ń lọ sí ile","Mo ń lọ sí iṣẹ́"], a:0, y:2022},
+{q:"Kí ni itumọ̀ 'Iṣẹ́'?", o:["Work","School","Home","Market"], a:0, y:2023},
+{q:"Kí ni itumọ̀ 'Ọjà'?", o:["Market","School","Home","Work"], a:0, y:2023},
+
+/* ===================== 61–70 ===================== */
+{q:"Báwo ni a ṣe ń sọ 'I am learning Yoruba'?", o:["Mo ń kọ́ Yorùbá","Mo ń sọ Gẹ̀ẹ́sì","Mo ń jẹun","Mo ń mu"], a:0, y:2021},
+{q:"Kí ni itumọ̀ 'Yorùbá'?", o:["Yoruba","English","German","Spanish"], a:0, y:2021},
+{q:"Kí ni itumọ̀ 'Gẹ̀ẹ́sì'?", o:["English","Yoruba","German","Spanish"], a:0, y:2022},
+{q:"Kí ni itumọ̀ 'Jámánì'?", o:["German","English","Yoruba","Spanish"], a:0, y:2022},
+{q:"Báwo ni a ṣe ń sọ 'I am sleepy' ní Yorùbá?", o:["Mo ń sun","Mo ń jẹun","Mo rẹ̀","Inú mi dùn"], a:0, y:2023},
+{q:"Kí ni itumọ̀ 'Ẹwà'?", o:["Beautiful","Ugly","Small","Big"], a:0, y:2023},
+{q:"Kí ni itumọ̀ 'Òdà'?", o:["Ugly","Beautiful","Small","Big"], a:0, y:2021},
+{q:"Báwo ni a ṣe ń sọ 'I am sad' ní Yorùbá?", o:["Inú mi bàjẹ́","Inú mi dùn","Mo rẹ̀","Mo ń jẹun"], a:0, y:2022},
+{q:"Kí ni itumọ̀ 'Dùn'?", o:["Happy","Sad","Tired","Hungry"], a:0, y:2023},
+{q:"Kí ni itumọ̀ 'Rẹ̀'?", o:["Tired","Happy","Sad","Hungry"], a:0, y:2023},
+
+/* ===================== 71–80 ===================== */
+{q:"Báwo ni a ṣe ń sọ 'I am angry' ní Yorùbá?", o:["Inú mi ń binu","Inú mi bàjẹ́","Inú mi dùn","Mo ń jẹun"], a:0, y:2021},
+{q:"Kí ni itumọ̀ 'Bíni'?", o:["Anger","Happiness","Sadness","Fear"], a:0, y:2021},
+{q:"Kí ni itumọ̀ 'Ẹ̀rù'?", o:["Fear","Love","Joy","Sadness"], a:0, y:2022},
+{q:"Kí ni itumọ̀ 'Ayọ̀'?", o:["Joy","Fear","Anger","Sadness"], a:0, y:2022},
+{q:"Báwo ni a ṣe ń sọ 'I am busy' ní Yorùbá?", o:["Mo ní iṣẹ́","Mo ṣáfẹ́fẹ́","Mo rẹ̀","Mo ń jẹun"], a:0, y:2023},
+{q:"Kí ni itumọ̀ 'Ọfẹ́'?", o:["Free","Busy","Tired","Hungry"], a:0, y:2023},
+{q:"Kí ni itumọ̀ 'Iṣẹ́'?", o:["Busy","Free","Tired","Hungry"], a:0, y:2021},
+{q:"Báwo ni a ṣe ń sọ 'I am thirsty' ní Yorùbá?", o:["Mo ń fẹ́ omi","Mo ń jẹun","Mo rẹ̀","Inú mi dùn"], a:0, y:2022},
+{q:"Kí ni itumọ̀ 'Ẹ̀jẹ̀'?", o:["Blood","Water","Milk","Juice"], a:0, y:2023},
+{q:"Kí ni itumọ̀ 'Omi'?", o:["Water","Blood","Milk","Juice"], a:0, y:2023},
+
+/* ===================== 81–90 ===================== */
+{q:"Báwo ni a ṣe ń sọ 'I am learning' ní Yorùbá?", o:["Mo ń kọ́","Mo ń sọ","Mo ń jẹun","Mo ń mu"], a:0, y:2021},
+{q:"Kí ni itumọ̀ 'Kọ́'?", o:["Learn/Write","Read","Speak","Listen"], a:0, y:2021},
+{q:"Kí ni itumọ̀ 'Kà'?", o:["Read","Write","Speak","Listen"], a:0, y:2022},
+{q:"Kí ni itumọ̀ 'Gbọ́'?", o:["Listen","Read","Write","Speak"], a:0, y:2022},
+{q:"Kí ni itumọ̀ 'Sọ'?", o:["Speak","Read","Write","Listen"], a:0, y:2023},
+{q:"Báwo ni a ṣe ń sọ 'I like to read' ní Yorùbá?", o:["Mo fẹ́ kà","Mo fẹ́ kọ́","Mo fẹ́ gbọ́","Mo fẹ́ sọ"], a:0, y:2023},
+{q:"Kí ni itumọ̀ 'Bàtà'?", o:["Shoe","Shirt","Hat","Bag"], a:0, y:2021},
+{q:"Kí ni itumọ̀ 'Ṣíìrù'?", o:["Shirt","Shoe","Hat","Bag"], a:0, y:2022},
+{q:"Kí ni itumọ̀ 'Fìlà'?", o:["Hat","Shirt","Shoe","Bag"], a:0, y:2023},
+{q:"Kí ni itumọ̀ 'Àpò'?", o:["Bag","Hat","Shoe","Shirt"], a:0, y:2023},
+
+/* ===================== 91–100 ===================== */
+{q:"Báwo ni a ṣe ń sọ 'I am learning Yoruba every day' ní Yorùbá?", o:["Mo ń kọ́ Yorùbá lojoojúmọ́","Mo ń jẹun lojoojúmọ́","Mo ń sun lojoojúmọ́","Mo ń mu lojoojúmọ́"], a:0, y:2021},
+{q:"Kí ni itumọ̀ 'Ọjọ́'?", o:["Day","Night","Morning","Evening"], a:0, y:2021},
+{q:"Kí ni itumọ̀ 'Alẹ́'?", o:["Night","Day","Morning
+/* ================= VARIABLES ================= */
+let current = 0;
+let answers = [];
+let isPremium = false;
+let time = 0;          // exam duration in seconds
+let selectedMinutes = 0;
+let timerInt;
+let timerStarted = false;
+
+const qText = document.getElementById("qText");
+const optionsWrap = document.getElementById("optionsWrap");
+const qNav = document.getElementById("qNav");
+const progressFill = document.getElementById("progressFill");
+const timerEl = document.getElementById("timer");
+
+/* ================= UTILITY ================= */
+function shuffle(array){
+  for(let i=array.length-1;i>0;i--){
+    const j=Math.floor(Math.random()*(i+1));
+    [array[i],array[j]]=[array[j],array[i]];
+  }
+}
+
+/* ================= RENDER QUESTIONS ================= */
+function render(){
+  const q = QUESTIONS[current];
+  qText.innerHTML = `${current+1}. ${q.q} <small>${q.y ? "(Year "+q.y+")":""}</small>`;
+  optionsWrap.innerHTML="";
+  q.o.forEach((op,i)=>{
+    const d=document.createElement("div");
+    d.className="option";
+    if(answers[current]===i) d.classList.add("selected");
+    d.innerText=op;
+    d.onclick=()=>{answers[current]=i; render();};
+    optionsWrap.appendChild(d);
+  });
+  progressFill.style.width=((answers.filter(a=>a!==null).length/QUESTIONS.length)*100)+"%";
+  buildNav();
+}
+
+function buildNav(){
+  qNav.innerHTML="";
+  for(let i=0;i<QUESTIONS.length;i++){
+    const b=document.createElement("button");
+    b.className="qbtn";
+    if(i===current) b.classList.add("current");
+    if(answers[i]!=null) b.classList.add("answered");
+    if(!isPremium && i>=25){
+      b.classList.add("locked");
+      b.disabled=true;
+    }
+    b.innerText=i+1;
+    b.onclick=()=>{current=i; render();}
+    qNav.appendChild(b);
+  }
+}
+
+/* ================= TIMER ================= */
+async function chooseExamTime(){
+  const { value } = await Swal.fire({
+    title: "Select Exam Duration",
+    text: "Choose your preferred exam time",
+    icon: "info",
+    allowOutsideClick: false,
+    allowEscapeKey: false,
+    confirmButtonText: "Start Exam",
+    input: "radio",
+    inputOptions: {
+      20: "20 Minutes",
+      30: "30 Minutes",
+      40: "40 Minutes",
+      60: "60 Minutes"
+    },
+    inputValidator: (value) => {
+      if (!value) return "Please select a duration";
+    }
+  });
+
+  selectedMinutes = Number(value);
+  time = selectedMinutes * 60;
+}
+
+function startTimer(){
+  if(timerStarted) return;
+  timerStarted = true;
+
+  timerInt = setInterval(()=>{
+    let m = Math.floor(time / 60);
+    let s = time % 60;
+    timerEl.innerText = `${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}`;
+    time--;
+    if(time<0){
+      clearInterval(timerInt);
+      Swal.fire({
+        title:"Time Up!",
+        text:"Your exam has been submitted automatically.",
+        icon:"warning",
+        confirmButtonText:"View Result"
+      }).then(()=>showReview());
+    }
+  },1000);
+}
+
+/* ================= SUBMIT & REVIEW ================= */
+function submitExam(){
+  Swal.fire({
+    title:"Submit Exam?",
+    icon:"warning",
+    showCancelButton:true,
+    confirmButtonText:"Yes Submit"
+  }).then(r=>{
+    if(!r.isConfirmed) return;
+    showReview();
+  });
+}
+
+function showReview(){
+  clearInterval(timerInt);
+  document.getElementById("examSection").style.display="none";
+  document.getElementById("reviewSection").style.display="block";
+
+  const total = isPremium ? QUESTIONS.length : Math.min(25, QUESTIONS.length);
+  let score = 0;
+  const list = document.getElementById("reviewList");
+  list.innerHTML="";
+
+  for(let i=0;i<total;i++){
+    if(answers[i]===QUESTIONS[i].a) score++;
+    const div=document.createElement("div");
+    div.className="review-q";
+    div.innerHTML=`
+      <p><b>${i+1}. ${QUESTIONS[i].q}</b></p>
+      <p>Your Answer: <span class="${answers[i]===QUESTIONS[i].a?"correct":"wrong"}">${QUESTIONS[i].o[answers[i]]||"Not Answered"}</span></p>
+      <p>Correct Answer: ${QUESTIONS[i].o[QUESTIONS[i].a]}</p>
+    `;
+    list.appendChild(div);
+  }
+
+  document.getElementById("rScore").innerText = `${score}/${total}`;
+  document.getElementById("rFail").innerText = total-score;
+  document.getElementById("rPercent").innerText = ((score/total)*100).toFixed(1)+"%";
+}
+
+/* ================= BUTTONS ================= */
+document.getElementById("nextBtn").onclick=()=>{
+  if(!isPremium && current===24){
+    Swal.fire("Upgrade Required","Only 25 questions for free users","info");
+    return;
+  }
+  if(current<QUESTIONS.length-1){current++;render();}
+};
+document.getElementById("backBtn").onclick=()=>{if(current>0){current--;render();}};
+document.getElementById("submitBtn").onclick=submitExam;
+
+/* ================= AUTH & INIT ================= */
+onAuthStateChanged(auth, async(user)=>{
+  if(!user){ location.href="login.html"; return; }
+
+  const snap = await getDoc(doc(db,"users",user.uid));
+  isPremium = snap.exists() && snap.data().isPremium===true;
+  if(!isPremium) document.getElementById("freeNote").style.display="block";
+
+  // 1. Select exam time
+  await chooseExamTime();
+
+  // 2. Shuffle questions & init answers
+  shuffle(QUESTIONS);
+  answers = Array(QUESTIONS.length).fill(null);
+
+  // 3. Render and start timer
+  render();
+  startTimer();
+});
+</script>
+
+</body>
+</html>

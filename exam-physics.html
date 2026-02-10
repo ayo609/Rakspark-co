@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>JAMB CBT – English Language</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<!-- SweetAlert2 -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<!-- Google Font -->
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+:root{
+  --navy:#001f3f;
+  --sky:#eaf4ff;
+  --green:#2ed573;
+  --red:#ff4757;
+  --gold:#f1c40f;
+  --gray:#f5f5f5;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+  font-family:Poppins,sans-serif;
+  background:linear-gradient(135deg,#eaf4ff,#d6e9ff);
+  min-height:100vh;
+  padding:20px;
+}
+.container{
+  max-width:1100px;
+  margin:auto;
+  background:#fff;
+  border-radius:25px;
+  box-shadow:0 25px 70px rgba(0,0,0,.15);
+  overflow:hidden;
+}
+header{
+  background:var(--navy);
+  color:#fff;
+  padding:25px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+header h2{font-size:1.6rem}
+#timer{
+  background:#fff;
+  color:var(--navy);
+  padding:8px 18px;
+  border-radius:20px;
+  font-weight:700;
+}
+#freeNote{
+  background:#fff3cd;
+  color:#856404;
+  padding:12px;
+  text-align:center;
+  font-weight:600;
+  display:none;
+}
+.main{
+  padding:30px;
+}
+#progress{
+  height:10px;
+  background:#eee;
+  border-radius:10px;
+  overflow:hidden;
+  margin-bottom:20px;
+}
+#progressFill{
+  height:100%;
+  width:0%;
+  background:linear-gradient(90deg,var(--green),var(--gold));
+}
+#qText{
+  font-size:1.3rem;
+  font-weight:600;
+  margin-bottom:20px;
+}
+.option{
+  background:var(--gray);
+  padding:15px 18px;
+  border-radius:15px;
+  margin-bottom:12px;
+  cursor:pointer;
+  transition:.3s;
+}
+.option:hover{background:#e0e0e0}
+.option.selected{
+  background:var(--navy);
+  color:#fff;
+}
+.nav-btns{
+  display:flex;
+  justify-content:space-between;
+  margin-top:25px;
+}
+button{
+  padding:12px 30px;
+  border:none;
+  border-radius:30px;
+  font-weight:600;
+  cursor:pointer;
+}
+#backBtn{background:#ccc}
+#nextBtn{background:var(--navy);color:#fff}
+#submitBtn{
+  background:var(--green);
+  color:#fff;
+}
+#qNav{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(45px,1fr));
+  gap:10px;
+  margin-top:30px;
+}
+.qbtn{
+  padding:10px;
+  border-radius:10px;
+  border:none;
+  cursor:pointer;
+  font-weight:600;
+}
+.qbtn.current{background:var(--navy);color:#fff}
+.qbtn.answered{background:var(--green);color:#fff}
+.qbtn.locked{background:#ddd;color:#999;cursor:not-allowed}
+.review{
+  display:none;
+  padding:30px;
+}
+.review h2{text-align:center;margin-bottom:20px}
+.score-box{
+  display:flex;
+  justify-content:space-around;
+  margin-bottom:25px;
+  flex-wrap:wrap;
+}
+.score-card{
+  background:var(--gray);
+  padding:20px;
+  border-radius:20px;
+  text-align:center;
+  min-width:160px;
+}
+.correct{color:var(--green);font-weight:700}
+.wrong{color:var(--red);font-weight:700}
+.review-q{
+  background:#f9f9f9;
+  padding:15px;
+  border-radius:15px;
+  margin-bottom:15px;
+}
+.review-q p{margin:6px 0}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<header>
+  <h2>JAMB CBT – Physics</h2>
+  <div id="timer">00:00</div>
+</header>
+
+<div id="freeNote">
+  Free users can attempt only <b>25 questions</b>. Upgrade to Premium for all 99+.
+</div>
+
+<div class="main" id="examSection">
+  <div id="progress"><div id="progressFill"></div></div>
+  <div id="qText"></div>
+  <div id="optionsWrap"></div>
+
+  <div class="nav-btns">
+    <button id="backBtn">Back</button>
+    <button id="nextBtn">Next</button>
+    <button id="submitBtn">Submit</button>
+  </div>
+
+  <div id="qNav"></div>
+</div>
+
+<div class="review" id="reviewSection">
+  <h2>Exam Review</h2>
+  <div class="score-box">
+    <div class="score-card">Score<br><span id="rScore"></span></div>
+    <div class="score-card">Failed<br><span id="rFail"></span></div>
+    <div class="score-card">Percentage<br><span id="rPercent"></span></div>
+  </div>
+  <div id="reviewList"></div>
+</div>
+
+</div>
+
+<script type="module">
+/* ================= FIREBASE ================= */
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js";
+import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDTDWqG_WAXZO7O6yAxV5lOHUkHZp-wwQk",
+  authDomain: "rackspark.firebaseapp.com",
+  projectId: "rackspark",
+  storageBucket: "rackspark.firebasestorage.app",
+  messagingSenderId: "125488977166",
+  appId: "1:125488977166:web:b519b6871df21662c0f35f"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+/* ================= QUESTIONS ================= */
+const QUESTIONS = [
+
+/* ===================== 1–10 ===================== */
+{q:"The SI unit of force is?", o:["Newton","Joule","Pascal","Watt"], a:0, y:2021},
+{q:"Acceleration due to gravity on Earth is approximately?", o:["9.8 m/s²","10 m/s²","9.2 m/s²","9 m/s²"], a:0, y:2021},
+{q:"Speed of light in vacuum?", o:["3 × 10^8 m/s","3 × 10^6 m/s","3 × 10^5 m/s","3 × 10^7 m/s"], a:0, y:2022},
+{q:"Which is a vector quantity?", o:["Velocity","Speed","Distance","Time"], a:0, y:2022},
+{q:"Unit of electric current is?", o:["Ampere","Coulomb","Volt","Ohm"], a:0, y:2023},
+{q:"The formula for kinetic energy?", o:["1/2 mv²","mv²","1/2 mv","mgh"], a:0, y:2023},
+{q:"Work done is measured in?", o:["Joule","Newton","Watt","Pascal"], a:0, y:2021},
+{q:"Frequency of wave is?", o:["Number of oscillations per second","Wavelength","Speed × Time","Amplitude"], a:0, y:2022},
+{q:"Which law explains current-voltage relationship?", o:["Ohm’s Law","Newton’s Law","Faraday’s Law","Hooke’s Law"], a:0, y:2022},
+{q:"Unit of pressure is?", o:["Pascal","Newton","Joule","Watt"], a:0, y:2023},
+
+/* ===================== 11–20 ===================== */
+{q:"If mass doubles, weight?", o:["Doubles","Halves","Remains","Quadruples"], a:0, y:2021},
+{q:"Acceleration formula?", o:["Change in velocity / time","Velocity / distance","Force / mass","Velocity × time"], a:0, y:2021},
+{q:"Unit of energy?", o:["Joule","Newton","Ampere","Tesla"], a:0, y:2022},
+{q:"Which is a scalar quantity?", o:["Speed","Velocity","Acceleration","Force"], a:0, y:2022},
+{q:"Ohm’s law formula?", o:["V = IR","V = I/R","I = VR","R = IV"], a:0, y:2023},
+{q:"Displacement formula?", o:["Final position - Initial position","Distance × Time","Velocity × Acceleration","Mass × Gravity"], a:0, y:2023},
+{q:"Power formula?", o:["Work / Time","Force × Distance","Energy × Time","Voltage × Current"], a:0, y:2021},
+{q:"Unit of frequency?", o:["Hertz","Newton","Joule","Tesla"], a:0, y:2022},
+{q:"Light travels fastest in?", o:["Vacuum","Water","Glass","Air"], a:0, y:2022},
+{q:"Momentum formula?", o:["Mass × Velocity","Mass × Acceleration","Force × Distance","Mass / Volume"], a:0, y:2023},
+
+/* ===================== 21–30 ===================== */
+{q:"If velocity = 20 m/s and time = 5s, displacement?", o:["100m","25m","200m","50m"], a:0, y:2021},
+{q:"Work done = Force × ?", o:["Distance","Time","Velocity","Acceleration"], a:0, y:2021},
+{q:"Acceleration due to gravity symbol?", o:["g","a","v","G"], a:0, y:2022},
+{q:"Energy possessed by body due to motion?", o:["Kinetic Energy","Potential Energy","Mechanical Energy","Thermal Energy"], a:0, y:2022},
+{q:"Unit of capacitance?", o:["Farad","Henry","Volt","Ohm"], a:0, y:2023},
+{q:"Which wave needs medium?", o:["Mechanical Wave","Electromagnetic Wave","Light","Radio Wave"], a:0, y:2023},
+{q:"Newton’s 1st law is about?", o:["Inertia","F=ma","Action-reaction","Gravity"], a:0, y:2021},
+{q:"Pressure formula?", o:["Force / Area","Mass × Acceleration","Force × Distance","Weight / Area"], a:0, y:2022},
+{q:"Which is renewable energy?", o:["Solar","Coal","Petrol","Natural Gas"], a:0, y:2022},
+{q:"Unit of magnetic flux?", o:["Weber","Tesla","Henry","Ampere"], a:0, y:2023},
+
+/* ===================== 31–40 ===================== */
+{q:"Ohm is unit of?", o:["Resistance","Voltage","Current","Power"], a:0, y:2021},
+{q:"Work done when force=10N, distance=5m?", o:["50J","15J","25J","5J"], a:0, y:2021},
+{q:"Hooke’s law states?", o:["F=kx","F=ma","V=IR","P=mv"], a:0, y:2022},
+{q:"Unit of electric charge?", o:["Coulomb","Ampere","Volt","Ohm"], a:0, y:2022},
+{q:"Sound travels fastest in?", o:["Solids","Liquids","Gases","Vacuum"], a:0, y:2023},
+{q:"Frequency and period relationship?", o:["f = 1/T","f = T","f = T²","f = 2T"], a:0, y:2023},
+{q:"Newton’s 3rd law states?", o:["Action=Reaction","F=ma","Energy conserved","Inertia"], a:0, y:2021},
+{q:"Unit of work?", o:["Joule","Newton","Watt","Volt"], a:0, y:2022},
+{q:"Potential energy formula?", o:["mgh","1/2 mv²","F×d","mv"], a:0, y:2022},
+{q:"Which is transverse wave?", o:["Light","Sound","Water in pipe","Earthquake P-wave"], a:0, y:2023},
+
+/* ===================== 41–50 ===================== */
+{q:"Acceleration = 10 m/s², initial v=0, time=5s, final v?", o:["50 m/s","10 m/s","25 m/s","5 m/s"], a:0, y:2021},
+{q:"Unit of density?", o:["kg/m³","kg","m³","g"], a:0, y:2021},
+{q:"Force required to accelerate 2kg mass at 5 m/s²?", o:["10N","5N","15N","20N"], a:0, y:2022},
+{q:"1N = ?", o:["1 kg·m/s²","1 kg·m²/s²","1 kg·m/s","1 kg·m²/s"], a:0, y:2022},
+{q:"Magnetic field unit?", o:["Tesla","Weber","Ampere","Farad"], a:0, y:2023},
+{q:"Ohm’s law explains?", o:["V-I relationship","F=ma","Gravity","Energy"], a:0, y:2023},
+{q:"Velocity-time graph slope = ?", o:["Acceleration","Displacement","Speed","Force"], a:0, y:2021},
+{q:"Unit of electric power?", o:["Watt","Joule","Volt","Ampere"], a:0, y:2022},
+{q:"Density formula?", o:["Mass / Volume","Mass × Volume","Mass + Volume","Volume / Mass"], a:0, y:2022},
+{q:"Light year measures?", o:["Distance","Time","Speed","Energy"], a:0, y:2023},
+
+/* ===================== 51–60 ===================== */
+{q:"SI unit of frequency?", o:["Hertz","Newton","Ampere","Tesla"], a:0, y:2021},
+{q:"Newton’s 2nd law formula?", o:["F=ma","F=m/v","F=m+v","F=m/v"], a:0, y:2021},
+{q:"Unit of energy?", o:["Joule","Newton","Watt","Pascal"], a:0, y:2022},
+{q:"Weight formula?", o:["W=mg","W=mv²","W=1/2mv²","W=F/a"], a:0, y:2022},
+{q:"Simple pendulum period formula?", o:["T=2π√(l/g)","T=√(l/g)","T=2l/g","T=2πl"], a:0, y:2023},
+{q:"Unit of capacitance?", o:["Farad","Henry","Volt","Ohm"], a:0, y:2023},
+{q:"Voltage formula?", o:["V=IR","V=I/R","V=I+R","V=R/I"], a:0, y:2021},
+{q:"Power in electrical circuit?", o:["P=VI","P=V+I","P=V/I","P=V-I"], a:0, y:2022},
+{q:"Work done by 20N force through 3m?", o:["60J","23J","17J","20J"], a:0, y:2022},
+{q:"Unit of electric resistance?", o:["Ohm","Ampere","Volt","Joule"], a:0, y:2023},
+
+/* ===================== 61–70 ===================== */
+{q:"Frequency = 50Hz, period?", o:["0.02s","0.2s","0.5s","2s"], a:0, y:2021},
+{q:"Distance = speed × time, symbolically?", o:["s=vt","s=at","s=uv","s=2vt"], a:0, y:2021},
+{q:"Wave velocity = ?", o:["fλ","v/f","f+λ","v-f"], a:0, y:2022},
+{q:"1 Joule = ?", o:["1 N·m","1 N/m","1 Nm²","1 Nm³"], a:0, y:2022},
+{q:"Force of 10N displaces 2m, work done?", o:["20J","10J","12J","15J"], a:0, y:2023},
+{q:"Acceleration formula?", o:["a=(v-u)/t","a=v×t","a=v/u","a=ut"], a:0, y:2023},
+{q:"Unit of momentum?", o:["kg·m/s","kg·m²/s²","N·m","kg·m²/s"], a:0, y:2021},
+{q:"1 Tesla = ?", o:["1 Wb/m²","1 V/m²","1 N/m²","1 A/m"], a:0, y:2022},
+{q:"Work done formula?", o:["W=F×d","W=F/d","W=F×t","W=F+d"], a:0, y:2022},
+{q:"Unit of mechanical power?", o:["Watt","Joule","Newton","Pascal"], a:0, y:2023},
+
+/* ===================== 71–80 ===================== */
+{q:"Unit of energy?", o:["Joule","Watt","Newton","Ampere"], a:0, y:2021},
+{q:"Unit of pressure?", o:["Pascal","Newton","Watt","Joule"], a:0, y:2021},
+{q:"Density = ?", o:["Mass/Volume","Mass×Volume","Volume/Mass","Mass+Volume"], a:0, y:2022},
+{q:"Electric field unit?", o:["N/C","V/A","J/C","W/m²"], a:0, y:2022},
+{q:"Magnetic flux = ?", o:["B×A","B/A","A/B","B+A"], a:0, y:2023},
+{q:"Voltage unit?", o:["Volt","Ampere","Ohm","Farad"], a:0, y:2023},
+{q:"Energy of photon?", o:["E=hf","E=mv²","E=1/2mv²","E=mgh"], a:0, y:2021},
+{q:"Unit of inductance?", o:["Henry","Farad","Volt","Ampere"], a:0, y:2022},
+{q:"Speed formula?", o:["v=d/t","v=t/d","v=at","v=a/t"], a:0, y:2022},
+{q:"Acceleration due to gravity symbol?", o:["g","a","v","G"], a:0, y:2023},
+
+/* ===================== 81–90 ===================== */
+{q:"Hooke’s law constant unit?", o:["N/m","Nm","J","Pa"], a:0, y:2021},
+{q:"Unit of electric current?", o:["Ampere","Volt","Ohm","Coulomb"], a:0, y:2021},
+{q:"Energy formula?", o:["E=1/2mv²","E=mgh","E=F×d","All"], a:3, y:2022},
+{q:"Unit of work?", o:["Joule","Newton","Watt","Tesla"], a:0, y:2022},
+{q:"Unit of magnetic field?", o:["Tesla","Weber","Ampere","Henry"], a:0, y:2023},
+{q:"Which wave is longitudinal?", o:["Sound","Light","Water surface","Light wave"], a:0, y:2023},
+{q:"Electric potential unit?", o:["Volt","Ampere","Ohm","Joule"], a:0, y:2021},
+{q:"Power = ?", o:["Work / Time","Force × Distance","Energy × Time","Voltage × Current"], a:0, y:2022},
+{q:"Unit of resistance?", o:["Ohm","Volt","Ampere","Joule"], a:0, y:2022},
+{q:"Mechanical advantage = ?", o:["Load/Effort","Effort/Load","Load×Effort","Load+Effort"], a:0, y:2023},
+
+/* ===================== 91–100 ===================== */
+{q:"Speed of sound at 0°C?", o:["331 m/s","300 m/s","340 m/s","350 m/s"], a:0, y:2021},
+{q:"Gravitational potential energy?", o:["mgh","1/2mv²","mv","F×d"], a:0, y:2021},
+{q:"Electric power formula?", o:["P=VI","P=I/V","P=V/I","P=V+I"], a:0, y:2022},
+{q:"Unit of frequency?", o:["Hertz","Newton","Joule","Tesla"], a:0, y:2022},
+{q:"Wavelength formula?", o:["λ=v/f","λ=f/v","λ=v×f","λ=f+v"], a:0, y:2023},
+{q:"Unit of charge?", o:["Coulomb","Ampere","Volt","Ohm"], a:0, y:2023},
+{q:"Momentum formula?", o:["p=mv","p=ma","p=F×t","p=mv²"], a:0, y:2024},
+{q:"Time period formula?", o:["T=1/f","T=f","T=f²","T²=f"], a:0, y:2024},
+{q:"Gravitational constant?", o:["6.67×10^-11 N·m²/kg²","9.8 m/s²","3×10^8 m/s","1.6×10^-19 C"], a:0, y:2025},
+{q:"Coulomb’s law formula?", o:["F=kq₁q₂/r²","F=ma","V=IR","P=VI"], a:0, y:2025}
+
+];
+
+/* ================= VARIABLES ================= */
+let current = 0;
+let answers = [];
+let isPremium = false;
+let time = 0;          // exam duration in seconds
+let selectedMinutes = 0;
+let timerInt;
+let timerStarted = false;
+
+const qText = document.getElementById("qText");
+const optionsWrap = document.getElementById("optionsWrap");
+const qNav = document.getElementById("qNav");
+const progressFill = document.getElementById("progressFill");
+const timerEl = document.getElementById("timer");
+
+/* ================= UTILITY ================= */
+function shuffle(array){
+  for(let i=array.length-1;i>0;i--){
+    const j=Math.floor(Math.random()*(i+1));
+    [array[i],array[j]]=[array[j],array[i]];
+  }
+}
+
+/* ================= RENDER QUESTIONS ================= */
+function render(){
+  const q = QUESTIONS[current];
+  qText.innerHTML = `${current+1}. ${q.q} <small>${q.y ? "(Year "+q.y+")":""}</small>`;
+  optionsWrap.innerHTML="";
+  q.o.forEach((op,i)=>{
+    const d=document.createElement("div");
+    d.className="option";
+    if(answers[current]===i) d.classList.add("selected");
+    d.innerText=op;
+    d.onclick=()=>{answers[current]=i; render();};
+    optionsWrap.appendChild(d);
+  });
+  progressFill.style.width=((answers.filter(a=>a!==null).length/QUESTIONS.length)*100)+"%";
+  buildNav();
+}
+
+function buildNav(){
+  qNav.innerHTML="";
+  for(let i=0;i<QUESTIONS.length;i++){
+    const b=document.createElement("button");
+    b.className="qbtn";
+    if(i===current) b.classList.add("current");
+    if(answers[i]!=null) b.classList.add("answered");
+    if(!isPremium && i>=25){
+      b.classList.add("locked");
+      b.disabled=true;
+    }
+    b.innerText=i+1;
+    b.onclick=()=>{current=i; render();}
+    qNav.appendChild(b);
+  }
+}
+
+/* ================= TIMER ================= */
+async function chooseExamTime(){
+  const { value } = await Swal.fire({
+    title: "Select Exam Duration",
+    text: "Choose your preferred exam time",
+    icon: "info",
+    allowOutsideClick: false,
+    allowEscapeKey: false,
+    confirmButtonText: "Start Exam",
+    input: "radio",
+    inputOptions: {
+      20: "20 Minutes",
+      30: "30 Minutes",
+      40: "40 Minutes",
+      60: "60 Minutes"
+    },
+    inputValidator: (value) => {
+      if (!value) return "Please select a duration";
+    }
+  });
+
+  selectedMinutes = Number(value);
+  time = selectedMinutes * 60;
+}
+
+function startTimer(){
+  if(timerStarted) return;
+  timerStarted = true;
+
+  timerInt = setInterval(()=>{
+    let m = Math.floor(time / 60);
+    let s = time % 60;
+    timerEl.innerText = `${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}`;
+    time--;
+    if(time<0){
+      clearInterval(timerInt);
+      Swal.fire({
+        title:"Time Up!",
+        text:"Your exam has been submitted automatically.",
+        icon:"warning",
+        confirmButtonText:"View Result"
+      }).then(()=>showReview());
+    }
+  },1000);
+}
+
+/* ================= SUBMIT & REVIEW ================= */
+function submitExam(){
+  Swal.fire({
+    title:"Submit Exam?",
+    icon:"warning",
+    showCancelButton:true,
+    confirmButtonText:"Yes Submit"
+  }).then(r=>{
+    if(!r.isConfirmed) return;
+    showReview();
+  });
+}
+
+function showReview(){
+  clearInterval(timerInt);
+  document.getElementById("examSection").style.display="none";
+  document.getElementById("reviewSection").style.display="block";
+
+  const total = isPremium ? QUESTIONS.length : Math.min(25, QUESTIONS.length);
+  let score = 0;
+  const list = document.getElementById("reviewList");
+  list.innerHTML="";
+
+  for(let i=0;i<total;i++){
+    if(answers[i]===QUESTIONS[i].a) score++;
+    const div=document.createElement("div");
+    div.className="review-q";
+    div.innerHTML=`
+      <p><b>${i+1}. ${QUESTIONS[i].q}</b></p>
+      <p>Your Answer: <span class="${answers[i]===QUESTIONS[i].a?"correct":"wrong"}">${QUESTIONS[i].o[answers[i]]||"Not Answered"}</span></p>
+      <p>Correct Answer: ${QUESTIONS[i].o[QUESTIONS[i].a]}</p>
+    `;
+    list.appendChild(div);
+  }
+
+  document.getElementById("rScore").innerText = `${score}/${total}`;
+  document.getElementById("rFail").innerText = total-score;
+  document.getElementById("rPercent").innerText = ((score/total)*100).toFixed(1)+"%";
+}
+
+/* ================= BUTTONS ================= */
+document.getElementById("nextBtn").onclick=()=>{
+  if(!isPremium && current===24){
+    Swal.fire("Upgrade Required","Only 25 questions for free users","info");
+    return;
+  }
+  if(current<QUESTIONS.length-1){current++;render();}
+};
+document.getElementById("backBtn").onclick=()=>{if(current>0){current--;render();}};
+document.getElementById("submitBtn").onclick=submitExam;
+
+/* ================= AUTH & INIT ================= */
+onAuthStateChanged(auth, async(user)=>{
+  if(!user){ location.href="login.html"; return; }
+
+  const snap = await getDoc(doc(db,"users",user.uid));
+  isPremium = snap.exists() && snap.data().isPremium===true;
+  if(!isPremium) document.getElementById("freeNote").style.display="block";
+
+  // 1. Select exam time
+  await chooseExamTime();
+
+  // 2. Shuffle questions & init answers
+  shuffle(QUESTIONS);
+  answers = Array(QUESTIONS.length).fill(null);
+
+  // 3. Render and start timer
+  render();
+  startTimer();
+});
+</script>
+
+</body>
+</html>

@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>JAMB CBT – History </title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<!-- SweetAlert2 -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<!-- Google Font -->
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+:root{
+  --navy:#001f3f;
+  --sky:#eaf4ff;
+  --green:#2ed573;
+  --red:#ff4757;
+  --gold:#f1c40f;
+  --gray:#f5f5f5;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+  font-family:Poppins,sans-serif;
+  background:linear-gradient(135deg,#eaf4ff,#d6e9ff);
+  min-height:100vh;
+  padding:20px;
+}
+.container{
+  max-width:1100px;
+  margin:auto;
+  background:#fff;
+  border-radius:25px;
+  box-shadow:0 25px 70px rgba(0,0,0,.15);
+  overflow:hidden;
+}
+header{
+  background:var(--navy);
+  color:#fff;
+  padding:25px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+header h2{font-size:1.6rem}
+#timer{
+  background:#fff;
+  color:var(--navy);
+  padding:8px 18px;
+  border-radius:20px;
+  font-weight:700;
+}
+#freeNote{
+  background:#fff3cd;
+  color:#856404;
+  padding:12px;
+  text-align:center;
+  font-weight:600;
+  display:none;
+}
+.main{
+  padding:30px;
+}
+#progress{
+  height:10px;
+  background:#eee;
+  border-radius:10px;
+  overflow:hidden;
+  margin-bottom:20px;
+}
+#progressFill{
+  height:100%;
+  width:0%;
+  background:linear-gradient(90deg,var(--green),var(--gold));
+}
+#qText{
+  font-size:1.3rem;
+  font-weight:600;
+  margin-bottom:20px;
+}
+.option{
+  background:var(--gray);
+  padding:15px 18px;
+  border-radius:15px;
+  margin-bottom:12px;
+  cursor:pointer;
+  transition:.3s;
+}
+.option:hover{background:#e0e0e0}
+.option.selected{
+  background:var(--navy);
+  color:#fff;
+}
+.nav-btns{
+  display:flex;
+  justify-content:space-between;
+  margin-top:25px;
+}
+button{
+  padding:12px 30px;
+  border:none;
+  border-radius:30px;
+  font-weight:600;
+  cursor:pointer;
+}
+#backBtn{background:#ccc}
+#nextBtn{background:var(--navy);color:#fff}
+#submitBtn{
+  background:var(--green);
+  color:#fff;
+}
+#qNav{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(45px,1fr));
+  gap:10px;
+  margin-top:30px;
+}
+.qbtn{
+  padding:10px;
+  border-radius:10px;
+  border:none;
+  cursor:pointer;
+  font-weight:600;
+}
+.qbtn.current{background:var(--navy);color:#fff}
+.qbtn.answered{background:var(--green);color:#fff}
+.qbtn.locked{background:#ddd;color:#999;cursor:not-allowed}
+.review{
+  display:none;
+  padding:30px;
+}
+.review h2{text-align:center;margin-bottom:20px}
+.score-box{
+  display:flex;
+  justify-content:space-around;
+  margin-bottom:25px;
+  flex-wrap:wrap;
+}
+.score-card{
+  background:var(--gray);
+  padding:20px;
+  border-radius:20px;
+  text-align:center;
+  min-width:160px;
+}
+.correct{color:var(--green);font-weight:700}
+.wrong{color:var(--red);font-weight:700}
+.review-q{
+  background:#f9f9f9;
+  padding:15px;
+  border-radius:15px;
+  margin-bottom:15px;
+}
+.review-q p{margin:6px 0}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<header>
+  <h2>JAMB CBT – History</h2>
+  <div id="timer">00:00</div>
+</header>
+
+<div id="freeNote">
+  Free users can attempt only <b>25 questions</b>. Upgrade to Premium for all 99+.
+</div>
+
+<div class="main" id="examSection">
+  <div id="progress"><div id="progressFill"></div></div>
+  <div id="qText"></div>
+  <div id="optionsWrap"></div>
+
+  <div class="nav-btns">
+    <button id="backBtn">Back</button>
+    <button id="nextBtn">Next</button>
+    <button id="submitBtn">Submit</button>
+  </div>
+
+  <div id="qNav"></div>
+</div>
+
+<div class="review" id="reviewSection">
+  <h2>Exam Review</h2>
+  <div class="score-box">
+    <div class="score-card">Score<br><span id="rScore"></span></div>
+    <div class="score-card">Failed<br><span id="rFail"></span></div>
+    <div class="score-card">Percentage<br><span id="rPercent"></span></div>
+  </div>
+  <div id="reviewList"></div>
+</div>
+
+</div>
+
+<script type="module">
+/* ================= FIREBASE ================= */
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js";
+import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDTDWqG_WAXZO7O6yAxV5lOHUkHZp-wwQk",
+  authDomain: "rackspark.firebaseapp.com",
+  projectId: "rackspark",
+  storageBucket: "rackspark.firebasestorage.app",
+  messagingSenderId: "125488977166",
+  appId: "1:125488977166:web:b519b6871df21662c0f35f"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+/* ================= QUESTIONS ================= */
+const QUESTIONS = [
+
+/* ===================== 1–10 ===================== */
+{q:"Who was the first President of Nigeria?", o:["Nnamdi Azikiwe","Abubakar Tafawa Balewa","Olusegun Obasanjo","Yakubu Gowon"], a:0, y:2021},
+{q:"The Berlin Conference of 1884–85 regulated?", o:["Partition of Africa","World War I","Trade in Europe","Slavery in America"], a:0, y:2021},
+{q:"Who was the last independent Oba of Lagos?", o:["Oba Dosunmu","Oba Akitoye","Oba Kosoko","Oba Eshugbayi"], a:0, y:2022},
+{q:"The Sokoto Caliphate was established by?", o:["Usman dan Fodio","Muhammad Bello","Ahmadu Bello","Yusuf Bala"], a:0, y:2022},
+{q:"Nigeria gained independence in?", o:["1960","1954","1963","1967"], a:0, y:2023},
+{q:"The main reason for the Transatlantic Slave Trade was?", o:["Labour supply for plantations","Religious expansion","Exploration","Trade in spices"], a:0, y:2023},
+{q:"The first capital of Nigeria was?", o:["Lagos","Abuja","Ibadan","Kano"], a:0, y:2021},
+{q:"The term 'Scramble for Africa' refers to?", o:["European colonization of Africa","Slave trade","African independence","Trade with Asia"], a:0, y:2022},
+{q:"Who led the Maji Maji Rebellion in Tanganyika?", o:["Kinjikitile Ngwale","Shaka Zulu","Menelik II","Samori Toure"], a:0, y:2023},
+{q:"The Battle of Adwa was fought in?", o:["Ethiopia","Egypt","Sudan","Morocco"], a:0, y:2023},
+
+/* ===================== 11–20 ===================== */
+{q:"The first military head of state in Nigeria was?", o:["Major General Johnson Aguiyi-Ironsi","Yakubu Gowon","Murtala Mohammed","Olusegun Obasanjo"], a:0, y:2021},
+{q:"The Hausa states were mainly located in?", o:["Northern Nigeria","Western Nigeria","Eastern Nigeria","Southern Nigeria"], a:0, y:2021},
+{q:"The Biafra War took place between?", o:["1967–1970","1960–1963","1975–1979","1980–1985"], a:0, y:2022},
+{q:"The Ijaw people are predominantly found in?", o:["Niger Delta","Sokoto","Kano","Kaduna"], a:0, y:2022},
+{q:"The British used which system to administer Nigeria indirectly?", o:["Indirect Rule","Direct Rule","Federation","Protectorate"], a:0, y:2023},
+{q:"The Aro Confederacy was famous for?", o:["Trade and religious influence","Military conquests","Agriculture","Mining"], a:0, y:2023},
+{q:"Who founded the Oyo Empire?", o:["Oranyan","Shaka Zulu","Sunni Ali","Oba Eweka"], a:0, y:2021},
+{q:"The Ashanti Kingdom is located in?", o:["Ghana","Nigeria","Mali","Senegal"], a:0, y:2022},
+{q:"The first European to reach Nigeria's coast was?", o:["Portuguese","Dutch","British","French"], a:0, y:2023},
+{q:"The Berlin Conference was convened by?", o:["Otto von Bismarck","Queen Victoria","Napoleon Bonaparte","King Leopold II"], a:0, y:2023},
+
+/* ===================== 21–30 ===================== */
+{q:"The Yoruba people are mainly found in?", o:["Southwest Nigeria","Northeast Nigeria","Southeast Nigeria","Northwest Nigeria"], a:0, y:2021},
+{q:"The Igbo people predominantly inhabit?", o:["Southeast Nigeria","Southwest Nigeria","Northwest Nigeria","Northeast Nigeria"], a:0, y:2021},
+{q:"Which European country colonized Sierra Leone?", o:["Britain","France","Portugal","Germany"], a:0, y:2022},
+{q:"The Hausa-Fulani are mostly found in?", o:["Northern Nigeria","Southern Nigeria","Western Nigeria","Eastern Nigeria"], a:0, y:2022},
+{q:"The Trans-Saharan trade was mainly for?", o:["Gold and salt","Spices","Slaves to America","Textiles"], a:0, y:2023},
+{q:"The Oyo Empire was known for?", o:["Military organization","Maritime trade","Oil palm production","Slave trade only"], a:0, y:2023},
+{q:"The Sokoto Caliphate was established in?", o:["1804","1750","1900","1884"], a:0, y:2021},
+{q:"The Kingdom of Benin is famous for?", o:["Bronze sculptures","Ivory trade","Salt mining","Textile weaving"], a:0, y:2022},
+{q:"Who was the first Prime Minister of Nigeria?", o:["Abubakar Tafawa Balewa","Nnamdi Azikiwe","Ahmadu Bello","Olusegun Obasanjo"], a:0, y:2023},
+{q:"The Nigerian National Democratic Party was founded by?", o:["Nnamdi Azikiwe","Herbert Macaulay","Obafemi Awolowo","Ahmadu Bello"], a:1, y:2023},
+
+/* ===================== 31–40 ===================== */
+{q:"The British amalgamated Northern and Southern Nigeria in?", o:["1914","1900","1922","1939"], a:0, y:2021},
+{q:"Who led the Aba Women Riot of 1929?", o:["Igbo women","Yoruba women","Hausa women","Ijaw women"], a:0, y:2021},
+{q:"The Kingdom of Nri is associated with which ethnic group?", o:["Igbo","Yoruba","Hausa","Kanuri"], a:0, y:2022},
+{q:"Which Nigerian nationalist was known as the 'Father of Nigerian Nationalism'?", o:["Herbert Macaulay","Nnamdi Azikiwe","Obafemi Awolowo","Ahmadu Bello"], a:0, y:2022},
+{q:"The British Southern Protectorate of Nigeria was created in?", o:["1900","1890","1914","1922"], a:0, y:2023},
+{q:"The League of Nations was established after?", o:["World War I","World War II","The Napoleonic Wars","Franco-Prussian War"], a:0, y:2023},
+{q:"The Indirect Rule system was pioneered by?", o:["Lord Lugard","Queen Victoria","Lord Frederick Lugard","Winston Churchill"], a:0, y:2021},
+{q:"The Yoruba Kingdom of Ife is famous for?", o:["Bronze and terracotta art","Salt trade","Gold trade","Ivory trade"], a:0, y:2022},
+{q:"The Ashanti Empire was located in?", o:["Ghana","Nigeria","Togo","Benin"], a:0, y:2023},
+{q:"The Sokoto Caliphate was known for?", o:["Islamic administration and scholarship","Christian missions","Slave raiding only","Mining"], a:0, y:2023},
+
+/* ===================== 41–50 ===================== */
+{q:"The Anglo-Ashanti wars were fought between?", o:["British and Ashanti","French and Ashanti","British and Yoruba","British and Hausa"], a:0, y:2021},
+{q:"The Kingdom of Dahomey is located in?", o:["Benin Republic","Nigeria","Ghana","Togo"], a:0, y:2021},
+{q:"The earliest European traders to Nigeria were?", o:["Portuguese","British","Dutch","French"], a:0, y:2022},
+{q:"The British officially colonized Lagos in?", o:["1861","1850","1875","1900"], a:0, y:2022},
+{q:"The Hausa states were brought under British control by?", o:["Lord Lugard","Herbert Macaulay","Nnamdi Azikiwe","Ahmadu Bello"], a:0, y:2023},
+{q:"The famous Nigerian activist Herbert Macaulay founded?", o:["NNDP","NCNC","Action Group","PRP"], a:0, y:2023},
+{q:"The Oyo Empire used which system of government?", o:["Monarchical","Democratic","Federal","Republican"], a:0, y:2021},
+{q:"The Battle of Trafalgar occurred in?", o:["1805","1815","1798","1820"], a:0, y:2022},
+{q:"The first European to explore the Niger River was?", o:["Mungo Park","David Livingstone","Henry Morton Stanley","John Hawkins"], a:0, y:2023},
+{q:"The French Revolution began in?", o:["1789","1799","1804","1815"], a:0, y:2023},
+
+/* ===================== 51–60 ===================== */
+{q:"The American Revolution began in?", o:["1775","1789","1800","1812"], a:0, y:2021},
+{q:"Who was the first Governor-General of independent Nigeria?", o:["Nnamdi Azikiwe","Abubakar Tafawa Balewa","Olusegun Obasanjo","Yakubu Gowon"], a:0, y:2021},
+{q:"The Kingdom of Kanem-Bornu was located in?", o:["Northern Nigeria","Southern Nigeria","Southwest Nigeria","Southeast Nigeria"], a:0, y:2022},
+{q:"The Igbo Women’s War was sparked by?", o:["Warrant chiefs","Taxation policies","Colonial interference","All of the above"], a:3, y:2022},
+{q:"The famous nationalist Obafemi Awolowo led which party?", o:["Action Group","NNDP","NCNC","PRP"], a:0, y:2023},
+{q:"The Biafra War was also called?", o:["Nigerian Civil War","First World War","Second World War","Rwandan Genocide"], a:0, y:2023},
+{q:"The Hausa-Fulani were mainly?", o:["Muslims","Christians","Animists","Jews"], a:0, y:2021},
+{q:"The Sokoto Caliphate adopted which religion?", o:["Islam","Christianity","Animism","Judaism"], a:0, y:2022},
+{q:"The Kingdom of Benin was famous for?", o:["Bronze sculptures","Gold trade","Silver trade","Cotton trade"], a:0, y:2023},
+{q:"The Nigerian National Democratic Party (NNDP) was founded in?", o:["1923","1914","1939","1945"], a:0, y:2023},
+
+/* ===================== 61–70 ===================== */
+{q:"The Aba Women's Riot was in?", o:["1929","1914","1939","1945"], a:0, y:2021},
+{q:"The first Nigerian to become Governor-General was?", o:["Nnamdi Azikiwe","Abubakar Tafawa Balewa","Obafemi Awolowo","Ahmadu Bello"], a:0, y:2021},
+{q:"The Kingdom of Ife is located in?", o:["Southwest Nigeria","Southeast Nigeria","Northern Nigeria","Midwest Nigeria"], a:0, y:2022},
+{q:"The British protectorate in Northern Nigeria was created in?", o:["1900","1890","1914","1920"], a:0, y:2022},
+{q:"The Berlin Conference was convened in?", o:["1884","1880","1890","1900"], a:0, y:2023},
+{q:"Who led the 1897 British expedition against Benin?", o:["Admiral Rawson","Lord Lugard","Herbert Macaulay","Nnamdi Azikiwe"], a:0, y:2023},
+{q:"The first newspaper in Nigeria was?", o:["The Lagos Weekly Record","Nigerian Tribune","Daily Times","New Nigerian"], a:0, y:2021},
+{q:"The Atlantic slave trade was abolished in?", o:["1807","1850","1900","1833"], a:0, y:2022},
+{q:"The Gold Coast became Ghana in?", o:["1957","1960","1963","1967"], a:0, y:2023},
+{q:"The first President of Ghana was?", o:["Kwame Nkrumah","Julius K. Nyerere","Haile Selassie","Patrice Lumumba"], a:0, y:2023},
+
+/* ===================== 71–80 ===================== */
+{q:"Who discovered the mouth of the Niger River?", o:["Mungo Park","David Livingstone","Henry Morton Stanley","John Hawkins"], a:0, y:2021},
+{q:"The Kanem-Bornu Empire was ruled by?", o:["Mai","Oba","Sarkin","Emir"], a:0, y:2021},
+{q:"The Ashanti Empire was located in?", o:["Ghana","Nigeria","Togo","Benin"], a:0, y:2022},
+{q:"The Hausa city-states traded mainly in?", o:["Salt and textiles","Oil palm","Gold only","Ivory only"], a:0, y:2022},
+{q:"The Yoruba city of Ile-Ife is known for?", o:["Art and culture","Trade","Agriculture","Mining"], a:0, y:2023},
+{q:"The Oyo Empire was destroyed by?", o:["Fulani Jihadists","British colonists","French invaders","Portuguese explorers"], a:0, y:2023},
+{q:"The Kingdom of Dahomey is located in?", o:["Benin Republic","Nigeria","Ghana","Togo"], a:0, y:2021},
+{q:"Who led the anti-colonial movement in Nigeria?", o:["Herbert Macaulay","Nnamdi Azikiwe","Obafemi Awolowo","All of the above"], a:3, y:2022},
+{q:"The first European to reach the Niger River was?", o:["Mungo Park","David Livingstone","Henry Morton Stanley","John Hawkins"], a:0, y:2023},
+{q:"The Biafra War ended in?", o:["1970","1967","1965","1975"], a:0, y:2023},
+
+/* ===================== 81–90 ===================== */
+{q:"The British amalgamated Nigeria in?", o:["1914","1900","1922","1930"], a:0, y:2021},
+{q:"The first Governor-General of Nigeria was?", o:["Nnamdi Azikiwe","Abubakar Tafawa Balewa","Olusegun Obasanjo","Yakubu Gowon"], a:0, y:2021},
+{q:"The French colonized which West African country?", o:["Senegal","Ghana","Nigeria","Sierra Leone"], a:0, y:2022},
+{q:"The Portuguese first arrived in Nigeria in?", o:["1472","1492","1500","1600"], a:0, y:2022},
+{q:"Who led the 1906 Maji Maji Rebellion?", o:["Kinjikitile Ngwale","Shaka Zulu","Menelik II","Samori Toure"], a:0, y:2023},
+{q:"The Battle of Adwa was fought in?", o:["Ethiopia","Egypt","Sudan","Morocco"], a:0, y:2023},
+{q:"The League of Nations replaced which organization?", o:["The Concert of Europe","UNESCO","NATO","EU"], a:0, y:2021},
+{q:"The First World War began in?", o:["1914","1918","1939","1945"], a:0, y:2022},
+{q:"The Second World War ended in?", o:["1945","1939","1918","1914"], a:0, y:2023},
+{q:"The Cold War was mainly between?", o:["USA and USSR","USA and UK","UK and USSR","USA and China"], a:0, y:2023},
+
+/* ===================== 91–100 ===================== */
+{q:"The independence of Nigeria was on?", o:["1st October 1960","1st January 1960","1st October 1963","1st January 1963"], a:0, y:2021},
+{q:"The first military head of state in Nigeria was?", o:["Major General Johnson Aguiyi-Ironsi","Yakubu Gowon","Murtala Mohammed","Olusegun Obasanjo"], a:0, y:2021},
+{q:"Who succeeded Johnson Aguiyi-Ironsi after the counter-coup?", o:["Yakubu Gowon","Murtala Mohammed","Olusegun Obasanjo","Sani Abacha"], a:0, y:2022},
+{q:"The Nigerian National Democratic Party (NNDP) was founded in?", o:["1923","1914","1939","1945"], a:0, y:2022},
+{q:"The Biafra War started in?", o:["1967","1960","1963","1970"], a:0, y:2023},
+{q:"The Sokoto Caliphate was founded in?", o:["1804","1750","1900","1884"], a:0, y:2023},
+{q:"The Oyo Empire reached its peak under?", o:["Alaafin Abiodun","Shaka Zulu","Sunni Ali","Oba Eweka"], a:0, y:2021},
+{q:"The Hausa-Fulani are predominantly?", o:["Muslims","Christians","Animists","Jews"], a:0, y:2022},
+{q:"The first Nationalist Party in Nigeria was?", o:["NNDP","NCNC","Action Group","PRP"], a:0, y:2023},
+{q:"The Nigerian Civil War is also known as?", o:["Biafra War","First World War","Second World War","Rwandan Genocide"], a:0, y:2023}
+
+];
+
+/* ================= VARIABLES ================= */
+let current = 0;
+let answers = [];
+let isPremium = false;
+let time = 0;          // exam duration in seconds
+let selectedMinutes = 0;
+let timerInt;
+let timerStarted = false;
+
+const qText = document.getElementById("qText");
+const optionsWrap = document.getElementById("optionsWrap");
+const qNav = document.getElementById("qNav");
+const progressFill = document.getElementById("progressFill");
+const timerEl = document.getElementById("timer");
+
+/* ================= UTILITY ================= */
+function shuffle(array){
+  for(let i=array.length-1;i>0;i--){
+    const j=Math.floor(Math.random()*(i+1));
+    [array[i],array[j]]=[array[j],array[i]];
+  }
+}
+
+/* ================= RENDER QUESTIONS ================= */
+function render(){
+  const q = QUESTIONS[current];
+  qText.innerHTML = `${current+1}. ${q.q} <small>${q.y ? "(Year "+q.y+")":""}</small>`;
+  optionsWrap.innerHTML="";
+  q.o.forEach((op,i)=>{
+    const d=document.createElement("div");
+    d.className="option";
+    if(answers[current]===i) d.classList.add("selected");
+    d.innerText=op;
+    d.onclick=()=>{answers[current]=i; render();};
+    optionsWrap.appendChild(d);
+  });
+  progressFill.style.width=((answers.filter(a=>a!==null).length/QUESTIONS.length)*100)+"%";
+  buildNav();
+}
+
+function buildNav(){
+  qNav.innerHTML="";
+  for(let i=0;i<QUESTIONS.length;i++){
+    const b=document.createElement("button");
+    b.className="qbtn";
+    if(i===current) b.classList.add("current");
+    if(answers[i]!=null) b.classList.add("answered");
+    if(!isPremium && i>=25){
+      b.classList.add("locked");
+      b.disabled=true;
+    }
+    b.innerText=i+1;
+    b.onclick=()=>{current=i; render();}
+    qNav.appendChild(b);
+  }
+}
+
+/* ================= TIMER ================= */
+async function chooseExamTime(){
+  const { value } = await Swal.fire({
+    title: "Select Exam Duration",
+    text: "Choose your preferred exam time",
+    icon: "info",
+    allowOutsideClick: false,
+    allowEscapeKey: false,
+    confirmButtonText: "Start Exam",
+    input: "radio",
+    inputOptions: {
+      20: "20 Minutes",
+      30: "30 Minutes",
+      40: "40 Minutes",
+      60: "60 Minutes"
+    },
+    inputValidator: (value) => {
+      if (!value) return "Please select a duration";
+    }
+  });
+
+  selectedMinutes = Number(value);
+  time = selectedMinutes * 60;
+}
+
+function startTimer(){
+  if(timerStarted) return;
+  timerStarted = true;
+
+  timerInt = setInterval(()=>{
+    let m = Math.floor(time / 60);
+    let s = time % 60;
+    timerEl.innerText = `${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}`;
+    time--;
+    if(time<0){
+      clearInterval(timerInt);
+      Swal.fire({
+        title:"Time Up!",
+        text:"Your exam has been submitted automatically.",
+        icon:"warning",
+        confirmButtonText:"View Result"
+      }).then(()=>showReview());
+    }
+  },1000);
+}
+
+/* ================= SUBMIT & REVIEW ================= */
+function submitExam(){
+  Swal.fire({
+    title:"Submit Exam?",
+    icon:"warning",
+    showCancelButton:true,
+    confirmButtonText:"Yes Submit"
+  }).then(r=>{
+    if(!r.isConfirmed) return;
+    showReview();
+  });
+}
+
+function showReview(){
+  clearInterval(timerInt);
+  document.getElementById("examSection").style.display="none";
+  document.getElementById("reviewSection").style.display="block";
+
+  const total = isPremium ? QUESTIONS.length : Math.min(25, QUESTIONS.length);
+  let score = 0;
+  const list = document.getElementById("reviewList");
+  list.innerHTML="";
+
+  for(let i=0;i<total;i++){
+    if(answers[i]===QUESTIONS[i].a) score++;
+    const div=document.createElement("div");
+    div.className="review-q";
+    div.innerHTML=`
+      <p><b>${i+1}. ${QUESTIONS[i].q}</b></p>
+      <p>Your Answer: <span class="${answers[i]===QUESTIONS[i].a?"correct":"wrong"}">${QUESTIONS[i].o[answers[i]]||"Not Answered"}</span></p>
+      <p>Correct Answer: ${QUESTIONS[i].o[QUESTIONS[i].a]}</p>
+    `;
+    list.appendChild(div);
+  }
+
+  document.getElementById("rScore").innerText = `${score}/${total}`;
+  document.getElementById("rFail").innerText = total-score;
+  document.getElementById("rPercent").innerText = ((score/total)*100).toFixed(1)+"%";
+}
+
+/* ================= BUTTONS ================= */
+document.getElementById("nextBtn").onclick=()=>{
+  if(!isPremium && current===24){
+    Swal.fire("Upgrade Required","Only 25 questions for free users","info");
+    return;
+  }
+  if(current<QUESTIONS.length-1){current++;render();}
+};
+document.getElementById("backBtn").onclick=()=>{if(current>0){current--;render();}};
+document.getElementById("submitBtn").onclick=submitExam;
+
+/* ================= AUTH & INIT ================= */
+onAuthStateChanged(auth, async(user)=>{
+  if(!user){ location.href="login.html"; return; }
+
+  const snap = await getDoc(doc(db,"users",user.uid));
+  isPremium = snap.exists() && snap.data().isPremium===true;
+  if(!isPremium) document.getElementById("freeNote").style.display="block";
+
+  // 1. Select exam time
+  await chooseExamTime();
+
+  // 2. Shuffle questions & init answers
+  shuffle(QUESTIONS);
+  answers = Array(QUESTIONS.length).fill(null);
+
+  // 3. Render and start timer
+  render();
+  startTimer();
+});
+</script>
+
+</body>
+</html>

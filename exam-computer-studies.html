@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>JAMB CBT – Computer Studies </title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<!-- SweetAlert2 -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<!-- Google Font -->
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+:root{
+  --navy:#001f3f;
+  --sky:#eaf4ff;
+  --green:#2ed573;
+  --red:#ff4757;
+  --gold:#f1c40f;
+  --gray:#f5f5f5;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+  font-family:Poppins,sans-serif;
+  background:linear-gradient(135deg,#eaf4ff,#d6e9ff);
+  min-height:100vh;
+  padding:20px;
+}
+.container{
+  max-width:1100px;
+  margin:auto;
+  background:#fff;
+  border-radius:25px;
+  box-shadow:0 25px 70px rgba(0,0,0,.15);
+  overflow:hidden;
+}
+header{
+  background:var(--navy);
+  color:#fff;
+  padding:25px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+header h2{font-size:1.6rem}
+#timer{
+  background:#fff;
+  color:var(--navy);
+  padding:8px 18px;
+  border-radius:20px;
+  font-weight:700;
+}
+#freeNote{
+  background:#fff3cd;
+  color:#856404;
+  padding:12px;
+  text-align:center;
+  font-weight:600;
+  display:none;
+}
+.main{
+  padding:30px;
+}
+#progress{
+  height:10px;
+  background:#eee;
+  border-radius:10px;
+  overflow:hidden;
+  margin-bottom:20px;
+}
+#progressFill{
+  height:100%;
+  width:0%;
+  background:linear-gradient(90deg,var(--green),var(--gold));
+}
+#qText{
+  font-size:1.3rem;
+  font-weight:600;
+  margin-bottom:20px;
+}
+.option{
+  background:var(--gray);
+  padding:15px 18px;
+  border-radius:15px;
+  margin-bottom:12px;
+  cursor:pointer;
+  transition:.3s;
+}
+.option:hover{background:#e0e0e0}
+.option.selected{
+  background:var(--navy);
+  color:#fff;
+}
+.nav-btns{
+  display:flex;
+  justify-content:space-between;
+  margin-top:25px;
+}
+button{
+  padding:12px 30px;
+  border:none;
+  border-radius:30px;
+  font-weight:600;
+  cursor:pointer;
+}
+#backBtn{background:#ccc}
+#nextBtn{background:var(--navy);color:#fff}
+#submitBtn{
+  background:var(--green);
+  color:#fff;
+}
+#qNav{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(45px,1fr));
+  gap:10px;
+  margin-top:30px;
+}
+.qbtn{
+  padding:10px;
+  border-radius:10px;
+  border:none;
+  cursor:pointer;
+  font-weight:600;
+}
+.qbtn.current{background:var(--navy);color:#fff}
+.qbtn.answered{background:var(--green);color:#fff}
+.qbtn.locked{background:#ddd;color:#999;cursor:not-allowed}
+.review{
+  display:none;
+  padding:30px;
+}
+.review h2{text-align:center;margin-bottom:20px}
+.score-box{
+  display:flex;
+  justify-content:space-around;
+  margin-bottom:25px;
+  flex-wrap:wrap;
+}
+.score-card{
+  background:var(--gray);
+  padding:20px;
+  border-radius:20px;
+  text-align:center;
+  min-width:160px;
+}
+.correct{color:var(--green);font-weight:700}
+.wrong{color:var(--red);font-weight:700}
+.review-q{
+  background:#f9f9f9;
+  padding:15px;
+  border-radius:15px;
+  margin-bottom:15px;
+}
+.review-q p{margin:6px 0}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<header>
+  <h2>JAMB CBT – Computer Studies</h2>
+  <div id="timer">00:00</div>
+</header>
+
+<div id="freeNote">
+  Free users can attempt only <b>25 questions</b>. Upgrade to Premium for all 99+.
+</div>
+
+<div class="main" id="examSection">
+  <div id="progress"><div id="progressFill"></div></div>
+  <div id="qText"></div>
+  <div id="optionsWrap"></div>
+
+  <div class="nav-btns">
+    <button id="backBtn">Back</button>
+    <button id="nextBtn">Next</button>
+    <button id="submitBtn">Submit</button>
+  </div>
+
+  <div id="qNav"></div>
+</div>
+
+<div class="review" id="reviewSection">
+  <h2>Exam Review</h2>
+  <div class="score-box">
+    <div class="score-card">Score<br><span id="rScore"></span></div>
+    <div class="score-card">Failed<br><span id="rFail"></span></div>
+    <div class="score-card">Percentage<br><span id="rPercent"></span></div>
+  </div>
+  <div id="reviewList"></div>
+</div>
+
+</div>
+
+<script type="module">
+/* ================= FIREBASE ================= */
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js";
+import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDTDWqG_WAXZO7O6yAxV5lOHUkHZp-wwQk",
+  authDomain: "rackspark.firebaseapp.com",
+  projectId: "rackspark",
+  storageBucket: "rackspark.firebasestorage.app",
+  messagingSenderId: "125488977166",
+  appId: "1:125488977166:web:b519b6871df21662c0f35f"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+/* ================= QUESTIONS ================= */
+const QUESTIONS = [
+
+/* ===================== 1–10 ===================== */
+{q:"Which of the following is an input device?", o:["Keyboard","Printer","Monitor","Speaker"], a:0, y:2021},
+{q:"Which of these is a programming language?", o:["Python","HTML","CSS","SQL"], a:0, y:2021},
+{q:"The brain of the computer is?", o:["CPU","RAM","ROM","ALU"], a:0, y:2022},
+{q:"Which memory is volatile?", o:["RAM","ROM","Hard Disk","Flash Memory"], a:0, y:2022},
+{q:"What does HTTP stand for?", o:["HyperText Transfer Protocol","HyperText Transmission Program","Hyper Terminal Transfer Protocol","High Text Transfer Protocol"], a:0, y:2023},
+{q:"Which of these is an output device?", o:["Printer","Keyboard","Scanner","Mouse"], a:0, y:2023},
+{q:"Which of these is a high-level language?", o:["Java","Machine Code","Assembly","Binary"], a:0, y:2021},
+{q:"Which of these is non-volatile memory?", o:["ROM","RAM","Cache","Register"], a:0, y:2022},
+{q:"Which of these is an example of an operating system?", o:["Windows","Python","Oracle","C++"], a:0, y:2023},
+{q:"The binary number system uses how many digits?", o:["2","8","10","16"], a:0, y:2023},
+
+/* ===================== 11–20 ===================== */
+{q:"Which device is used for long-term storage?", o:["Hard Disk","RAM","Cache","Register"], a:0, y:2021},
+{q:"Which is the largest unit of storage?", o:["Terabyte","Gigabyte","Megabyte","Kilobyte"], a:0, y:2021},
+{q:"Which of these is a database management system?", o:["MySQL","Python","Windows","HTML"], a:0, y:2022},
+{q:"What does GUI stand for?", o:["Graphical User Interface","General User Interface","Global User Input","Graphical User Input"], a:0, y:2022},
+{q:"What is the full form of URL?", o:["Uniform Resource Locator","Universal Resource Locator","Unified Resource Link","Universal Resource Link"], a:0, y:2023},
+{q:"Which of the following is a web browser?", o:["Chrome","Windows","Linux","Oracle"], a:0, y:2023},
+{q:"Which of these is NOT a programming language?", o:["HTML","Python","C++","Java"], a:0, y:2021},
+{q:"Which of these is a network device?", o:["Router","Keyboard","Monitor","Printer"], a:0, y:2022},
+{q:"Which of these is an example of secondary storage?", o:["Hard Disk","RAM","Cache","Register"], a:0, y:2023},
+{q:"Which of the following is NOT an input device?", o:["Monitor","Keyboard","Scanner","Mouse"], a:0, y:2023},
+
+/* ===================== 21–30 ===================== */
+{q:"Which is used to check the correctness of a program?", o:["Compiler","Interpreter","Editor","Debugger"], a:3, y:2021},
+{q:"Which language is used for web page structure?", o:["HTML","Python","C++","Java"], a:0, y:2021},
+{q:"Which of these is a protocol for sending email?", o:["SMTP","FTP","HTTP","POP"], a:0, y:2022},
+{q:"Which of these is NOT a programming paradigm?", o:["Functional","Procedural","Object-Oriented","Graphical"], a:3, y:2022},
+{q:"The part of the CPU that performs arithmetic operations is?", o:["ALU","CU","RAM","ROM"], a:0, y:2023},
+{q:"Which of these is a low-level programming language?", o:["Assembly","Python","Java","HTML"], a:0, y:2023},
+{q:"Which of these is used to prevent unauthorized access to a network?", o:["Firewall","Router","Switch","Modem"], a:0, y:2021},
+{q:"Which of these stores data temporarily for fast access?", o:["Cache","Hard Disk","ROM","Flash Drive"], a:0, y:2022},
+{q:"Which device is used to convert digital signals to analog?", o:["Modem","Router","Switch","Hub"], a:0, y:2023},
+{q:"What is the main function of the Control Unit?", o:["Directs operations of CPU","Stores data","Performs calculations","Outputs results"], a:0, y:2023},
+
+/* ===================== 31–40 ===================== */
+{q:"Which type of network covers a small area?", o:["LAN","WAN","MAN","Internet"], a:0, y:2021},
+{q:"Which type of network covers a large area?", o:["WAN","LAN","PAN","MAN"], a:0, y:2021},
+{q:"Which of these is a search engine?", o:["Google","Firefox","Oracle","Windows"], a:0, y:2022},
+{q:"Which of these is a markup language?", o:["HTML","Python","C++","Java"], a:0, y:2022},
+{q:"Which of the following is volatile memory?", o:["RAM","ROM","Hard Disk","Flash Memory"], a:0, y:2023},
+{q:"What does BIOS stand for?", o:["Basic Input Output System","Binary Input Output System","Basic Internet Output System","Binary Input Output Service"], a:0, y:2023},
+{q:"Which of these is an example of open source software?", o:["Linux","Windows","MacOS","Oracle"], a:0, y:2021},
+{q:"Which software is used to create documents?", o:["Word Processor","Compiler","Database","Browser"], a:0, y:2022},
+{q:"Which of these is used to detect errors in a program?", o:["Debugger","Editor","Compiler","Interpreter"], a:0, y:2023},
+{q:"Which of these is a type of computer virus?", o:["Trojan","Router","Switch","Hub"], a:0, y:2023},
+
+/* ===================== 41–50 ===================== */
+{q:"Which of the following is NOT an operating system?", o:["Oracle","Linux","Windows","MacOS"], a:0, y:2021},
+{q:"Which of these is used for video conferencing?", o:["Zoom","MS Word","Oracle","Photoshop"], a:0, y:2021},
+{q:"Which of these is used to connect computers in a network?", o:["Router","Printer","Monitor","Keyboard"], a:0, y:2022},
+{q:"Which of these is used to browse the internet?", o:["Browser","Compiler","Interpreter","Debugger"], a:0, y:2022},
+{q:"Which of the following is used to manage databases?", o:["DBMS","CPU","RAM","ALU"], a:0, y:2023},
+{q:"Which of these is a social media platform?", o:["Facebook","Windows","Linux","Oracle"], a:0, y:2023},
+{q:"Which is used to create graphics?", o:["Photoshop","MS Word","Notepad","Excel"], a:0, y:2021},
+{q:"Which of these is NOT a type of computer memory?", o:["Printer","RAM","ROM","Cache"], a:0, y:2022},
+{q:"Which of these is used to send files over a network?", o:["FTP","HTTP","SMTP","DNS"], a:0, y:2023},
+{q:"Which of the following is NOT a database?", o:["Python","Oracle","MySQL","MS Access"], a:0, y:2023},
+
+/* ===================== 51–60 ===================== */
+{q:"Which of the following is a compiler?", o:["GCC","Chrome","Windows","MS Word"], a:0, y:2021},
+{q:"Which of these is NOT a type of programming language?", o:["HTTP","Java","Python","C++"], a:0, y:2021},
+{q:"Which of these is a type of computer network?", o:["LAN","WAN","MAN","ATM"], a:3, y:2022},
+{q:"Which of these is used for numerical calculations?", o:["Spreadsheet","Word Processor","Browser","Database"], a:0, y:2022},
+{q:"Which of these is a type of malware?", o:["Spyware","Router","Switch","Hub"], a:0, y:2023},
+{q:"Which is a volatile storage device?", o:["RAM","ROM","Hard Disk","SSD"], a:0, y:2023},
+{q:"Which of these is a high-level programming language?", o:["Python","Assembly","Machine Code","Binary"], a:0, y:2021},
+{q:"Which of the following is NOT a web technology?", o:["C++","HTML","CSS","JavaScript"], a:0, y:2022},
+{q:"Which of these is used to create slides?", o:["PowerPoint","Excel","Word","Access"], a:0, y:2023},
+{q:"Which of these is used to calculate formulas?", o:["Spreadsheet","Word Processor","Browser","Database"], a:0, y:2023},
+
+/* ===================== 61–70 ===================== */
+{q:"Which of these is NOT a type of computer?", o:["Refrigerator","Laptop","Desktop","Server"], a:0, y:2021},
+{q:"Which of these is used to detect network problems?", o:["Ping","Compiler","Interpreter","Debugger"], a:0, y:2021},
+{q:"Which of these is a type of database?", o:["Relational","Hierarchical","Network","All of the above"], a:3, y:2022},
+{q:"Which of the following is a storage unit?", o:["Byte","Bit","Nibble","All of the above"], a:3, y:2022},
+{q:"Which of these is a functional unit of CPU?", o:["ALU","CU","Registers","All of the above"], a:3, y:2023},
+{q:"Which of these is NOT a computer peripheral?", o:["Keyboard","Mouse","Monitor","CPU"], a:3, y:2023},
+{q:"Which of these is a wireless technology?", o:["Wi-Fi","Ethernet","USB","Serial"], a:0, y:2021},
+{q:"Which of the following is a binary number?", o:["1010","1234","5678","9A"], a:0, y:2022},
+{q:"Which of these is used for creating web pages?", o:["HTML","Python","C++","Java"], a:0, y:2023},
+{q:"Which of these is used for programming microcontrollers?", o:["C","Python","Java","HTML"], a:0, y:2023},
+
+/* ===================== 71–80 ===================== */
+{q:"Which of these is NOT a type of CPU?", o:["ALU","CU","ROM","Registers"], a:2, y:2021},
+{q:"Which of these is used to connect computers in a LAN?", o:["Switch","Router","Monitor","Printer"], a:0, y:2021},
+{q:"Which of these is NOT an operating system?", o:["Photoshop","Linux","Windows","MacOS"], a:0, y:2022},
+{q:"Which of these stores instructions and data temporarily?", o:["RAM","ROM","Hard Disk","Flash"], a:0, y:2022},
+{q:"Which of the following is a logic gate?", o:["AND","OR","NOT","All of the above"], a:3, y:2023},
+{q:"Which of these is used to scan documents?", o:["Scanner","Printer","Monitor","Keyboard"], a:0, y:2023},
+{q:"Which of these is NOT a type of network?", o:["LAN","WAN","MAN","SSD"], a:3, y:2021},
+{q:"Which of these is an Internet protocol?", o:["TCP/IP","SMTP","HTTP","All of the above"], a:3, y:2022},
+{q:"Which of these is a type of storage device?", o:["HDD","SSD","USB Drive","All of the above"], a:3, y:2023},
+{q:"Which of these is a type of computer virus?", o:["Trojan","Worm","Spyware","All of the above"], a:3, y:2023},
+
+/* ===================== 81–90 ===================== */
+{q:"Which of these is used to create databases?", o:["MS Access","MS Word","MS Excel","PowerPoint"], a:0, y:2021},
+{q:"Which of these is a type of software?", o:["System software","Application software","Utility software","All of the above"], a:3, y:2021},
+{q:"Which of these is NOT a type of programming error?", o:["Syntax","Logical","Runtime","Keyboard"], a:3, y:2022},
+{q:"Which of these is used to secure a network?", o:["Firewall","Router","Switch","Hub"], a:0, y:2022},
+{q:"Which of these is an example of open source programming language?", o:["Python","Java","C++","All of the above"], a:3, y:2023},
+{q:"Which of these stores permanent data?", o:["ROM","RAM","Cache","Registers"], a:0, y:2023},
+{q:"Which of these is a software development methodology?", o:["Agile","Waterfall","Scrum","All of the above"], a:3, y:2021},
+{q:"Which of these is used to compress files?", o:["WinRAR","MS Word","MS Excel","PowerPoint"], a:0, y:2022},
+{q:"Which of these is used for debugging programs?", o:["Debugger","Compiler","Interpreter","Editor"], a:0, y:2023},
+{q:"Which of these is NOT an example of input device?", o:["Monitor","Keyboard","Mouse","Scanner"], a:0, y:2023},
+
+/* ===================== 91–100 ===================== */
+{q:"Which of these is used to store programs permanently?", o:["ROM","RAM","Cache","Registers"], a:0, y:2021},
+{q:"Which of these converts source code to machine code?", o:["Compiler","Interpreter","Editor","Debugger"], a:0, y:2021},
+{q:"Which of these is used for real-time execution of programs?", o:["Interpreter","Compiler","Editor","Debugger"], a:0, y:2022},
+{q:"Which of these is used to connect a computer to the internet?", o:["Modem","Printer","Monitor","Keyboard"], a:0, y:2022},
+{q:"Which of these is NOT a type of programming language?", o:["Windows","Python","C++","Java"], a:0, y:2023},
+{q:"Which of these is used to display text and graphics on a screen?", o:["Monitor","Printer","Keyboard","Mouse"], a:0, y:2023},
+{q:"Which of these is used for email communication?", o:["SMTP","FTP","HTTP","DNS"], a:0, y:2021},
+{q:"Which of these is used for network addressing?", o:["IP Address","MAC Address","Hostname","All of the above"], a:3, y:2022},
+{q:"Which of these is NOT a type of software?", o:["Hardware","System software","Application software","Utility software"], a:0, y:2023},
+{q:"Which of these is used to make presentations?", o:["PowerPoint","Word","Excel","Access"], a:0, y:2023}
+
+];
+
+/* ================= VARIABLES ================= */
+let current = 0;
+let answers = [];
+let isPremium = false;
+let time = 0;          // exam duration in seconds
+let selectedMinutes = 0;
+let timerInt;
+let timerStarted = false;
+
+const qText = document.getElementById("qText");
+const optionsWrap = document.getElementById("optionsWrap");
+const qNav = document.getElementById("qNav");
+const progressFill = document.getElementById("progressFill");
+const timerEl = document.getElementById("timer");
+
+/* ================= UTILITY ================= */
+function shuffle(array){
+  for(let i=array.length-1;i>0;i--){
+    const j=Math.floor(Math.random()*(i+1));
+    [array[i],array[j]]=[array[j],array[i]];
+  }
+}
+
+/* ================= RENDER QUESTIONS ================= */
+function render(){
+  const q = QUESTIONS[current];
+  qText.innerHTML = `${current+1}. ${q.q} <small>${q.y ? "(Year "+q.y+")":""}</small>`;
+  optionsWrap.innerHTML="";
+  q.o.forEach((op,i)=>{
+    const d=document.createElement("div");
+    d.className="option";
+    if(answers[current]===i) d.classList.add("selected");
+    d.innerText=op;
+    d.onclick=()=>{answers[current]=i; render();};
+    optionsWrap.appendChild(d);
+  });
+  progressFill.style.width=((answers.filter(a=>a!==null).length/QUESTIONS.length)*100)+"%";
+  buildNav();
+}
+
+function buildNav(){
+  qNav.innerHTML="";
+  for(let i=0;i<QUESTIONS.length;i++){
+    const b=document.createElement("button");
+    b.className="qbtn";
+    if(i===current) b.classList.add("current");
+    if(answers[i]!=null) b.classList.add("answered");
+    if(!isPremium && i>=25){
+      b.classList.add("locked");
+      b.disabled=true;
+    }
+    b.innerText=i+1;
+    b.onclick=()=>{current=i; render();}
+    qNav.appendChild(b);
+  }
+}
+
+/* ================= TIMER ================= */
+async function chooseExamTime(){
+  const { value } = await Swal.fire({
+    title: "Select Exam Duration",
+    text: "Choose your preferred exam time",
+    icon: "info",
+    allowOutsideClick: false,
+    allowEscapeKey: false,
+    confirmButtonText: "Start Exam",
+    input: "radio",
+    inputOptions: {
+      20: "20 Minutes",
+      30: "30 Minutes",
+      40: "40 Minutes",
+      60: "60 Minutes"
+    },
+    inputValidator: (value) => {
+      if (!value) return "Please select a duration";
+    }
+  });
+
+  selectedMinutes = Number(value);
+  time = selectedMinutes * 60;
+}
+
+function startTimer(){
+  if(timerStarted) return;
+  timerStarted = true;
+
+  timerInt = setInterval(()=>{
+    let m = Math.floor(time / 60);
+    let s = time % 60;
+    timerEl.innerText = `${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}`;
+    time--;
+    if(time<0){
+      clearInterval(timerInt);
+      Swal.fire({
+        title:"Time Up!",
+        text:"Your exam has been submitted automatically.",
+        icon:"warning",
+        confirmButtonText:"View Result"
+      }).then(()=>showReview());
+    }
+  },1000);
+}
+
+/* ================= SUBMIT & REVIEW ================= */
+function submitExam(){
+  Swal.fire({
+    title:"Submit Exam?",
+    icon:"warning",
+    showCancelButton:true,
+    confirmButtonText:"Yes Submit"
+  }).then(r=>{
+    if(!r.isConfirmed) return;
+    showReview();
+  });
+}
+
+function showReview(){
+  clearInterval(timerInt);
+  document.getElementById("examSection").style.display="none";
+  document.getElementById("reviewSection").style.display="block";
+
+  const total = isPremium ? QUESTIONS.length : Math.min(25, QUESTIONS.length);
+  let score = 0;
+  const list = document.getElementById("reviewList");
+  list.innerHTML="";
+
+  for(let i=0;i<total;i++){
+    if(answers[i]===QUESTIONS[i].a) score++;
+    const div=document.createElement("div");
+    div.className="review-q";
+    div.innerHTML=`
+      <p><b>${i+1}. ${QUESTIONS[i].q}</b></p>
+      <p>Your Answer: <span class="${answers[i]===QUESTIONS[i].a?"correct":"wrong"}">${QUESTIONS[i].o[answers[i]]||"Not Answered"}</span></p>
+      <p>Correct Answer: ${QUESTIONS[i].o[QUESTIONS[i].a]}</p>
+    `;
+    list.appendChild(div);
+  }
+
+  document.getElementById("rScore").innerText = `${score}/${total}`;
+  document.getElementById("rFail").innerText = total-score;
+  document.getElementById("rPercent").innerText = ((score/total)*100).toFixed(1)+"%";
+}
+
+/* ================= BUTTONS ================= */
+document.getElementById("nextBtn").onclick=()=>{
+  if(!isPremium && current===24){
+    Swal.fire("Upgrade Required","Only 25 questions for free users","info");
+    return;
+  }
+  if(current<QUESTIONS.length-1){current++;render();}
+};
+document.getElementById("backBtn").onclick=()=>{if(current>0){current--;render();}};
+document.getElementById("submitBtn").onclick=submitExam;
+
+/* ================= AUTH & INIT ================= */
+onAuthStateChanged(auth, async(user)=>{
+  if(!user){ location.href="login.html"; return; }
+
+  const snap = await getDoc(doc(db,"users",user.uid));
+  isPremium = snap.exists() && snap.data().isPremium===true;
+  if(!isPremium) document.getElementById("freeNote").style.display="block";
+
+  // 1. Select exam time
+  await chooseExamTime();
+
+  // 2. Shuffle questions & init answers
+  shuffle(QUESTIONS);
+  answers = Array(QUESTIONS.length).fill(null);
+
+  // 3. Render and start timer
+  render();
+  startTimer();
+});
+</script>
+
+</body>
+</html>

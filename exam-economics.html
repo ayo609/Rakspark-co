@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>JAMB CBT – Economics </title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<!-- SweetAlert2 -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<!-- Google Font -->
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+:root{
+  --navy:#001f3f;
+  --sky:#eaf4ff;
+  --green:#2ed573;
+  --red:#ff4757;
+  --gold:#f1c40f;
+  --gray:#f5f5f5;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+  font-family:Poppins,sans-serif;
+  background:linear-gradient(135deg,#eaf4ff,#d6e9ff);
+  min-height:100vh;
+  padding:20px;
+}
+.container{
+  max-width:1100px;
+  margin:auto;
+  background:#fff;
+  border-radius:25px;
+  box-shadow:0 25px 70px rgba(0,0,0,.15);
+  overflow:hidden;
+}
+header{
+  background:var(--navy);
+  color:#fff;
+  padding:25px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+header h2{font-size:1.6rem}
+#timer{
+  background:#fff;
+  color:var(--navy);
+  padding:8px 18px;
+  border-radius:20px;
+  font-weight:700;
+}
+#freeNote{
+  background:#fff3cd;
+  color:#856404;
+  padding:12px;
+  text-align:center;
+  font-weight:600;
+  display:none;
+}
+.main{
+  padding:30px;
+}
+#progress{
+  height:10px;
+  background:#eee;
+  border-radius:10px;
+  overflow:hidden;
+  margin-bottom:20px;
+}
+#progressFill{
+  height:100%;
+  width:0%;
+  background:linear-gradient(90deg,var(--green),var(--gold));
+}
+#qText{
+  font-size:1.3rem;
+  font-weight:600;
+  margin-bottom:20px;
+}
+.option{
+  background:var(--gray);
+  padding:15px 18px;
+  border-radius:15px;
+  margin-bottom:12px;
+  cursor:pointer;
+  transition:.3s;
+}
+.option:hover{background:#e0e0e0}
+.option.selected{
+  background:var(--navy);
+  color:#fff;
+}
+.nav-btns{
+  display:flex;
+  justify-content:space-between;
+  margin-top:25px;
+}
+button{
+  padding:12px 30px;
+  border:none;
+  border-radius:30px;
+  font-weight:600;
+  cursor:pointer;
+}
+#backBtn{background:#ccc}
+#nextBtn{background:var(--navy);color:#fff}
+#submitBtn{
+  background:var(--green);
+  color:#fff;
+}
+#qNav{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(45px,1fr));
+  gap:10px;
+  margin-top:30px;
+}
+.qbtn{
+  padding:10px;
+  border-radius:10px;
+  border:none;
+  cursor:pointer;
+  font-weight:600;
+}
+.qbtn.current{background:var(--navy);color:#fff}
+.qbtn.answered{background:var(--green);color:#fff}
+.qbtn.locked{background:#ddd;color:#999;cursor:not-allowed}
+.review{
+  display:none;
+  padding:30px;
+}
+.review h2{text-align:center;margin-bottom:20px}
+.score-box{
+  display:flex;
+  justify-content:space-around;
+  margin-bottom:25px;
+  flex-wrap:wrap;
+}
+.score-card{
+  background:var(--gray);
+  padding:20px;
+  border-radius:20px;
+  text-align:center;
+  min-width:160px;
+}
+.correct{color:var(--green);font-weight:700}
+.wrong{color:var(--red);font-weight:700}
+.review-q{
+  background:#f9f9f9;
+  padding:15px;
+  border-radius:15px;
+  margin-bottom:15px;
+}
+.review-q p{margin:6px 0}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<header>
+  <h2>JAMB CBT – Economics</h2>
+  <div id="timer">00:00</div>
+</header>
+
+<div id="freeNote">
+  Free users can attempt only <b>25 questions</b>. Upgrade to Premium for all 99+.
+</div>
+
+<div class="main" id="examSection">
+  <div id="progress"><div id="progressFill"></div></div>
+  <div id="qText"></div>
+  <div id="optionsWrap"></div>
+
+  <div class="nav-btns">
+    <button id="backBtn">Back</button>
+    <button id="nextBtn">Next</button>
+    <button id="submitBtn">Submit</button>
+  </div>
+
+  <div id="qNav"></div>
+</div>
+
+<div class="review" id="reviewSection">
+  <h2>Exam Review</h2>
+  <div class="score-box">
+    <div class="score-card">Score<br><span id="rScore"></span></div>
+    <div class="score-card">Failed<br><span id="rFail"></span></div>
+    <div class="score-card">Percentage<br><span id="rPercent"></span></div>
+  </div>
+  <div id="reviewList"></div>
+</div>
+
+</div>
+
+<script type="module">
+/* ================= FIREBASE ================= */
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js";
+import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDTDWqG_WAXZO7O6yAxV5lOHUkHZp-wwQk",
+  authDomain: "rackspark.firebaseapp.com",
+  projectId: "rackspark",
+  storageBucket: "rackspark.firebasestorage.app",
+  messagingSenderId: "125488977166",
+  appId: "1:125488977166:web:b519b6871df21662c0f35f"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+/* ================= QUESTIONS ================= */
+const QUESTIONS = [
+
+/* ===================== 1–10 ===================== */
+{q:"Economics is the study of?", o:["Scarcity and choice","Money only","Business","Accounting"], a:0, y:2021},
+{q:"Scarcity means?", o:["Limited resources","Unlimited wants","High prices","Low income"], a:0, y:2021},
+{q:"Opportunity cost is the?", o:["Next best alternative foregone","Total cost","Money cost","Fixed cost"], a:0, y:2022},
+{q:"Human wants are?", o:["Unlimited","Limited","Fixed","Constant"], a:0, y:2022},
+{q:"Resources are also called?", o:["Factors of production","Wants","Goods","Needs"], a:0, y:2023},
+{q:"Which is NOT a factor of production?", o:["Money","Land","Labour","Capital"], a:0, y:2023},
+{q:"Land refers to?", o:["Natural resources","Buildings","Machines","Labour"], a:0, y:2021},
+{q:"Labour is?", o:["Human effort","Machines","Raw materials","Land"], a:0, y:2022},
+{q:"Capital includes?", o:["Man-made productive assets","Money only","Land","Labour"], a:0, y:2023},
+{q:"Entrepreneur is responsible for?", o:["Risk taking","Labour","Land","Consumption"], a:0, y:2021},
+
+/* ===================== 11–20 ===================== */
+{q:"Production is the?", o:["Creation of utility","Selling of goods","Buying of goods","Consumption"], a:0, y:2021},
+{q:"Utility means?", o:["Ability to satisfy wants","Price of goods","Quality","Demand"], a:0, y:2022},
+{q:"Types of utility include all EXCEPT?", o:["Political utility","Form utility","Place utility","Time utility"], a:0, y:2022},
+{q:"Consumption is the?", o:["Use of goods and services","Production","Distribution","Exchange"], a:0, y:2023},
+{q:"Wealth refers to?", o:["Goods with value","Money only","Free goods","Services only"], a:0, y:2023},
+{q:"Free goods are?", o:["Abundant and free","Scarce","Produced","Paid for"], a:0, y:2021},
+{q:"Economic goods are?", o:["Scarce and useful","Free","Unlimited","Valueless"], a:0, y:2022},
+{q:"Goods that satisfy wants directly are?", o:["Consumer goods","Capital goods","Producer goods","Intermediate goods"], a:0, y:2023},
+{q:"Capital goods are used for?", o:["Further production","Consumption","Luxury","Pleasure"], a:0, y:2023},
+{q:"Distribution deals with?", o:["Sharing of income","Production","Consumption","Exchange"], a:0, y:2021},
+
+/* ===================== 21–30 ===================== */
+{q:"Rent is reward for?", o:["Land","Labour","Capital","Entrepreneur"], a:0, y:2021},
+{q:"Wages are paid to?", o:["Labour","Land","Capital","Entrepreneur"], a:0, y:2022},
+{q:"Interest is reward for?", o:["Capital","Labour","Land","Risk"], a:0, y:2022},
+{q:"Profit is reward for?", o:["Entrepreneur","Labour","Capital","Land"], a:0, y:2023},
+{q:"Exchange involves?", o:["Buying and selling","Production","Consumption","Distribution"], a:0, y:2023},
+{q:"Barter system means?", o:["Exchange of goods for goods","Use of money","Credit purchase","Online trade"], a:0, y:2021},
+{q:"A major problem of barter is?", o:["Double coincidence of wants","Inflation","Taxation","Interest"], a:0, y:2022},
+{q:"Money serves as?", o:["Medium of exchange","Factor of production","Free good","Labour"], a:0, y:2022},
+{q:"Which is NOT a function of money?", o:["Production","Medium of exchange","Store of value","Unit of account"], a:0, y:2023},
+{q:"Legal tender is money that?", o:["Must be accepted by law","Is foreign","Is fake","Is scarce"], a:0, y:2023},
+
+/* ===================== 31–40 ===================== */
+{q:"Demand means?", o:["Willingness and ability to buy","Desire only","Supply","Production"], a:0, y:2021},
+{q:"Law of demand states that?", o:["Price and quantity demanded are inversely related","They move together","Demand is fixed","Price is constant"], a:0, y:2021},
+{q:"Demand curve slopes?", o:["Downward","Upward","Vertical","Horizontal"], a:0, y:2022},
+{q:"An increase in price leads to?", o:["Decrease in quantity demanded","Increase in demand","Increase in supply","No change"], a:0, y:2022},
+{q:"Supply means?", o:["Willingness to sell","Buying","Consumption","Demand"], a:0, y:2023},
+{q:"Law of supply states that?", o:["Price and quantity supplied move together","They move opposite","Supply is fixed","Price is constant"], a:0, y:2023},
+{q:"Supply curve slopes?", o:["Upward","Downward","Vertical","Horizontal"], a:0, y:2021},
+{q:"Market equilibrium occurs when?", o:["Demand equals supply","Demand exceeds supply","Supply exceeds demand","Price is high"], a:0, y:2022},
+{q:"Equilibrium price is also called?", o:["Market price","High price","Low price","Fixed price"], a:0, y:2022},
+{q:"Excess demand leads to?", o:["Increase in price","Decrease in price","Equilibrium","Surplus"], a:0, y:2023},
+
+/* ===================== 41–50 ===================== */
+{q:"Excess supply leads to?", o:["Decrease in price","Increase in price","Equilibrium","Shortage"], a:0, y:2023},
+{q:"Elasticity of demand measures?", o:["Responsiveness of demand to price","Quantity supplied","Cost","Profit"], a:0, y:2021},
+{q:"Perfectly elastic demand means?", o:["Small price change causes large change","No change","Demand fixed","Price fixed"], a:0, y:2022},
+{q:"Inelastic demand means?", o:["Little response to price change","Large response","Infinite response","Zero price"], a:0, y:2022},
+{q:"Price elasticity of demand formula?", o:["%ΔQ / %ΔP","P/Q","Q/P","ΔP/ΔQ"], a:0, y:2023},
+{q:"Goods with close substitutes have?", o:["Elastic demand","Inelastic demand","Zero demand","Fixed demand"], a:0, y:2023},
+{q:"Necessities usually have?", o:["Inelastic demand","Elastic demand","Perfect elasticity","Zero elasticity"], a:0, y:2021},
+{q:"Luxury goods have?", o:["Elastic demand","Inelastic demand","No demand","Constant demand"], a:0, y:2022},
+{q:"Income elasticity measures change in demand due to?", o:["Income","Price","Population","Taste"], a:0, y:2023},
+{q:"Cross elasticity deals with?", o:["Related goods","Income","Population","Supply"], a:0, y:2023},
+
+/* ===================== 51–60 ===================== */
+{q:"Substitute goods have?", o:["Positive cross elasticity","Negative cross elasticity","Zero elasticity","No relation"], a:0, y:2021},
+{q:"Complementary goods have?", o:["Negative cross elasticity","Positive","Zero","Infinite"], a:0, y:2022},
+{q:"Inferior goods demand?", o:["Falls as income rises","Rises as income rises","Is constant","Is zero"], a:0, y:2022},
+{q:"Normal goods demand?", o:["Rises as income rises","Falls as income rises","Is constant","Is zero"], a:0, y:2023},
+{q:"Cost refers to?", o:["Expenses of production","Profit","Revenue","Income"], a:0, y:2023},
+{q:"Fixed cost is?", o:["Cost that does not change","Cost that changes","Profit","Revenue"], a:0, y:2021},
+{q:"Variable cost is?", o:["Cost that changes with output","Constant cost","Total cost","Fixed cost"], a:0, y:2022},
+{q:"Total cost equals?", o:["Fixed cost + Variable cost","Profit + Loss","Revenue - Cost","Output × Price"], a:0, y:2022},
+{q:"Average cost is?", o:["Total cost / Output","Output / Cost","Revenue / Cost","Profit / Output"], a:0, y:2023},
+{q:"Marginal cost is?", o:["Cost of one extra unit","Total cost","Average cost","Fixed cost"], a:0, y:2023},
+
+/* ===================== 61–70 ===================== */
+{q:"Revenue is?", o:["Income from sales","Cost","Profit","Loss"], a:0, y:2021},
+{q:"Total revenue equals?", o:["Price × Quantity","Cost × Output","Profit × Sales","Income / Output"], a:0, y:2021},
+{q:"Profit equals?", o:["Revenue - Cost","Cost - Revenue","Price - Quantity","Income + Cost"], a:0, y:2022},
+{q:"Loss occurs when?", o:["Cost exceeds revenue","Revenue exceeds cost","Demand equals supply","Price is high"], a:0, y:2022},
+{q:"Market structure deals with?", o:["Nature of competition","Production","Consumption","Distribution"], a:0, y:2023},
+{q:"Perfect competition has?", o:["Many buyers and sellers","One seller","Few sellers","Price control"], a:0, y:2023},
+{q:"Monopoly means?", o:["Single seller","Many sellers","Two sellers","Free market"], a:0, y:2021},
+{q:"Oligopoly has?", o:["Few sellers","One seller","Many sellers","No seller"], a:0, y:2022},
+{q:"Monopolistic competition has?", o:["Many sellers with differentiation","One seller","No competition","Government control"], a:0, y:2023},
+{q:"Price takers are firms in?", o:["Perfect competition","Monopoly","Oligopoly","Duopoly"], a:0, y:2023},
+
+/* ===================== 71–80 ===================== */
+{q:"Price makers are firms in?", o:["Monopoly","Perfect competition","Free market","Barter"], a:0, y:2021},
+{q:"National income is the?", o:["Total value of goods and services","Population","Government revenue","Export"], a:0, y:2021},
+{q:"GDP means?", o:["Gross Domestic Product","General Domestic Price","Gross Demand Product","Government Domestic Product"], a:0, y:2022},
+{q:"GNP includes?", o:["GDP + net income from abroad","GDP only","Exports only","Imports only"], a:0, y:2022},
+{q:"Per capita income equals?", o:["National income / Population","Population / Income","GDP × Population","Exports / Population"], a:0, y:2023},
+{q:"Inflation is?", o:["General rise in prices","Fall in prices","Increase in output","Unemployment"], a:0, y:2023},
+{q:"Deflation means?", o:["General fall in prices","Rise in prices","Shortage","Surplus"], a:0, y:2021},
+{q:"Unemployment refers to?", o:["Able but jobless persons","Children","Retired workers","Employers"], a:0, y:2022},
+{q:"Fiscal policy deals with?", o:["Government revenue and spending","Money supply","Exchange rate","Trade"], a:0, y:2023},
+{q:"Monetary policy is controlled by?", o:["Central Bank","Ministry of Trade","Consumers","Firms"], a:0, y:2023},
+
+/* ===================== 81–90 ===================== */
+{q:"Central Bank controls?", o:["Money supply","Labour","Land","Goods"], a:0, y:2021},
+{q:"Commercial banks accept?", o:["Deposits","Taxes","Rent","Wages"], a:0, y:2021},
+{q:"Savings means?", o:["Income not spent","Profit","Revenue","Cost"], a:0, y:2022},
+{q:"Investment is?", o:["Purchase of capital goods","Buying food","Saving money","Spending"], a:0, y:2022},
+{q:"Public expenditure is spending by?", o:["Government","Individuals","Firms","Foreigners"], a:0, y:2023},
+{q:"Tax is a compulsory payment to?", o:["Government","Bank","Firm","Employer"], a:0, y:2023},
+{q:"Direct tax example?", o:["Income tax","VAT","Sales tax","Custom duty"], a:0, y:2021},
+{q:"Indirect tax example?", o:["VAT","Income tax","Poll tax","Property tax"], a:0, y:2022},
+{q:"Balance of trade compares?", o:["Exports and imports","Revenue and cost","Demand and supply","Savings and investment"], a:0, y:2023},
+{q:"Favourable balance of trade occurs when?", o:["Exports exceed imports","Imports exceed exports","They are equal","No trade"], a:0, y:2023},
+
+/* ===================== 91–100 ===================== */
+{q:"Unfavourable balance of trade occurs when?", o:["Imports exceed exports","Exports exceed imports","They are equal","No trade"], a:0, y:2021},
+{q:"Terms of trade refers to?", o:["Rate of exchange of exports for imports","Balance of payments","Trade surplus","Trade deficit"], a:0, y:2021},
+{q:"Population census is?", o:["Counting of population","Tax collection","Income distribution","Employment"], a:0, y:2022},
+{q:"Population growth means?", o:["Increase in population size","Decrease","Constant population","Migration"], a:0, y:2022},
+{q:"High population can lead to?", o:["Unemployment","High wages","Low demand","Surplus capital"], a:0, y:2023},
+{q:"Economic growth means?", o:["Increase in output","Increase in population","Inflation","Deflation"], a:0, y:2023},
+{q:"Economic development includes?", o:["Improved living standards","Output only","Population","Trade"], a:0, y:2024},
+{q:"Developing countries often face?", o:["Poverty","High income","Low population","Surplus capital"], a:0, y:2024},
+{q:"Standard of living refers to?", o:["Level of welfare","Population size","Price level","Money supply"], a:0, y:2025},
+{q:"Economics helps society to?", o:["Use resources efficiently","Waste resources","Create scarcity","End production"], a:0, y:2025}
+
+];
+
+/* ================= VARIABLES ================= */
+let current = 0;
+let answers = [];
+let isPremium = false;
+let time = 0;          // exam duration in seconds
+let selectedMinutes = 0;
+let timerInt;
+let timerStarted = false;
+
+const qText = document.getElementById("qText");
+const optionsWrap = document.getElementById("optionsWrap");
+const qNav = document.getElementById("qNav");
+const progressFill = document.getElementById("progressFill");
+const timerEl = document.getElementById("timer");
+
+/* ================= UTILITY ================= */
+function shuffle(array){
+  for(let i=array.length-1;i>0;i--){
+    const j=Math.floor(Math.random()*(i+1));
+    [array[i],array[j]]=[array[j],array[i]];
+  }
+}
+
+/* ================= RENDER QUESTIONS ================= */
+function render(){
+  const q = QUESTIONS[current];
+  qText.innerHTML = `${current+1}. ${q.q} <small>${q.y ? "(Year "+q.y+")":""}</small>`;
+  optionsWrap.innerHTML="";
+  q.o.forEach((op,i)=>{
+    const d=document.createElement("div");
+    d.className="option";
+    if(answers[current]===i) d.classList.add("selected");
+    d.innerText=op;
+    d.onclick=()=>{answers[current]=i; render();};
+    optionsWrap.appendChild(d);
+  });
+  progressFill.style.width=((answers.filter(a=>a!==null).length/QUESTIONS.length)*100)+"%";
+  buildNav();
+}
+
+function buildNav(){
+  qNav.innerHTML="";
+  for(let i=0;i<QUESTIONS.length;i++){
+    const b=document.createElement("button");
+    b.className="qbtn";
+    if(i===current) b.classList.add("current");
+    if(answers[i]!=null) b.classList.add("answered");
+    if(!isPremium && i>=25){
+      b.classList.add("locked");
+      b.disabled=true;
+    }
+    b.innerText=i+1;
+    b.onclick=()=>{current=i; render();}
+    qNav.appendChild(b);
+  }
+}
+
+/* ================= TIMER ================= */
+async function chooseExamTime(){
+  const { value } = await Swal.fire({
+    title: "Select Exam Duration",
+    text: "Choose your preferred exam time",
+    icon: "info",
+    allowOutsideClick: false,
+    allowEscapeKey: false,
+    confirmButtonText: "Start Exam",
+    input: "radio",
+    inputOptions: {
+      20: "20 Minutes",
+      30: "30 Minutes",
+      40: "40 Minutes",
+      60: "60 Minutes"
+    },
+    inputValidator: (value) => {
+      if (!value) return "Please select a duration";
+    }
+  });
+
+  selectedMinutes = Number(value);
+  time = selectedMinutes * 60;
+}
+
+function startTimer(){
+  if(timerStarted) return;
+  timerStarted = true;
+
+  timerInt = setInterval(()=>{
+    let m = Math.floor(time / 60);
+    let s = time % 60;
+    timerEl.innerText = `${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}`;
+    time--;
+    if(time<0){
+      clearInterval(timerInt);
+      Swal.fire({
+        title:"Time Up!",
+        text:"Your exam has been submitted automatically.",
+        icon:"warning",
+        confirmButtonText:"View Result"
+      }).then(()=>showReview());
+    }
+  },1000);
+}
+
+/* ================= SUBMIT & REVIEW ================= */
+function submitExam(){
+  Swal.fire({
+    title:"Submit Exam?",
+    icon:"warning",
+    showCancelButton:true,
+    confirmButtonText:"Yes Submit"
+  }).then(r=>{
+    if(!r.isConfirmed) return;
+    showReview();
+  });
+}
+
+function showReview(){
+  clearInterval(timerInt);
+  document.getElementById("examSection").style.display="none";
+  document.getElementById("reviewSection").style.display="block";
+
+  const total = isPremium ? QUESTIONS.length : Math.min(25, QUESTIONS.length);
+  let score = 0;
+  const list = document.getElementById("reviewList");
+  list.innerHTML="";
+
+  for(let i=0;i<total;i++){
+    if(answers[i]===QUESTIONS[i].a) score++;
+    const div=document.createElement("div");
+    div.className="review-q";
+    div.innerHTML=`
+      <p><b>${i+1}. ${QUESTIONS[i].q}</b></p>
+      <p>Your Answer: <span class="${answers[i]===QUESTIONS[i].a?"correct":"wrong"}">${QUESTIONS[i].o[answers[i]]||"Not Answered"}</span></p>
+      <p>Correct Answer: ${QUESTIONS[i].o[QUESTIONS[i].a]}</p>
+    `;
+    list.appendChild(div);
+  }
+
+  document.getElementById("rScore").innerText = `${score}/${total}`;
+  document.getElementById("rFail").innerText = total-score;
+  document.getElementById("rPercent").innerText = ((score/total)*100).toFixed(1)+"%";
+}
+
+/* ================= BUTTONS ================= */
+document.getElementById("nextBtn").onclick=()=>{
+  if(!isPremium && current===24){
+    Swal.fire("Upgrade Required","Only 25 questions for free users","info");
+    return;
+  }
+  if(current<QUESTIONS.length-1){current++;render();}
+};
+document.getElementById("backBtn").onclick=()=>{if(current>0){current--;render();}};
+document.getElementById("submitBtn").onclick=submitExam;
+
+/* ================= AUTH & INIT ================= */
+onAuthStateChanged(auth, async(user)=>{
+  if(!user){ location.href="login.html"; return; }
+
+  const snap = await getDoc(doc(db,"users",user.uid));
+  isPremium = snap.exists() && snap.data().isPremium===true;
+  if(!isPremium) document.getElementById("freeNote").style.display="block";
+
+  // 1. Select exam time
+  await chooseExamTime();
+
+  // 2. Shuffle questions & init answers
+  shuffle(QUESTIONS);
+  answers = Array(QUESTIONS.length).fill(null);
+
+  // 3. Render and start timer
+  render();
+  startTimer();
+});
+</script>
+
+</body>
+</html>

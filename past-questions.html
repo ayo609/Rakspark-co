@@ -1,0 +1,221 @@
+
+<!DOCTYPE html>  <html lang="en">  
+<head>  
+  <meta charset="UTF-8" />  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>  
+  <title>Past Questions • Rakspark Academy</title>  
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">  
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>  
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">  
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>    <style>  
+    :root{  
+      --sky:#87CEEB;--navy:#001F3F;--gold:#FFD700;--green:#2ed573;--red:#ff4757;--white:#fff;--shadow:rgba(0,31,63,0.25)  
+    }  
+    *{margin:0;padding:0;box-sizing:border-box}  
+    body{  
+      font-family:'Poppins',sans-serif;  
+      background:linear-gradient(135deg,var(--sky),#5dade2);  
+      min-height:100vh;  
+      color:#333;  
+      display:flex;  
+      align-items:center;  
+      justify-content:center;  
+      padding:20px  
+    }  
+    .container{max-width:950px;width:100%}  
+    .card{  
+      background:white;  
+      border-radius:40px;  
+      padding:80px 60px;  
+      box-shadow:0 30px 100px var(--shadow);  
+      text-align:center;  
+      position:relative;  
+      overflow:hidden  
+    }  
+    .header h1{font-size:4.2rem;color:var(--navy);font-weight:800;margin-bottom:20px}  
+    .header p{font-size:1.7rem;color:#555;margin-bottom:70px;line-height:1.6}  
+  
+    .form-group{  
+      display:grid;  
+      grid-template-columns:repeat(auto-fit,minmax(300px,1fr));  
+      gap:40px;  
+      margin:80px 0  
+    }  
+    select{  
+      padding:25px;  
+      border:5px solid var(--navy);  
+      border-radius:24px;  
+      font-size:1.6rem;  
+      font-weight:600;  
+      background:white;  
+      color:var(--navy);  
+      cursor:pointer;  
+      transition:all 0.3s  
+    }  
+    select:focus{  
+      outline:none;  
+      border-color:var(--gold);  
+      box-shadow:0 0 0 8px rgba(255,215,0,0.2)  
+    }  
+  
+    .start-btn{  
+      display:inline-block;  
+      padding:28px 130px;  
+      background:var(--navy);  
+      color:white;  
+      border:none;  
+      border-radius:60px;  
+      font-size:2rem;  
+      font-weight:800;  
+      cursor:not-allowed;  
+      opacity:0.6;  
+      transition:all 0.4s;  
+      margin-top:50px;  
+      text-decoration:none;  
+      pointer-events:none  
+    }  
+    .start-btn.ready{  
+      opacity:1;  
+      cursor:pointer;  
+      pointer-events:auto  
+    }  
+    .start-btn.ready:hover{  
+      background:#001233;  
+      transform:translateY(-10px);  
+      box-shadow:0 25px 50px rgba(0,31,63,0.4)  
+    }  
+  
+    .back-link{  
+      display:block;  
+      margin-top:100px;  
+      color:var(--navy);  
+      font-size:1.7rem;  
+      font-weight:600;  
+      text-decoration:none;  
+      transition:all 0.3s  
+    }  
+    .back-link:hover{color:var(--gold)}  
+  
+    @media (max-width:768px){  
+      .card{padding:60px 40px}  
+      .header h1{font-size:3.2rem}  
+      .header p{font-size:1.5rem}  
+      .form-group{grid-template-columns:1fr;gap:30px}  
+      .start-btn{padding:24px 80px;font-size:1.7rem}  
+    }  
+  </style>  </head>  
+<body>  <div class="container">  
+  <div class="card">  
+    <div class="header">  
+      <h1>JAMB Past Questions</h1>  
+      <p>Practice with authentic questions from 1990 – 2025</p>  
+    </div>  <div class="form-group">  
+  <select id="yearSelect" required>  
+    <option value="">Select Year</option>  
+    <option value="2025">2025</option>  
+    
+  </select>  
+
+  <select id="subjectSelect" required>  
+    <option value="">Select Subject</option>  
+    <option value="english">Use of English</option>  
+    <option value="mathematics">Mathematics</option>  
+    <option value="physics">Physics</option>  
+    <option value="chemistry">Chemistry</option>  
+    <option value="biology">Biology</option>  
+    <option value="government">Government</option>  
+    <option value="economics">Economics</option>  
+    <option value="commerce">Commerce</option>  
+  </select>  
+</div>  
+
+<a href="#" id="startExamBtn" class="start-btn">Start Practice Exam →</a>  
+<a href="dashboard.html" class="back-link">← Back to Dashboard</a>
+
+  </div>  
+</div>  <script type="module">  
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js";  
+  import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js";  
+  import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";  
+  
+  const firebaseConfig = {  
+    apiKey: "AIzaSyDTDWqG_WAXZO7O6yAxV5lOHUkHZp-wwQk",  
+    authDomain: "rackspark.firebaseapp.com",  
+    projectId: "rackspark",  
+    storageBucket: "rackspark.firebasestorage.app",  
+    messagingSenderId: "125488977166",  
+    appId: "1:125488977166:web:b519b6871df21662c0f35f"  
+  };  
+  
+  const app = initializeApp(firebaseConfig);  
+  const auth = getAuth(app);  
+  const db = getFirestore(app);  
+  
+  const startBtn = document.getElementById('startExamBtn');  
+  const yearSelect = document.getElementById('yearSelect');  
+  const subjectSelect = document.getElementById('subjectSelect');  
+  
+  function showUpgradeModal() {  
+    Swal.fire({  
+      icon: 'warning',  
+      title: 'Premium Feature 🔒',  
+      html: `  
+        <p style="font-size:1.6rem;margin:25px 0">  
+          JAMB Past Questions are only available to <strong>Premium members</strong>  
+        </p>  
+        <p style="color:#666;font-size:1.4rem">Upgrade now to access 35+ years of real questions!</p>  
+      `,  
+      confirmButtonText: 'Upgrade to Premium Now',  
+      cancelButtonText: 'Back to Dashboard',  
+      showCancelButton: true,  
+      confirmButtonColor: '#001F3F',  
+      cancelButtonColor: '#95a5a6',  
+      allowOutsideClick: false,  
+      allowEscapeKey: false  
+    }).then((result) => {  
+      if (result.isConfirmed) {  
+        location.href = "upgrade.html";  
+      } else {  
+        location.href = "dashboard.html";  
+      }  
+    });  
+  }  
+  
+  function updateExamLink() {  
+    const year = yearSelect.value;  
+    const subject = subjectSelect.value;  
+    if (year && subject) {  
+      startBtn.href = `exam.html?subject=${subject}&year=${year}`;  
+      startBtn.classList.add('ready');  
+    } else {  
+      startBtn.href = "#";  
+      startBtn.classList.remove('ready');  
+    }  
+  }  
+  
+  yearSelect.addEventListener('change', updateExamLink);  
+  subjectSelect.addEventListener('change', updateExamLink);  
+  
+  startBtn.addEventListener('click', (e) => {  
+    if (!yearSelect.value || !subjectSelect.value) {  
+      e.preventDefault();  
+      Swal.fire({  
+        icon: 'info',  
+        title: 'Almost there!',  
+        text: 'Please select both Year and Subject to continue',  
+        confirmButtonColor: '#001F3F'  
+      });  
+    }  
+  });  
+  
+  // Auth & Premium Check  
+  onAuthStateChanged(auth, async (user) => {  
+    if (!user) location.href = "login.html";  
+  
+    const userSnap = await getDoc(doc(db, "users", user.uid));  
+    const userData = userSnap.exists() ? userSnap.data() : {};  
+  
+    if (!userData.isPremium) showUpgradeModal();  
+  });  
+</script>  </body>  
+</html>

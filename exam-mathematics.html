@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>JAMB CBT – English Language</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<!-- SweetAlert2 -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<!-- Google Font -->
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+:root{
+  --navy:#001f3f;
+  --sky:#eaf4ff;
+  --green:#2ed573;
+  --red:#ff4757;
+  --gold:#f1c40f;
+  --gray:#f5f5f5;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+  font-family:Poppins,sans-serif;
+  background:linear-gradient(135deg,#eaf4ff,#d6e9ff);
+  min-height:100vh;
+  padding:20px;
+}
+.container{
+  max-width:1100px;
+  margin:auto;
+  background:#fff;
+  border-radius:25px;
+  box-shadow:0 25px 70px rgba(0,0,0,.15);
+  overflow:hidden;
+}
+header{
+  background:var(--navy);
+  color:#fff;
+  padding:25px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+header h2{font-size:1.6rem}
+#timer{
+  background:#fff;
+  color:var(--navy);
+  padding:8px 18px;
+  border-radius:20px;
+  font-weight:700;
+}
+#freeNote{
+  background:#fff3cd;
+  color:#856404;
+  padding:12px;
+  text-align:center;
+  font-weight:600;
+  display:none;
+}
+.main{
+  padding:30px;
+}
+#progress{
+  height:10px;
+  background:#eee;
+  border-radius:10px;
+  overflow:hidden;
+  margin-bottom:20px;
+}
+#progressFill{
+  height:100%;
+  width:0%;
+  background:linear-gradient(90deg,var(--green),var(--gold));
+}
+#qText{
+  font-size:1.3rem;
+  font-weight:600;
+  margin-bottom:20px;
+}
+.option{
+  background:var(--gray);
+  padding:15px 18px;
+  border-radius:15px;
+  margin-bottom:12px;
+  cursor:pointer;
+  transition:.3s;
+}
+.option:hover{background:#e0e0e0}
+.option.selected{
+  background:var(--navy);
+  color:#fff;
+}
+.nav-btns{
+  display:flex;
+  justify-content:space-between;
+  margin-top:25px;
+}
+button{
+  padding:12px 30px;
+  border:none;
+  border-radius:30px;
+  font-weight:600;
+  cursor:pointer;
+}
+#backBtn{background:#ccc}
+#nextBtn{background:var(--navy);color:#fff}
+#submitBtn{
+  background:var(--green);
+  color:#fff;
+}
+#qNav{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(45px,1fr));
+  gap:10px;
+  margin-top:30px;
+}
+.qbtn{
+  padding:10px;
+  border-radius:10px;
+  border:none;
+  cursor:pointer;
+  font-weight:600;
+}
+.qbtn.current{background:var(--navy);color:#fff}
+.qbtn.answered{background:var(--green);color:#fff}
+.qbtn.locked{background:#ddd;color:#999;cursor:not-allowed}
+.review{
+  display:none;
+  padding:30px;
+}
+.review h2{text-align:center;margin-bottom:20px}
+.score-box{
+  display:flex;
+  justify-content:space-around;
+  margin-bottom:25px;
+  flex-wrap:wrap;
+}
+.score-card{
+  background:var(--gray);
+  padding:20px;
+  border-radius:20px;
+  text-align:center;
+  min-width:160px;
+}
+.correct{color:var(--green);font-weight:700}
+.wrong{color:var(--red);font-weight:700}
+.review-q{
+  background:#f9f9f9;
+  padding:15px;
+  border-radius:15px;
+  margin-bottom:15px;
+}
+.review-q p{margin:6px 0}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<header>
+  <h2>JAMB CBT – Mathematics</h2>
+  <div id="timer">00:00</div>
+</header>
+
+<div id="freeNote">
+  Free users can attempt only <b>25 questions</b>. Upgrade to Premium for all 99+.
+</div>
+
+<div class="main" id="examSection">
+  <div id="progress"><div id="progressFill"></div></div>
+  <div id="qText"></div>
+  <div id="optionsWrap"></div>
+
+  <div class="nav-btns">
+    <button id="backBtn">Back</button>
+    <button id="nextBtn">Next</button>
+    <button id="submitBtn">Submit</button>
+  </div>
+
+  <div id="qNav"></div>
+</div>
+
+<div class="review" id="reviewSection">
+  <h2>Exam Review</h2>
+  <div class="score-box">
+    <div class="score-card">Score<br><span id="rScore"></span></div>
+    <div class="score-card">Failed<br><span id="rFail"></span></div>
+    <div class="score-card">Percentage<br><span id="rPercent"></span></div>
+  </div>
+  <div id="reviewList"></div>
+</div>
+
+</div>
+
+<script type="module">
+/* ================= FIREBASE ================= */
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js";
+import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDTDWqG_WAXZO7O6yAxV5lOHUkHZp-wwQk",
+  authDomain: "rackspark.firebaseapp.com",
+  projectId: "rackspark",
+  storageBucket: "rackspark.firebasestorage.app",
+  messagingSenderId: "125488977166",
+  appId: "1:125488977166:web:b519b6871df21662c0f35f"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+/* ================= QUESTIONS ================= */
+
+const QUESTIONS = [
+
+/* ===================== 1–10 ===================== */
+{q:"If 3x + 5 = 14, what is x?", o:["2","3","4","5"], a:2, y:2021},
+{q:"The sum of the angles in a triangle is?", o:["180°","90°","360°","270°"], a:0, y:2021},
+{q:"If f(x) = 2x + 3, find f(4).", o:["10","11","12","13"], a:3, y:2022},
+{q:"Solve x² - 5x + 6 = 0", o:["1,6","2,3","3,2","0,6"], a:1, y:2022},
+{q:"Simplify: 3(2x - 1) + 4", o:["6x + 1","6x + 2","6x - 3","6x + 7"], a:0, y:2023},
+{q:"Next number: 2, 4, 8, 16, ?", o:["20","24","32","36"], a:2, y:2023},
+{q:"If sinθ = 0.5, θ = ?", o:["30°","45°","60°","90°"], a:0, y:2021},
+{q:"Area of rectangle 5cm by 10cm?", o:["15cm²","50cm²","25cm²","100cm²"], a:1, y:2021},
+{q:"Median of 3, 7, 9, 12, 15?", o:["7","8","9","10"], a:2, y:2022},
+{q:"If log₁₀ x = 3, then x = ?", o:["10","100","1000","10000"], a:2, y:2022},
+
+/* ===================== 11–20 ===================== */
+{q:"Solve 2x - 3 = 7", o:["2","3","5","7"], a:2, y:2023},
+{q:"Factorize x² - 16", o:["(x-4)(x+4)","(x-8)(x+2)","(x-2)(x+8)","Prime"], a:0, y:2023},
+{q:"Derivative of f(x)=x²?", o:["x²","2x","x","0"], a:1, y:2024},
+{q:"Slope of line y = 3x + 7?", o:["3","7","-3","-7"], a:0, y:2024},
+{q:"Probability of head in a coin toss?", o:["1/2","1/3","1/4","1/5"], a:0, y:2021},
+{q:"Solve x² - 16 = 0", o:["4,-4","0,16","2,8","-2,2"], a:0, y:2022},
+{q:"Simplify x³ × x²", o:["x⁵","x⁶","x²","x⁸"], a:0, y:2022},
+{q:"Cube side if volume = 27cm³?", o:["3cm","9cm","6cm","27cm"], a:0, y:2023},
+{q:"Angle opposite hypotenuse in right triangle?", o:["30°","45°","60°","90°"], a:3, y:2023},
+{q:"Solve 2x + 3 = 11", o:["3","4","5","6"], a:1, y:2024},
+
+/* ===================== 21–30 ===================== */
+{q:"LCM of 12 and 18?", o:["36","72","24","12"], a:0, y:2024},
+{q:"HCF of 36 and 60?", o:["6","12","18","24"], a:1, y:2025},
+{q:"Sum of interior angles of hexagon?", o:["540°","360°","720°","180°"], a:0, y:2025},
+{q:"Solve 5x - 15 = 10", o:["2","3","4","5"], a:2, y:2021},
+{q:"Perimeter of square = 20cm, area?", o:["16cm²","25cm²","20cm²","10cm²"], a:0, y:2022},
+{q:"Simplify (2x²y³)(3x³y)", o:["6x⁵y⁴","6x⁶y³","5x⁵y³","6x⁵y⁵"], a:0, y:2022},
+{q:"Solve 5x - 3 = 2x + 9", o:["3","4","5","6"], a:2, y:2023},
+{q:"Distance A(1,2) B(4,6)?", o:["5","6","7","8"], a:0, y:2023},
+{q:"Integral of f(x)=2x?", o:["x² + C","2x + C","x + C","x²"], a:0, y:2024},
+{q:"Sum of first 10 natural numbers?", o:["50","55","45","60"], a:1, y:2024},
+
+/* ===================== 31–40 ===================== */
+{q:"Find c if a=3,b=4 in a²+b²=c²", o:["5","6","7","8"], a:0, y:2025},
+{q:"If y=2x+3, find y when x=4", o:["10","11","12","13"], a:3, y:2025},
+{q:"Arithmetic mean of 2,5,7?", o:["4","5","6","7"], a:0, y:2021},
+{q:"Solve 2x-5=1", o:["1","2","3","4"], a:2, y:2021},
+{q:"Cube of 3?", o:["6","9","27","81"], a:2, y:2022},
+{q:"Square root of 144?", o:["10","11","12","13"], a:2, y:2022},
+{q:"Sum of angles in quadrilateral?", o:["360°","180°","270°","540°"], a:0, y:2023},
+{q:"If f(x)=x²-4x+4, f(2) = ?", o:["0","2","4","6"], a:0, y:2023},
+{q:"Solve 7x-14=0", o:["0","1","2","3"], a:2, y:2024},
+{q:"Determinant of |2 3;1 4|?", o:["5","6","7","8"], a:3, y:2024},
+
+/* ===================== 41–50 ===================== */
+{q:"Mode of 2,3,3,5,7?", o:["2","3","5","7"], a:1, y:2025},
+{q:"Median of 1,2,3,4,5?", o:["2","3","4","5"], a:1, y:2025},
+{q:"Next number 2,5,10,17,?", o:["24","26","28","30"], a:1, y:2021},
+{q:"If tanθ=1, θ=?", o:["30°","45°","60°","90°"], a:1, y:2021},
+{q:"Solve 3x+2=11", o:["2","3","4","5"], a:2, y:2022},
+{q:"Range of 3,7,5,12,9?", o:["9","10","8","12"], a:1, y:2022},
+{q:"Simplify (x²y³)/(xy²)", o:["x²y","xy","x³y²","xy²"], a:1, y:2023},
+{q:"Solve x²+5x+6=0", o:["1,6","2,3","3,2","-2,-3"], a:3, y:2023},
+{q:"Derivative of f(x)=3x³?", o:["3x²","9x²","x²","x³"], a:1, y:2024},
+{q:"Area of triangle base=6, height=4?", o:["10","12","24","20"], a:1, y:2024},
+
+/* ===================== 51–60 ===================== */
+{q:"Probability of rolling 3 on dice?", o:["1/3","1/4","1/5","1/6"], a:3, y:2025},
+{q:"Solve x²-4x=0", o:["0,4","2,4","0,2","2,3"], a:0, y:2025},
+{q:"Find x: 5x+3=18", o:["2","3","4","5"], a:3, y:2021},
+{q:"Sum of angles in pentagon?", o:["540°","360°","720°","180°"], a:0, y:2021},
+{q:"Pythagoras a=5,b=12, find c?", o:["12","13","17","15"], a:1, y:2022},
+{q:"Simplify 3(x+4)-2", o:["3x+10","3x+12","3x+5","3x+8"], a:0, y:2022},
+{q:"If f(x)=x²+2x, f(3)=?", o:["9","11","15","21"], a:1, y:2023},
+{q:"Solve 4x-7=9", o:["2","3","4","5"], a:3, y:2023},
+{q:"Integral of f(x)=3x²?", o:["x³+C","x³","3x+C","3x²+C"], a:0, y:2024},
+{q:"LCM of 8 and 12?", o:["24","36","48","16"], a:0, y:2024},
+
+/* ===================== 61–70 ===================== */
+{q:"HCF of 48 and 60?", o:["6","12","24","18"], a:1, y:2025},
+{q:"Solve x²-5x+6=0", o:["1,6","2,3","3,2","0,6"], a:1, y:2025},
+{q:"Solve 2x+3y=12, x=3, find y", o:["2","1","3","4"], a:1, y:2021},
+{q:"Mode of 1,1,2,3,3,3,4?", o:["1","2","3","4"], a:2, y:2021},
+{q:"Simplify (x²-y²)/(x-y)", o:["x+y","x-y","xy","x²+y²"], a:0, y:2022},
+{q:"Next number:1,4,9,16,?", o:["20","25","30","36"], a:1, y:2022},
+{q:"Solve 2x²-8x=0", o:["0,4","2,0","0,2","4,2"], a:2, y:2023},
+{q:"Sum of interior angles of heptagon?", o:["900°","1080°","1260°","1440°"], a:1, y:2023},
+{q:"If sin30°=?", o:["1/2","√3/2","1","0"], a:0, y:2024},
+{q:"Slope of line y=2x+5?", o:["2","5","-2","-5"], a:0, y:2024},
+
+/* ===================== 71–80 ===================== */
+{q:"Perimeter of square=36cm, side=?", o:["6","9","12","18"], a:1, y:2025},
+{q:"Square root of 81?", o:["7","8","9","10"], a:2, y:2025},
+{q:"Solve 3x+4=10", o:["1","2","3","4"], a:1, y:2021},
+{q:"Arithmetic mean 5,10,15?", o:["10","12","15","20"], a:0, y:2021},
+{q:"Simplify (2x³)(3x²)", o:["6x⁵","5x⁵","6x⁶","6x⁴"], a:0, y:2022},
+{q:"Solve x/2 + 3=7", o:["6","7","8","10"], a:2, y:2022},
+{q:"Find x:2x-3=1", o:["1","2","3","4"], a:1, y:2023},
+{q:"Integral of f(x)=5?", o:["5x+C","5x","x+C","C"], a:0, y:2023},
+{q:"Solve x²-9=0", o:["3,-3","0,9","1,8","2,7"], a:0, y:2024},
+{q:"Sum of interior angles of decagon?", o:["1440°","1260°","1080°","1200°"], a:0, y:2024},
+
+/* ===================== 81–90 ===================== */
+{q:"Probability of selecting red from 5 red,3 blue?", o:["1/2","5/8","5/3","3/8"], a:1, y:2025},
+{q:"Solve 7x+5=26", o:["2","3","4","5"], a:2, y:2025},
+{q:"Simplify (x²y³)/(xy)", o:["x²y²","xy²","xy³","x²y"], a:3, y:2021},
+{q:"Next number 5,10,20,40,?", o:["60","70","80","80"], a:3, y:2021},
+{q:"Solve 3x-7=2", o:["2","3","4","5"], a:3, y:2022},
+{q:"Sum of first 20 natural numbers?", o:["210","200","220","190"], a:0, y:2022},
+{q:"If a=2,b=3, a³+b³=?", o:["35","27","17","31"], a:0, y:2023},
+{q:"Tangent 45°?", o:["1","√2","0","√3"], a:0, y:2023},
+{q:"Solve 4x+7=19", o:["2","3","4","5"], a:2, y:2024},
+{q:"Square of 15?", o:["225","215","250","200"], a:0, y:2024},
+
+/* ===================== 91–100 ===================== */
+{q:"If f(x)=x²-3x+2, f(1)=?", o:["0","1","2","3"], a:0, y:2025},
+{q:"Mean of 4,8,12,16,20?", o:["12","10","14","15"], a:0, y:2025},
+{q:"If ratio 3:5 = x:25, x=?", o:["12","15","13","20"], a:1, y:2021},
+{q:"Number of sides of polygon sum angles=720°?", o:["6","5","7","8"], a:0, y:2021},
+{q:"Solve 5x²=80", o:["4","5","6","8"], a:0, y:2022},
+{q:"Simplify √64 + √36", o:["8","10","14","16"], a:2, y:2022},
+{q:"Slope line passes (1,2) and (3,6)?", o:["2","3","1","4"], a:1, y:2023},
+{q:"Perimeter of circle radius=7cm?", o:["44cm","43.96cm","42cm","45cm"], a:1, y:2024},
+{q:"log₁₀ 1000=?", o:["3","2","4","1"], a:0, y:2025},
+{q:"Solve x²-2x-15=0", o:["3,-5","5,-3","-3,5","3,5"], a:0, y:2025}
+
+];
+/* ================= VARIABLES ================= */
+let current = 0;
+let answers = [];
+let isPremium = false;
+let time = 0;          // exam duration in seconds
+let selectedMinutes = 0;
+let timerInt;
+let timerStarted = false;
+
+const qText = document.getElementById("qText");
+const optionsWrap = document.getElementById("optionsWrap");
+const qNav = document.getElementById("qNav");
+const progressFill = document.getElementById("progressFill");
+const timerEl = document.getElementById("timer");
+
+/* ================= UTILITY ================= */
+function shuffle(array){
+  for(let i=array.length-1;i>0;i--){
+    const j=Math.floor(Math.random()*(i+1));
+    [array[i],array[j]]=[array[j],array[i]];
+  }
+}
+
+/* ================= RENDER QUESTIONS ================= */
+function render(){
+  const q = QUESTIONS[current];
+  qText.innerHTML = `${current+1}. ${q.q} <small>${q.y ? "(Year "+q.y+")":""}</small>`;
+  optionsWrap.innerHTML="";
+  q.o.forEach((op,i)=>{
+    const d=document.createElement("div");
+    d.className="option";
+    if(answers[current]===i) d.classList.add("selected");
+    d.innerText=op;
+    d.onclick=()=>{answers[current]=i; render();};
+    optionsWrap.appendChild(d);
+  });
+  progressFill.style.width=((answers.filter(a=>a!==null).length/QUESTIONS.length)*100)+"%";
+  buildNav();
+}
+
+function buildNav(){
+  qNav.innerHTML="";
+  for(let i=0;i<QUESTIONS.length;i++){
+    const b=document.createElement("button");
+    b.className="qbtn";
+    if(i===current) b.classList.add("current");
+    if(answers[i]!=null) b.classList.add("answered");
+    if(!isPremium && i>=25){
+      b.classList.add("locked");
+      b.disabled=true;
+    }
+    b.innerText=i+1;
+    b.onclick=()=>{current=i; render();}
+    qNav.appendChild(b);
+  }
+}
+
+/* ================= TIMER ================= */
+async function chooseExamTime(){
+  const { value } = await Swal.fire({
+    title: "Select Exam Duration",
+    text: "Choose your preferred exam time",
+    icon: "info",
+    allowOutsideClick: false,
+    allowEscapeKey: false,
+    confirmButtonText: "Start Exam",
+    input: "radio",
+    inputOptions: {
+      20: "20 Minutes",
+      30: "30 Minutes",
+      40: "40 Minutes",
+      60: "60 Minutes"
+    },
+    inputValidator: (value) => {
+      if (!value) return "Please select a duration";
+    }
+  });
+
+  selectedMinutes = Number(value);
+  time = selectedMinutes * 60;
+}
+
+function startTimer(){
+  if(timerStarted) return;
+  timerStarted = true;
+
+  timerInt = setInterval(()=>{
+    let m = Math.floor(time / 60);
+    let s = time % 60;
+    timerEl.innerText = `${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}`;
+    time--;
+    if(time<0){
+      clearInterval(timerInt);
+      Swal.fire({
+        title:"Time Up!",
+        text:"Your exam has been submitted automatically.",
+        icon:"warning",
+        confirmButtonText:"View Result"
+      }).then(()=>showReview());
+    }
+  },1000);
+}
+
+/* ================= SUBMIT & REVIEW ================= */
+function submitExam(){
+  Swal.fire({
+    title:"Submit Exam?",
+    icon:"warning",
+    showCancelButton:true,
+    confirmButtonText:"Yes Submit"
+  }).then(r=>{
+    if(!r.isConfirmed) return;
+    showReview();
+  });
+}
+
+function showReview(){
+  clearInterval(timerInt);
+  document.getElementById("examSection").style.display="none";
+  document.getElementById("reviewSection").style.display="block";
+
+  const total = isPremium ? QUESTIONS.length : Math.min(25, QUESTIONS.length);
+  let score = 0;
+  const list = document.getElementById("reviewList");
+  list.innerHTML="";
+
+  for(let i=0;i<total;i++){
+    if(answers[i]===QUESTIONS[i].a) score++;
+    const div=document.createElement("div");
+    div.className="review-q";
+    div.innerHTML=`
+      <p><b>${i+1}. ${QUESTIONS[i].q}</b></p>
+      <p>Your Answer: <span class="${answers[i]===QUESTIONS[i].a?"correct":"wrong"}">${QUESTIONS[i].o[answers[i]]||"Not Answered"}</span></p>
+      <p>Correct Answer: ${QUESTIONS[i].o[QUESTIONS[i].a]}</p>
+    `;
+    list.appendChild(div);
+  }
+
+  document.getElementById("rScore").innerText = `${score}/${total}`;
+  document.getElementById("rFail").innerText = total-score;
+  document.getElementById("rPercent").innerText = ((score/total)*100).toFixed(1)+"%";
+}
+
+/* ================= BUTTONS ================= */
+document.getElementById("nextBtn").onclick=()=>{
+  if(!isPremium && current===24){
+    Swal.fire("Upgrade Required","Only 25 questions for free users","info");
+    return;
+  }
+  if(current<QUESTIONS.length-1){current++;render();}
+};
+document.getElementById("backBtn").onclick=()=>{if(current>0){current--;render();}};
+document.getElementById("submitBtn").onclick=submitExam;
+
+/* ================= AUTH & INIT ================= */
+onAuthStateChanged(auth, async(user)=>{
+  if(!user){ location.href="login.html"; return; }
+
+  const snap = await getDoc(doc(db,"users",user.uid));
+  isPremium = snap.exists() && snap.data().isPremium===true;
+  if(!isPremium) document.getElementById("freeNote").style.display="block";
+
+  // 1. Select exam time
+  await chooseExamTime();
+
+  // 2. Shuffle questions & init answers
+  shuffle(QUESTIONS);
+  answers = Array(QUESTIONS.length).fill(null);
+
+  // 3. Render and start timer
+  render();
+  startTimer();
+});
+</script>
+
+</body>
+</html>

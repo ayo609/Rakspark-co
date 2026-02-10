@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Register • Rakspark Academy</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+  <style>
+    :root {
+      --sky: #87CEEB;
+      --navy: #001F3F;
+      --success: #2ed573;
+      --danger: #ff4757;
+      --shadow: rgba(0,31,63,0.25);
+      --weak: #ff4757;
+      --medium: #ffa502;
+      --strong: #2ed573;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: linear-gradient(145deg, var(--sky) 0%, #5dade2 100%);
+      min-height: 100vh;
+      padding: 30px 20px;
+    }
+    .toast {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      min-width: 340px;
+      padding: 18px 28px;
+      border-radius: 18px;
+      color: white;
+      font-weight: 600;
+      font-size: 1.15rem;
+      box-shadow: 0 15px 45px rgba(0,0,0,0.35);
+      z-index: 10000;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.6s ease;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .toast.show { opacity: 1; visibility: visible; top: 40px; }
+    .toast.success { background: var(--success); }
+    .toast.error { background: var(--danger); }
+
+    .register-wrapper {
+      max-width: 1100px;
+      margin: 40px auto;
+      display: flex;
+      background: white;
+      border-radius: 32px;
+      overflow: hidden;
+      box-shadow: 0 30px 90px var(--shadow);
+    }
+    .side-panel {
+      flex: 1;
+      background: linear-gradient(135deg, var(--navy) 0%, #002b55 100%);
+      color: white;
+      padding: 80px 60px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 40px;
+    }
+    .side-panel h2 { font-size: 3.2rem; font-weight: 900; }
+    .side-panel p { font-size: 1.35rem; opacity: 0.95; }
+    .form-panel { flex: 1.3; padding: 80px 70px; background: white; }
+    .form-header h1 { font-size: 3rem; color: var(--navy); text-align: center; margin-bottom: 12px; font-weight: 800; }
+    .form-header p { text-align: center; color: #555; font-size: 1.25rem; }
+    .input-group { position: relative; margin-bottom: 30px; }
+    .input-group i:first-child { position: absolute; left: 24px; top: 50%; transform: translateY(-50%); color: var(--navy); font-size: 1.4rem; }
+    .password-toggle { position: absolute; right: 24px; top: 50%; transform: translateY(-50%); cursor: pointer; color: var(--navy); font-size: 1.3rem; z-index: 2; }
+    input {
+      width: 100%;
+      padding: 20px 20px 20px 65px;
+      border: 2.5px solid #e8ecf4;
+      border-radius: 18px;
+      font-size: 1.15rem;
+      background: #f8fbff;
+      transition: all 0.4s ease;
+    }
+    input:focus {
+      border-color: var(--navy);
+      background: white;
+      box-shadow: 0 0 0 7px rgba(0,31,63,0.1);
+      outline: none;
+    }
+    .error-text { color: var(--danger); font-size: 0.95rem; margin-top: 8px; display: none; font-weight: 500; }
+    .error-text.show { display: block; animation: shake 0.5s; }
+    @keyframes shake { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-8px); } 75% { transform: translateX(8px); } }
+    .password-strength { height: 7px; border-radius: 4px; margin-top: 12px; background: #f0f0f0; overflow: hidden; }
+    .strength-bar { height: 100%; width: 0; border-radius: 4px; transition: all 0.6s ease; }
+    .strength-bar.weak { background: var(--weak); }
+    .strength-bar.medium { background: var(--medium); }
+    .strength-bar.strong { background: var(--strong); }
+    .checkbox { display: flex; align-items: center; gap: 12px; margin: 25px 0 30px; font-size: 1.05rem; color: #444; cursor: pointer; }
+    .checkbox input[type="checkbox"] { accent-color: var(--navy); transform: scale(1.05); margin-top: 2px; }
+    .checkbox a { color: var(--navy); font-weight: 700; text-decoration: underline; }
+    .btn { width: 100%; padding: 22px; border: none; border-radius: 18px; font-size: 1.35rem; font-weight: 700; cursor: not-allowed; opacity: 0.6; transition: all 0.5s ease; display: flex; align-items: center; justify-content: center; gap: 14px; }
+    .btn.active { background: var(--navy); color: white; cursor: pointer; opacity: 1; }
+    .btn.active:hover { background: #001233; transform: translateY(-6px); box-shadow: 0 20px 40px rgba(0,31,63,0.35); }
+    .btn-google { background: white; color: var(--navy); border: 2.5px solid #ddd; margin-top: 15px; }
+    .btn-google:hover { background: #f8f9fa; border-color: var(--navy); }
+    .divider, .login-link { text-align: center; margin: 40px 0; color: #555; font-size: 1.15rem; }
+    .divider span { background: white; padding: 0 30px; font-weight: 600; position: relative; }
+    .divider::before { content: ''; position: absolute; top: 50%; left: 0; width: 100%; height: 1.5px; background: #ddd; z-index: -1; }
+
+    @media (max-width: 992px) { .register-wrapper { flex-direction: column; } .side-panel, .form-panel { padding: 60px 40px; } }
+    @media (max-width: 576px) { .register-wrapper { margin: 15px; border-radius: 24px; } .form-panel, .side-panel { padding: 40px 25px; } .form-header h1 { font-size: 2.4rem; } }
+  </style>
+</head>
+<body>
+  <div class="toast" id="toast"><i id="toastIcon"></i><span id="toastMessage"></span></div>
+
+  <div class="register-wrapper">
+    <div class="side-panel animate__animated animate__fadeInLeft">
+      <h2>Welcome to Rakspark Academy</h2>
+      <p>Join Nigeria’s #1 JAMB platform trusted by 50,000+ students scoring 300+ every year.</p>
+    </div>
+
+    <div class="form-panel animate__animated animate__fadeInRight">
+      <div class="form-header">
+        <h1>Create Account</h1>
+        <p>Get started in seconds — completely free!</p>
+      </div>
+
+      <form id="registerForm" novalidate>
+        <div class="input-group">
+          <i class="fas fa-user"></i>
+          <input type="text" id="fullName" placeholder="Full Name" required />
+        </div>
+        <div class="input-group">
+          <i class="fas fa-envelope"></i>
+          <input type="email" id="email" placeholder="Email Address" required />
+        </div>
+        <div class="input-group">
+          <i class="fas fa-phone"></i>
+          <input type="tel" id="phone" placeholder="Phone Number (e.g. 08012345678)" required />
+        </div>
+        <div class="input-group">
+          <i class="fas fa-lock"></i>
+          <input type="password" id="password" placeholder="Create Password" required />
+          <i class="fas fa-eye password-toggle" id="togglePassword"></i>
+          <div class="password-strength"><div id="strengthBar" class="strength-bar"></div></div>
+          <small class="error-text" id="pwdError">Password must be 8+ chars with uppercase, number & symbol</small>
+        </div>
+        <div class="input-group">
+          <i class="fas fa-lock"></i>
+          <input type="password" id="confirmPassword" placeholder="Confirm Password" required />
+          <i class="fas fa-eye password-toggle" id="toggleConfirm"></i>
+          <small class="error-text" id="confirmError">Passwords do not match</small>
+        </div>
+        <div class="checkbox">
+          <input type="checkbox" id="terms" required />
+          <label for="terms">I agree to the <a href="terms.html" target="_blank">Terms of Service</a> and <a href="privacy.html" target="_blank">Privacy Policy</a></label>
+        </div>
+        <button type="submit" class="btn" id="submitBtn" disabled>
+          <i class="fas fa-user-plus"></i>
+          <span id="btnText">Create Free Account</span>
+          <span id="loading" style="display:none;"><i class="fas fa-spinner fa-spin"></i> Creating Account...</span>
+        </button>
+      </form>
+
+      <div class="divider"><span>OR</span></div>
+      <button class="btn btn-google" id="googleSignup">
+        <i class="fab fa-google"></i> Continue with Google
+      </button>
+      <div class="login-link">
+        Already have an account? <a href="login.html">Login here</a>
+      </div>
+    </div>
+  </div>
+  <script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js";
+import { getAuth, createUserWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js";
+import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
+
+// Firebase config
+const firebaseConfig = {
+  apiKey: "AIzaSyDTDWqG_WAXZO7O6yAxV5lOHUkHZp-wwQk",
+  authDomain: "rackspark.firebaseapp.com",
+  projectId: "rackspark",
+  storageBucket: "rackspark.firebasestorage.app",
+  messagingSenderId: "125488977166",
+  appId: "1:125488977166:web:b519b6871df21662c0f35f"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+const provider = new GoogleAuthProvider();
+
+// Toast
+const toast = document.getElementById('toast');
+const toastIcon = document.getElementById('toastIcon');
+const toastMsg = document.getElementById('toastMessage');
+
+function showToast(message, type = 'success') {
+  toastMsg.textContent = message;
+  toast.className = `toast ${type} show`;
+  toastIcon.className = type === 'success' ? 'fas fa-check-circle' : 'fas fa-exclamation-circle';
+  setTimeout(() => toast.classList.remove('show'), 6000);
+}
+
+// Enable submit button only if terms checked
+const submitBtn = document.getElementById('submitBtn');
+const termsCheckbox = document.getElementById('terms');
+termsCheckbox.addEventListener('change', () => {
+  submitBtn.disabled = !termsCheckbox.checked;
+  submitBtn.classList.toggle('active', termsCheckbox.checked);
+});
+
+// Password toggle
+['togglePassword','toggleConfirm'].forEach(id => {
+  document.getElementById(id).addEventListener('click', function() {
+    const field = id === 'togglePassword' ? 'password' : 'confirmPassword';
+    const input = document.getElementById(field);
+    const isPassword = input.type === 'password';
+    input.type = isPassword ? 'text' : 'password';
+    this.classList.toggle('fa-eye', !isPassword);
+    this.classList.toggle('fa-eye-slash', isPassword);
+  });
+});
+
+// Password strength
+const pwdInput = document.getElementById('password');
+const strengthBar = document.getElementById('strengthBar');
+const pwdError = document.getElementById('pwdError');
+
+pwdInput.addEventListener('input', () => {
+  const val = pwdInput.value;
+  const hasUpper = /[A-Z]/.test(val);
+  const hasNumber = /\d/.test(val);
+  const hasSymbol = /[\W_]/.test(val);
+  const isLong = val.length >= 8;
+
+  const strength = (isLong ? 25 : 0) + (hasUpper ? 25 : 0) + (hasNumber ? 25 : 0) + (hasSymbol ? 25 : 0);
+  strengthBar.style.width = strength + '%';
+  if(strength < 50) strengthBar.className='strength-bar weak';
+  else if(strength < 100) strengthBar.className='strength-bar medium';
+  else strengthBar.className='strength-bar strong';
+
+  pwdError.classList.toggle('show', val && !(isLong && hasUpper && hasNumber && hasSymbol));
+});
+
+// Form submission
+document.getElementById('registerForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+
+  const fullName = document.getElementById('fullName').value.trim();
+  const email = document.getElementById('email').value.trim();
+  const phone = document.getElementById('phone').value.trim();
+  const password = document.getElementById('password').value;
+  const confirm = document.getElementById('confirmPassword').value;
+
+  if(!fullName || !email || !phone || !password) {
+    showToast('Please fill all fields','error'); return;
+  }
+  if(password !== confirm) { document.getElementById('confirmError').classList.add('show'); return; }
+  if(!termsCheckbox.checked) { showToast('You must agree to Terms & Privacy Policy','error'); return; }
+
+  document.getElementById('btnText').style.display='none';
+  document.getElementById('loading').style.display='inline-block';
+
+  try {
+    const userCredential = await createUserWithEmailAndPassword(auth,email,password);
+    const user = userCredential.user;
+
+    // Save to Firestore
+    await setDoc(doc(db,"users",user.uid),{
+      fullName,
+      email,
+      phone,
+      role: "student",
+      isPremium: false,
+      joinedAt: new Date().toISOString(),
+      totalScore: 0
+    });
+
+    showToast(`Welcome, ${fullName.split(' ')[0]}! Account created 🎉`,'success');
+    setTimeout(()=> location.href="dashboard.html",2000);
+  } catch(err) {
+    let msg='Registration failed. Try again.';
+    if(err.code==='auth/email-already-in-use') msg='This email is already registered';
+    else if(err.code==='auth/invalid-email') msg='Invalid email address';
+    else if(err.code==='auth/weak-password') msg='Password is too weak';
+    showToast(msg,'error');
+    document.getElementById('btnText').style.display='inline';
+    document.getElementById('loading').style.display='none';
+  }
+});
+
+// Google signup
+document.getElementById('googleSignup').addEventListener('click', async () => {
+  if(!termsCheckbox.checked){ showToast('Please accept Terms & Privacy Policy first','error'); return; }
+
+  try {
+    const result = await signInWithPopup(auth,provider);
+    const user = result.user;
+
+    await setDoc(doc(db,"users",user.uid),{
+      fullName: user.displayName||"Student",
+      email: user.email,
+      phone: user.phoneNumber||"",
+      photoURL: user.photoURL||"",
+      role: "student",
+      isPremium:false,
+      joinedAt:new Date().toISOString()
+    }, { merge:true });
+
+    showToast(`Welcome, ${user.displayName?.split(' ')[0]||'Student'}! 🎉`,'success');
+    setTimeout(()=> location.href="dashboard.html",1500);
+  } catch(err) {
+    showToast('Google sign-up failed. Try again.','error');
+  }
+});
+</script>

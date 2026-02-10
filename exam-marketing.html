@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>JAMB CBT –  Marketing</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<!-- SweetAlert2 -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<!-- Google Font -->
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+:root{
+  --navy:#001f3f;
+  --sky:#eaf4ff;
+  --green:#2ed573;
+  --red:#ff4757;
+  --gold:#f1c40f;
+  --gray:#f5f5f5;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+  font-family:Poppins,sans-serif;
+  background:linear-gradient(135deg,#eaf4ff,#d6e9ff);
+  min-height:100vh;
+  padding:20px;
+}
+.container{
+  max-width:1100px;
+  margin:auto;
+  background:#fff;
+  border-radius:25px;
+  box-shadow:0 25px 70px rgba(0,0,0,.15);
+  overflow:hidden;
+}
+header{
+  background:var(--navy);
+  color:#fff;
+  padding:25px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+header h2{font-size:1.6rem}
+#timer{
+  background:#fff;
+  color:var(--navy);
+  padding:8px 18px;
+  border-radius:20px;
+  font-weight:700;
+}
+#freeNote{
+  background:#fff3cd;
+  color:#856404;
+  padding:12px;
+  text-align:center;
+  font-weight:600;
+  display:none;
+}
+.main{
+  padding:30px;
+}
+#progress{
+  height:10px;
+  background:#eee;
+  border-radius:10px;
+  overflow:hidden;
+  margin-bottom:20px;
+}
+#progressFill{
+  height:100%;
+  width:0%;
+  background:linear-gradient(90deg,var(--green),var(--gold));
+}
+#qText{
+  font-size:1.3rem;
+  font-weight:600;
+  margin-bottom:20px;
+}
+.option{
+  background:var(--gray);
+  padding:15px 18px;
+  border-radius:15px;
+  margin-bottom:12px;
+  cursor:pointer;
+  transition:.3s;
+}
+.option:hover{background:#e0e0e0}
+.option.selected{
+  background:var(--navy);
+  color:#fff;
+}
+.nav-btns{
+  display:flex;
+  justify-content:space-between;
+  margin-top:25px;
+}
+button{
+  padding:12px 30px;
+  border:none;
+  border-radius:30px;
+  font-weight:600;
+  cursor:pointer;
+}
+#backBtn{background:#ccc}
+#nextBtn{background:var(--navy);color:#fff}
+#submitBtn{
+  background:var(--green);
+  color:#fff;
+}
+#qNav{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(45px,1fr));
+  gap:10px;
+  margin-top:30px;
+}
+.qbtn{
+  padding:10px;
+  border-radius:10px;
+  border:none;
+  cursor:pointer;
+  font-weight:600;
+}
+.qbtn.current{background:var(--navy);color:#fff}
+.qbtn.answered{background:var(--green);color:#fff}
+.qbtn.locked{background:#ddd;color:#999;cursor:not-allowed}
+.review{
+  display:none;
+  padding:30px;
+}
+.review h2{text-align:center;margin-bottom:20px}
+.score-box{
+  display:flex;
+  justify-content:space-around;
+  margin-bottom:25px;
+  flex-wrap:wrap;
+}
+.score-card{
+  background:var(--gray);
+  padding:20px;
+  border-radius:20px;
+  text-align:center;
+  min-width:160px;
+}
+.correct{color:var(--green);font-weight:700}
+.wrong{color:var(--red);font-weight:700}
+.review-q{
+  background:#f9f9f9;
+  padding:15px;
+  border-radius:15px;
+  margin-bottom:15px;
+}
+.review-q p{margin:6px 0}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<header>
+  <h2>JAMB CBT – Marketing</h2>
+  <div id="timer">00:00</div>
+</header>
+
+<div id="freeNote">
+  Free users can attempt only <b>25 questions</b>. Upgrade to Premium for all 99+.
+</div>
+
+<div class="main" id="examSection">
+  <div id="progress"><div id="progressFill"></div></div>
+  <div id="qText"></div>
+  <div id="optionsWrap"></div>
+
+  <div class="nav-btns">
+    <button id="backBtn">Back</button>
+    <button id="nextBtn">Next</button>
+    <button id="submitBtn">Submit</button>
+  </div>
+
+  <div id="qNav"></div>
+</div>
+
+<div class="review" id="reviewSection">
+  <h2>Exam Review</h2>
+  <div class="score-box">
+    <div class="score-card">Score<br><span id="rScore"></span></div>
+    <div class="score-card">Failed<br><span id="rFail"></span></div>
+    <div class="score-card">Percentage<br><span id="rPercent"></span></div>
+  </div>
+  <div id="reviewList"></div>
+</div>
+
+</div>
+
+<script type="module">
+/* ================= FIREBASE ================= */
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js";
+import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDTDWqG_WAXZO7O6yAxV5lOHUkHZp-wwQk",
+  authDomain: "rackspark.firebaseapp.com",
+  projectId: "rackspark",
+  storageBucket: "rackspark.firebasestorage.app",
+  messagingSenderId: "125488977166",
+  appId: "1:125488977166:web:b519b6871df21662c0f35f"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+/* ================= QUESTIONS ================= */
+const QUESTIONS = [
+
+/* ===================== 1–10 ===================== */
+{q:"Marketing is primarily concerned with?", o:["Satisfying customer needs","Producing goods only","Reducing costs","Paying salaries"], a:0, y:2021},
+{q:"Which of these is a function of marketing?", o:["Buying","Selling","Advertising","All of the above"], a:3, y:2021},
+{q:"The 4Ps of marketing include?", o:["Product, Price, Place, Promotion","People, Price, Product, Process","Product, Price, Profit, Promotion","Plan, Product, Price, Promotion"], a:0, y:2022},
+{q:"Market segmentation divides the market based on?", o:["Demographics, Geography, Psychographics, Behaviour","Price, Profit, Promotion, Product","Advertising, Selling, Pricing, Distribution","All of the above"], a:0, y:2022},
+{q:"Which of these is a pricing strategy?", o:["Penetration, Skimming, Competitive, Cost-plus","Advertising, Selling, Distribution, Promotion","Segmentation, Targeting, Positioning","All of the above"], a:0, y:2023},
+{q:"Promotion in marketing involves?", o:["Advertising, Sales Promotion, Publicity, Personal Selling","Pricing, Product Design, Distribution, Branding","Market Research, Selling, Planning, Finance","All of the above"], a:0, y:2023},
+{q:"Which of these is an example of a distribution channel?", o:["Wholesaler, Retailer, Agent, Direct Sales","Advertising, Personal Selling, Promotion","Price, Product, Place, Promotion","Segmentation, Targeting, Positioning, Branding"], a:0, y:2021},
+{q:"Market research is conducted to?", o:["Identify customer needs","Reduce taxes","Hire employees","Produce goods only"], a:0, y:2022},
+{q:"Branding helps to?", o:["Create unique identity","Increase taxes","Reduce product quality","Limit promotion"], a:0, y:2023},
+{q:"Consumer behavior refers to?", o:["Study of customer buying habits","Employee productivity","Company profits","Sales targets"], a:0, y:2023},
+
+/* ===================== 11–20 ===================== */
+{q:"A target market is?", o:["A specific group of customers a business wants to serve","All the people in the country","All employees of a company","All suppliers"], a:0, y:2021},
+{q:"Personal selling involves?", o:["Direct interaction between salespersons and customers","Advertising only","Social media marketing only","Email marketing only"], a:0, y:2021},
+{q:"Which of these is a type of advertising?", o:["Print, Broadcast, Online, Outdoor","Pricing, Product, Promotion, Place","Segmentation, Targeting, Positioning","All of the above"], a:0, y:2022},
+{q:"A marketing mix is?", o:["Combination of product, price, place, promotion","Combination of employees and customers","Combination of suppliers and logistics","All of the above"], a:0, y:2022},
+{q:"Skimming pricing is used when?", o:["Launching a new product at a high price","Reducing costs of production","Selling products in bulk","Advertising products"], a:0, y:2023},
+{q:"Penetration pricing is?", o:["Setting a low price to attract customers","Setting a high price","Reducing advertising costs","Using promotional offers only"], a:0, y:2023},
+{q:"Public relations in marketing aims to?", o:["Maintain good image of the company","Reduce production cost","Increase taxes","Hire more staff"], a:0, y:2021},
+{q:"Which of these is a type of market?", o:["Consumer market, Business market, Government market, International market","Production market only","Wholesale market only","Retail market only"], a:0, y:2022},
+{q:"A product life cycle includes?", o:["Introduction, Growth, Maturity, Decline","Planning, Research, Selling, Profit","Advertising, Promotion, Selling, Branding","All of the above"], a:0, y:2023},
+{q:"Customer loyalty refers to?", o:["Repeat purchase behavior","First-time buyers","Employee performance","Supplier efficiency"], a:0, y:2023},
+
+/* ===================== 21–30 ===================== */
+{q:"Which of these is an example of direct marketing?", o:["Email marketing","Billboards","TV ads","Radio ads"], a:0, y:2021},
+{q:"Which of these is a digital marketing tool?", o:["Social media, Email, Websites, SEO","Print, Radio, TV, Billboard","Retail, Wholesale, Agents, Distributors","All of the above"], a:0, y:2021},
+{q:"Market positioning involves?", o:["Creating a desired image in the consumer’s mind","Selling products only","Buying raw materials","Paying employees"], a:0, y:2022},
+{q:"Relationship marketing aims to?", o:["Build long-term customer relationships","Reduce product quality","Increase taxes","Hire more staff"], a:0, y:2022},
+{q:"A marketing strategy is?", o:["Plan to achieve marketing objectives","Employee schedule","Production plan","Financial report"], a:0, y:2023},
+{q:"Which of these affects pricing decisions?", o:["Costs, Competition, Demand, Customer perception","Weather, Religion, Culture, Ethics","Employee salary, Taxes, Loan, Profit","All of the above"], a:0, y:2023},
+{q:"Sales promotion includes?", o:["Discounts, Coupons, Samples, Free gifts","Direct selling only","Advertising only","Employee training"], a:0, y:2021},
+{q:"Which of these is an example of an intermediate market?", o:["Wholesalers and retailers","Final consumers","Government agencies","International markets"], a:0, y:2022},
+{q:"Which of these is NOT part of the 4Ps?", o:["People","Product","Price","Promotion"], a:0, y:2023},
+{q:"A marketing plan includes?", o:["Market analysis, Objectives, Strategies, Budget","Employee hiring, Payroll, Training, Salary","Production, Distribution, Warehousing, Finance","All of the above"], a:0, y:2023},
+
+/* ===================== 31–40 ===================== */
+{q:"Which of these is a qualitative research method?", o:["Focus groups, Interviews, Observation","Survey, Questionnaire, Census","Sales report, Financial report, Balance sheet","All of the above"], a:0, y:2021},
+{q:"Which of these is a quantitative research method?", o:["Survey, Questionnaire, Census","Observation, Interviews, Focus group","Advertising, Promotion, Personal selling","All of the above"], a:0, y:2021},
+{q:"A marketing audit involves?", o:["Evaluation of marketing activities","Employee performance review","Financial audit","Production evaluation"], a:0, y:2022},
+{q:"Market demand refers to?", o:["Total quantity of a product consumers are willing to buy","Total production capacity","Total employees","Total suppliers"], a:0, y:2022},
+{q:"Which of these is a characteristic of services?", o:["Intangibility, Perishability, Inseparability, Variability","Durability, Hardness, Weight, Size","Color, Shape, Price, Design","All of the above"], a:0, y:2023},
+{q:"A sales forecast predicts?", o:["Future sales","Employee performance","Profit margins","Production cost"], a:0, y:2023},
+{q:"Which of these is an example of personal selling?", o:["Face-to-face interaction with customers","TV advertising","Radio advertising","Billboard"], a:0, y:2021},
+{q:"Which of these is a form of direct marketing?", o:["Email, SMS, Telemarketing, Catalogs","TV, Radio, Billboards","Retail, Wholesale, Distribution","All of the above"], a:0, y:2022},
+{q:"Which of these is an example of an intangible product?", o:["Consulting services","Food","Clothing","Furniture"], a:0, y:2023},
+{q:"Which of these is a distribution strategy?", o:["Intensive, Selective, Exclusive","Direct, Indirect, Digital","All of the above","None of the above"], a:2, y:2023},
+
+/* ===================== 41–50 ===================== */
+{q:"Which of these affects consumer behavior?", o:["Culture, Social, Personal, Psychological factors","Price only","Promotion only","Product only"], a:0, y:2021},
+{q:"Which of these is part of the marketing environment?", o:["Economic, Social, Political, Technological","Employee, Supplier, Manager, Investor","Production, Sales, Finance, HR","All of the above"], a:0, y:2021},
+{q:"A marketing objective should be?", o:["Specific, Measurable, Achievable, Relevant, Time-bound","General, Vague, Impossible, Long-term","Ambiguous, Undefined, Unclear, Random","All of the above"], a:0, y:2022},
+{q:"Which of these is an ethical marketing practice?", o:["Honesty, Transparency, Responsibility, Fairness","False advertising, Deception, Bribery, Corruption","Exploitation, Price fixing, Deception","All of the above"], a:0, y:2022},
+{q:"Consumer satisfaction is important because?", o:["It leads to repeat purchase and loyalty","It increases taxes","It reduces employee performance","It decreases production"], a:0, y:2023},
+{q:"A marketing channel is?", o:["Path through which goods and services flow from producer to consumer","Employee workflow","Financial report","Production line"], a:0, y:2023},
+{q:"Which of these is a type of marketing research?", o:["Exploratory, Descriptive, Causal","Qualitative, Quantitative, Mixed-method","All of the above","None of the above"], a:2, y:2021},
+{q:"Which of these is a benefit of effective marketing?", o:["Increased sales, Market share, Customer loyalty, Brand recognition","Employee performance, Salary, Training, Attendance","Taxes, Penalties, Audits, Fines","All of the above"], a:0, y:2022},
+{q:"Which of these is a B2B marketing activity?", o:["Selling products to other businesses","Selling directly to consumers","Advertising to final consumers","All of the above"], a:0, y:2023},
+{q:"Which of these is a B2C marketing activity?", o:["Selling products directly to consumers","Selling to wholesalers","Selling to distributors","Selling to retailers"], a:0, y:2023},
+/* ===================== 51–60 ===================== */
+{q:"Which of these is a component of marketing strategy?", o:["Target market, Positioning, Marketing mix","Employee training, Payroll, HR","Production, Finance, Logistics","All of the above"], a:0, y:2021},
+{q:"Which of these is a digital marketing channel?", o:["Social media, Email, SEO, Website","Billboard, TV, Radio, Print","Wholesalers, Retailers, Agents, Distributors","All of the above"], a:0, y:2021},
+{q:"Which of these is a type of sales promotion?", o:["Discount, Coupon, Contest, Sample","TV, Radio, Billboard, Print","Employee evaluation, Training, Payroll, Hiring","All of the above"], a:0, y:2022},
+{q:"Which of these is a marketing metric?", o:["Market share, Sales growth, ROI, Customer satisfaction","Employee performance, Salary, Training, Attendance","Production output, Quality, Cost, Efficiency","All of the above"], a:0, y:2022},
+{q:"Which of these is a consumer market?", o:["Households and individuals","Government agencies","Businesses","All of the above"], a:0, y:2023},
+{q:"Which of these is a business market?", o:["Companies buying raw materials","Households","Consumers","All of the above"], a:0, y:2023},
+{q:"Which of these is a step in the consumer decision-making process?", o:["Problem recognition, Information search, Evaluation, Purchase","Employee recruitment, Training, Evaluation, Payroll","Production planning, Scheduling, Quality control, Delivery","All of the above"], a:0, y:2021},
+{q:"Which of these is a factor influencing pricing decisions?", o:["Costs, Competition, Demand, Legal constraints","Employee performance","Advertising only","Promotion only"], a:0, y:2022},
+{q:"Which of these is a type of marketing organization?", o:["Functional, Product, Geographic, Customer","HR, Finance, Production, Logistics","Accounting, Finance, IT, Operations","All of the above"], a:0, y:2023},
+{q:"Which of these is a marketing research tool?", o:["Questionnaire, Interview, Observation, Focus group","Payroll, Salary, HR, Hiring","Production, Quality, Delivery, Scheduling","All of the above"], a:0, y:2023},
+
+/* ===================== 61–70 ===================== */
+{q:"Which of these is part of integrated marketing communication?", o:["Advertising, Sales promotion, Public relations, Personal selling","Production, Finance, HR, Logistics","Employee recruitment, Payroll, Training, Evaluation","All of the above"], a:0, y:2021},
+{q:"Which of these is a marketing channel function?", o:["Information, Promotion, Contact, Matching, Negotiation, Physical distribution, Financing, Risk taking","Production, Finance, HR, Logistics","Employee training, Payroll, Hiring, Evaluation","All of the above"], a:0, y:2021},
+{q:"Which of these is a marketing orientation?", o:["Production, Product, Selling, Marketing, Societal","Financial, Operational, HR, IT","All of the above","None of the above"], a:0, y:2022},
+{q:"Which of these is a benefit of market segmentation?", o:["Better target marketing, Efficient resource allocation, Increased sales, Customer satisfaction","Employee performance","Production efficiency","All of the above"], a:0, y:2022},
+{q:"Which of these is a marketing objective?", o:["Increase market share, Sales growth, Brand recognition, Customer loyalty","Employee welfare, Salary, Training, Benefits","Production output, Quality, Delivery, Efficiency","All of the above"], a:0, y:2023},
+{q:"Which of these is a factor influencing consumer behavior?", o:["Culture, Social class, Reference groups, Personal factors","Price only","Promotion only","Product only"], a:0, y:2023},
+{q:"Which of these is a digital marketing KPI?", o:["Website traffic, Conversion rate, Bounce rate, Engagement","Employee attendance, Payroll, HR","Production output, Quality, Delivery","All of the above"], a:0, y:2021},
+{q:"Which of these is a marketing performance measure?", o:["ROI, Market share, Sales growth, Customer satisfaction","Employee performance","Production output","All of the above"], a:0, y:2022},
+{q:"Which of these is a consumer decision-making stage?", o:["Need recognition, Information search, Evaluation, Purchase, Post-purchase behavior","Employee recruitment, Training, Evaluation, Payroll","Production planning, Scheduling, Quality control, Delivery","All of the above"], a:0, y:2023},
+{q:"Which of these is a characteristic of a good brand?", o:["Memorable, Unique, Relevant, Positive associations","Expensive, Rare, Complex, Unnecessary","Hidden, Confusing, Irrelevant, Negative","All of the above"], a:0, y:2023},
+
+/* ===================== 71–80 ===================== */
+{q:"Which of these is an example of a B2B marketing channel?", o:["Wholesalers, Agents, Distributors","Retail stores","Direct to consumers","All of the above"], a:0, y:2021},
+{q:"Which of these is an example of a B2C marketing channel?", o:["Supermarkets, Online stores, Direct selling","Wholesalers","Agents","Distributors"], a:0, y:2021},
+{q:"Which of these is a method of gathering market intelligence?", o:["Surveys, Observation, Experiments, Focus groups","Payroll, HR, Training","Production, Scheduling, Quality","All of the above"], a:0, y:2022},
+{q:"Which of these is part of marketing environment?", o:["Micro environment, Macro environment","Employee performance","Production output","All of the above"], a:0, y:2022},
+{q:"Which of these is a pricing objective?", o:["Maximize profit, Increase market share, Survival, Status quo pricing","Employee performance","Production efficiency","All of the above"], a:0, y:2023},
+{q:"Which of these is an example of personal selling tool?", o:["Face-to-face communication, Demonstration, Samples, Negotiation","Billboards, TV ads, Radio ads","Social media, Website, Email, SMS","All of the above"], a:0, y:2023},
+{q:"Which of these is an advantage of advertising?", o:["Builds brand awareness, Persuades customers, Supports sales, Educates market","Reduces employee work","Reduces production cost","All of the above"], a:0, y:2021},
+{q:"Which of these is a disadvantage of personal selling?", o:["High cost per customer, Time-consuming, Requires skilled salespeople, Limited reach","Inexpensive, Quick, Requires no skill","All of the above","None of the above"], a:0, y:2022},
+{q:"Which of these is a type of marketing plan?", o:["Strategic, Tactical, Operational","Financial, HR, IT","Production, Logistics, Accounting","All of the above"], a:0, y:2023},
+{q:"Which of these is a characteristic of good market research?", o:["Relevant, Accurate, Timely, Objective","Biased, Irrelevant, Late, Subjective","All of the above","None of the above"], a:0, y:2023},
+
+/* ===================== 81–90 ===================== */
+{q:"Which of these is a component of marketing mix for services?", o:["Product, Price, Place, Promotion, People, Process, Physical evidence","Product only","Price only","Promotion only"], a:0, y:2021},
+{q:"Which of these is a type of channel intermediary?", o:["Wholesaler, Retailer, Agent, Broker","Producer, Manufacturer, Supplier, Distributor","All of the above","None of the above"], a:0, y:2021},
+{q:"Which of these is a step in product development process?", o:["Idea generation, Screening, Concept development, Testing, Commercialization","Employee recruitment, Payroll, Training, Evaluation","Production planning, Quality control, Scheduling, Delivery","All of the above"], a:0, y:2022},
+{q:"Which of these is a factor influencing consumer preferences?", o:["Culture, Social norms, Personal taste, Psychological factors","Taxes, Production cost, Staff skills","Advertising budget, Logistics, Branding","All of the above"], a:0, y:2022},
+{q:"Which of these is a method of market segmentation?", o:["Geographic, Demographic, Psychographic, Behavioral","Price, Product, Promotion, Place","Sales, Profit, Production, HR","All of the above"], a:0, y:2023},
+{q:"Which of these is a marketing trend?", o:["Digital marketing, Social media, Influencer marketing, Automation","Production planning, Costing, Scheduling, Payroll","Employee management, Training, Recruitment, Benefits","All of the above"], a:0, y:2023},
+{q:"Which of these is a benefit of brand loyalty?", o:["Repeat purchase, Customer retention, Positive word of mouth, Increased market share","Reduced production cost","Employee satisfaction","All of the above"], a:0, y:2021},
+{q:"Which of these is a pricing method?", o:["Cost-plus, Competition-based, Value-based, Penetration","Advertising, Promotion, Selling, Distribution","Employee management, Finance, Production, HR","All of the above"], a:0, y:2022},
+{q:"Which of these is part of promotional mix?", o:["Advertising, Sales promotion, Personal selling, Public relations","Production, Finance, HR, Logistics","Employee training, Recruitment, Payroll, Evaluation","All of the above"], a:0, y:2023},
+{q:"Which of these is a characteristic of effective advertising?", o:["Clear message, Targeted audience, Consistency, Creativity","High cost, Complexity, Confusion, Ambiguity","Irrelevant, Misleading, Confusing, Negative","All of the above"], a:0, y:2023},
+
+/* ===================== 91–100 ===================== */
+{q:"Which of these is a marketing objective of non-profit organizations?", o:["Awareness, Fundraising, Advocacy, Engagement","Profit, Market share, Sales growth","Production efficiency, Quality, Delivery","All of the above"], a:0, y:2021},
+{q:"Which of these is a function of packaging?", o:["Protection, Promotion, Information, Convenience","Cost reduction, Employee management","Advertising, Selling, Distribution, HR","All of the above"], a:0, y:2021},
+{q:"Which of these is a method of measuring customer satisfaction?", o:["Surveys, Feedback, Net Promoter Score, Reviews","Payroll, HR, Employee evaluation","Production quality, Output, Delivery","All of the above"], a:0, y:2022},
+{q:"Which of these is a type of marketing communication?", o:["Advertising, Sales promotion, Personal selling, Public relations","Production, Finance, HR, IT","Employee training, Payroll, Recruitment, Evaluation","All of the above"], a:0, y:2022},
+{q:"Which of these is a characteristic of successful marketing campaign?", o:["Clear objectives, Target audience, Creativity, Measurable results","Confusing, Unclear, Costly, Ineffective","Employee focused, Production focused, Finance focused, HR focused","All of the above"], a:0, y:2023},
+{q:"Which of these is a factor affecting consumer perception?", o:["Experience, Beliefs, Culture, Marketing messages","Price only","Promotion only","Product only"], a:0, y:2023},
+{q:"Which of these is an example of guerilla marketing?", o:["Street art, Flash mobs, Viral campaigns, Creative stunts","TV ads, Radio ads, Print ads, Billboards","Retail stores, Wholesalers, Agents, Distributors","All of the above"], a:0, y:2021},
+{q:"Which of these is a step in creating a marketing plan?", o:["Situation analysis, Objectives, Strategy, Implementation, Control","Production, Quality, HR, Finance","Employee recruitment, Training, Payroll, Evaluation","All of the above"], a:0, y:2022},
+{q:"Which of these is a type of pricing strategy for new products?", o:["Skimming, Penetration","Discount, Coupon","Free, Sampling","All of the above"], a:0, y:2023},
+{q:"Which of these is the ultimate goal of marketing?", o:["Satisfy customer needs profitably, Build strong brands, Maintain loyalty, Increase sales","Reduce employee work","Decrease production cost","All of the above"], a:0, y:2023}
+
+];
+
+/* ================= VARIABLES ================= */
+let current = 0;
+let answers = [];
+let isPremium = false;
+let time = 0;          // exam duration in seconds
+let selectedMinutes = 0;
+let timerInt;
+let timerStarted = false;
+
+const qText = document.getElementById("qText");
+const optionsWrap = document.getElementById("optionsWrap");
+const qNav = document.getElementById("qNav");
+const progressFill = document.getElementById("progressFill");
+const timerEl = document.getElementById("timer");
+
+/* ================= UTILITY ================= */
+function shuffle(array){
+  for(let i=array.length-1;i>0;i--){
+    const j=Math.floor(Math.random()*(i+1));
+    [array[i],array[j]]=[array[j],array[i]];
+  }
+}
+
+/* ================= RENDER QUESTIONS ================= */
+function render(){
+  const q = QUESTIONS[current];
+  qText.innerHTML = `${current+1}. ${q.q} <small>${q.y ? "(Year "+q.y+")":""}</small>`;
+  optionsWrap.innerHTML="";
+  q.o.forEach((op,i)=>{
+    const d=document.createElement("div");
+    d.className="option";
+    if(answers[current]===i) d.classList.add("selected");
+    d.innerText=op;
+    d.onclick=()=>{answers[current]=i; render();};
+    optionsWrap.appendChild(d);
+  });
+  progressFill.style.width=((answers.filter(a=>a!==null).length/QUESTIONS.length)*100)+"%";
+  buildNav();
+}
+
+function buildNav(){
+  qNav.innerHTML="";
+  for(let i=0;i<QUESTIONS.length;i++){
+    const b=document.createElement("button");
+    b.className="qbtn";
+    if(i===current) b.classList.add("current");
+    if(answers[i]!=null) b.classList.add("answered");
+    if(!isPremium && i>=25){
+      b.classList.add("locked");
+      b.disabled=true;
+    }
+    b.innerText=i+1;
+    b.onclick=()=>{current=i; render();}
+    qNav.appendChild(b);
+  }
+}
+
+/* ================= TIMER ================= */
+async function chooseExamTime(){
+  const { value } = await Swal.fire({
+    title: "Select Exam Duration",
+    text: "Choose your preferred exam time",
+    icon: "info",
+    allowOutsideClick: false,
+    allowEscapeKey: false,
+    confirmButtonText: "Start Exam",
+    input: "radio",
+    inputOptions: {
+      20: "20 Minutes",
+      30: "30 Minutes",
+      40: "40 Minutes",
+      60: "60 Minutes"
+    },
+    inputValidator: (value) => {
+      if (!value) return "Please select a duration";
+    }
+  });
+
+  selectedMinutes = Number(value);
+  time = selectedMinutes * 60;
+}
+
+function startTimer(){
+  if(timerStarted) return;
+  timerStarted = true;
+
+  timerInt = setInterval(()=>{
+    let m = Math.floor(time / 60);
+    let s = time % 60;
+    timerEl.innerText = `${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}`;
+    time--;
+    if(time<0){
+      clearInterval(timerInt);
+      Swal.fire({
+        title:"Time Up!",
+        text:"Your exam has been submitted automatically.",
+        icon:"warning",
+        confirmButtonText:"View Result"
+      }).then(()=>showReview());
+    }
+  },1000);
+}
+
+/* ================= SUBMIT & REVIEW ================= */
+function submitExam(){
+  Swal.fire({
+    title:"Submit Exam?",
+    icon:"warning",
+    showCancelButton:true,
+    confirmButtonText:"Yes Submit"
+  }).then(r=>{
+    if(!r.isConfirmed) return;
+    showReview();
+  });
+}
+
+function showReview(){
+  clearInterval(timerInt);
+  document.getElementById("examSection").style.display="none";
+  document.getElementById("reviewSection").style.display="block";
+
+  const total = isPremium ? QUESTIONS.length : Math.min(25, QUESTIONS.length);
+  let score = 0;
+  const list = document.getElementById("reviewList");
+  list.innerHTML="";
+
+  for(let i=0;i<total;i++){
+    if(answers[i]===QUESTIONS[i].a) score++;
+    const div=document.createElement("div");
+    div.className="review-q";
+    div.innerHTML=`
+      <p><b>${i+1}. ${QUESTIONS[i].q}</b></p>
+      <p>Your Answer: <span class="${answers[i]===QUESTIONS[i].a?"correct":"wrong"}">${QUESTIONS[i].o[answers[i]]||"Not Answered"}</span></p>
+      <p>Correct Answer: ${QUESTIONS[i].o[QUESTIONS[i].a]}</p>
+    `;
+    list.appendChild(div);
+  }
+
+  document.getElementById("rScore").innerText = `${score}/${total}`;
+  document.getElementById("rFail").innerText = total-score;
+  document.getElementById("rPercent").innerText = ((score/total)*100).toFixed(1)+"%";
+}
+
+/* ================= BUTTONS ================= */
+document.getElementById("nextBtn").onclick=()=>{
+  if(!isPremium && current===24){
+    Swal.fire("Upgrade Required","Only 25 questions for free users","info");
+    return;
+  }
+  if(current<QUESTIONS.length-1){current++;render();}
+};
+document.getElementById("backBtn").onclick=()=>{if(current>0){current--;render();}};
+document.getElementById("submitBtn").onclick=submitExam;
+
+/* ================= AUTH & INIT ================= */
+onAuthStateChanged(auth, async(user)=>{
+  if(!user){ location.href="login.html"; return; }
+
+  const snap = await getDoc(doc(db,"users",user.uid));
+  isPremium = snap.exists() && snap.data().isPremium===true;
+  if(!isPremium) document.getElementById("freeNote").style.display="block";
+
+  // 1. Select exam time
+  await chooseExamTime();
+
+  // 2. Shuffle questions & init answers
+  shuffle(QUESTIONS);
+  answers = Array(QUESTIONS.length).fill(null);
+
+  // 3. Render and start timer
+  render();
+  startTimer();
+});
+</script>
+
+</body>
+</html>

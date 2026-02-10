@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Live Classes • Rakspark Academy</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+  <style>
+    :root{--sky:#87CEEB;--navy:#001F3F;--gold:#FFD700;--green:#2ed573;--red:#ff4757;--white:#fff;--shadow:rgba(0,31,63,0.25)}
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:'Poppins',sans-serif;background:linear-gradient(135deg,var(--sky),#5dade2);min-height:100vh;padding:30px 20px;color:#333}
+    .container{max-width:1100px;margin:0 auto}
+    .card{background:white;border-radius:40px;padding:60px 50px;box-shadow:0 35px 100px var(--shadow)}
+    .header{text-align:center;margin-bottom:50px}
+    .header h1{font-size:3.5rem;color:var(--navy);font-weight:800}
+    .classes-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(350px,1fr));gap:30px;margin-top:40px}
+    .class-card{background:white;border-radius:25px;overflow:hidden;box-shadow:0 10px 40px rgba(0,0,0,0.1);transition:.4s}
+    .class-card:hover{transform:translateY(-8px);box-shadow:0 20px 55px rgba(0,0,0,0.18)}
+    .class-header{background:var(--navy);padding:25px;color:white;text-align:center}
+    .class-body{padding:25px}
+    .class-detail{display:flex;align-items:center;gap:10px;margin:12px 0;color:#444}
+    .class-detail i{color:var(--gold)}
+    .join-btn{margin-top:20px;display:block;padding:15px;border-radius:40px;background:var(--green);color:white;text-align:center;text-decoration:none;font-weight:600;font-size:1.2rem;transition:.3s}
+    .join-btn:hover{transform:scale(1.05);background:#27b85f}
+    .loading,.no-classes{text-align:center;font-size:1.5rem;padding:60px;color:#555}
+  </style>
+</head>
+
+<body>
+<div class="container">
+  <div class="card">
+    <div class="header">
+      <h1>Live Classes</h1>
+      <p>Join real-time interactive lessons with expert tutors</p>
+    </div>
+
+    <div id="contentArea">
+      <div class="loading">
+        <i class="fas fa-spinner fa-spin" style="font-size:2.5rem;margin-bottom:20px;display:block"></i>
+        Checking your access…
+      </div>
+    </div>
+
+    <div style="text-align:center;margin-top:40px">
+      <a href="dashboard.html" style="color:var(--navy);font-size:1.3rem;font-weight:600;text-decoration:none">← Back to Dashboard</a>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js";
+  import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js";
+  import { getFirestore, collection, getDocs, query } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
+  import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyDTDWqG_WAXZO7O6yAxV5lOHUkHZp-wwQk",
+    authDomain: "rackspark.firebaseapp.com",
+    projectId: "rackspark",
+    storageBucket: "rackspark.firebasestorage.app",
+    messagingSenderId: "125488977166",
+    appId: "1:125488977166:web:b519b6871df21662c0f35f"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+  const contentArea = document.getElementById("contentArea");
+
+  function showPremiumModal() {
+    Swal.fire({
+      title: "Premium Feature 🔒",
+      html: `
+        <p style="font-size:1.4rem;margin:20px 0">
+          Live Classes are only for <strong>Premium members</strong>.
+        </p>
+      `,
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Upgrade Now",
+      cancelButtonText: "Back",
+      confirmButtonColor: "#001F3F"
+    }).then(r => {
+      if (r.isConfirmed) location.href = "upgrade.html";
+      else location.href = "dashboard.html";
+    });
+  }
+
+  async function loadLiveClasses() {
+    try {
+      const q = query(collection(db, "liveClasses"));
+      const snapshot = await getDocs(q);
+
+      if (snapshot.empty) {
+        contentArea.innerHTML = `
+          <div class="no-classes">
+            <i class="fas fa-calendar-times" style="font-size:4rem;color:#ccc;margin-bottom:20px;"></i>
+            No live classes available at the moment.<br>Check back later!
+          </div>
+        `;
+        return;
+      }
+
+      let html = `<div class="classes-grid">`;
+
+      snapshot.forEach(doc => {
+        const c = doc.data();
+        html += `
+          <div class="class-card">
+            <div class="class-header">
+              <h3>${c.title || "Live Session"}</h3>
+              <small>${c.subject || "General"}</small>
+            </div>
+            <div class="class-body">
+              <div class="class-detail"><i class="fas fa-calendar-alt"></i> ${c.date || "TBD"}</div>
+              <div class="class-detail"><i class="fas fa-clock"></i> ${c.time || "TBD"}</div>
+              <div class="class-detail"><i class="fas fa-user-tie"></i> ${c.tutor || "Expert Tutor"}</div>
+              <a href="${c.link || "#"}" class="join-btn" target="_blank">
+                <i class="fas fa-video"></i> Join Class
+              </a>
+            </div>
+          </div>`;
+      });
+
+      html += `</div>`;
+      contentArea.innerHTML = html;
+
+    } catch (e) {
+      contentArea.innerHTML = `
+        <div class="no-classes">
+          <i class="fas fa-wifi" style="font-size:4rem;color:#ccc;margin-bottom:20px;"></i>
+          Unable to load classes.<br>Please refresh.
+        </div>
+      `;
+    }
+  }
+
+  onAuthStateChanged(auth, async (user) => {
+    if (!user) return location.href = "login.html";
+
+    const snap = await getDoc(doc(db, "users", user.uid));
+    const data = snap.exists() ? snap.data() : {};
+
+    data.isPremium ? loadLiveClasses() : showPremiumModal();
+  });
+</script>
+
+</body>
+</html> 

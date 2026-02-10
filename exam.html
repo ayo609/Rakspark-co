@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Premium Exam • Rakspark Academy</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<style>
+:root{
+  --sky:#87CEEB; --navy:#001F3F; --gold:#FFD700; --green:#2ed573; --red:#ff4757; --white:#fff; --shadow:rgba(0,31,63,0.25)
+}
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Poppins',sans-serif}
+body{
+  background:linear-gradient(135deg,var(--sky),#5dade2);
+  min-height:100vh; display:flex; justify-content:center; align-items:center; padding:20px; color:#333
+}
+.container{
+  max-width:950px; width:100%; background:white; border-radius:40px; padding:50px 40px;
+  box-shadow:0 30px 100px var(--shadow); position:relative
+}
+h1{color:var(--navy); font-size:3rem; margin-bottom:10px; text-align:center}
+p{font-size:1.5rem; color:#555; text-align:center; margin-bottom:40px}
+.question-box{
+  background:#f4f4f4; border-radius:20px; padding:30px; margin-bottom:20px; position:relative;
+  box-shadow:0 10px 30px rgba(0,0,0,0.1)
+}
+.question-box h2{font-size:1.8rem; color:var(--navy)}
+.correct-answer{
+  margin-top:15px; font-size:1.5rem; color:var(--green); font-weight:600
+}
+.options{margin-top:25px; display:flex; flex-direction:column; gap:15px}
+.options button{
+  padding:15px 25px; border:2px solid var(--navy); border-radius:15px; background:white; color:var(--navy);
+  font-size:1.5rem; font-weight:600; cursor:pointer; transition:all 0.3s
+}
+.options button:hover{background:var(--navy); color:white; transform:translateY(-3px)}
+.nav-buttons{display:flex; justify-content:space-between; margin-top:30px}
+.nav-buttons button{
+  padding:15px 35px; font-size:1.5rem; font-weight:700; border:none; border-radius:25px; cursor:pointer;
+  transition:all 0.3s; color:white; background:var(--navy)
+}
+.nav-buttons button:hover{background:#001233; transform:translateY(-3px)}
+.score-box{display:none; text-align:center}
+.score-box h2{font-size:2.5rem; color:var(--green)}
+@media(max-width:768px){
+  .container{padding:40px 20px} h1{font-size:2.4rem} p{font-size:1.2rem} .options button{font-size:1.3rem}
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+  <h1>Premium JAMB Exam</h1>
+  <p id="subjectYear">Loading Questions...</p>
+
+  <div class="question-box" id="questionBox">
+    <h2 id="questionText">Question will appear here</h2>
+    <div class="options" id="optionsContainer"></div>
+    <div class="correct-answer" id="correctAnswer"></div>
+  </div>
+
+  <div class="nav-buttons">
+    <button id="prevBtn">← Previous</button>
+    <button id="nextBtn">Next →</button>
+  </div>
+
+  <div class="score-box" id="scoreBox">
+    <h2>Your Score: <span id="score"></span>/15</h2>
+    <button onclick="location.href='dashboard.html'">Back to Dashboard</button>
+  </div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js";
+import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDTDWqG_WAXZO7O6yAxV5lOHUkHZp-wwQk",
+  authDomain: "rackspark.firebaseapp.com",
+  projectId: "rackspark",
+  storageBucket: "rackspark.firebasestorage.app",
+  messagingSenderId: "125488977166",
+  appId: "1:125488977166:web:b519b6871df21662c0f35f"
+};
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+// PREMIUM QUESTIONS (Tough)
+const QUESTIONS = {
+  
+  mathematics: [
+    {q:"If f(x) = 3x² - 2x + 1, find f'(x).", o:["6x + 2","6x - 2","3x - 2","3x²"], a:1},
+    {q:"Solve 2x² - 7x + 3 = 0.", o:["x=3 or x=1/2","x=1 or x=3/2","x=-3 or x=-1/2","x=7 or x=3"], a:0},
+    {q:"Derivative of y=sin²(x).", o:["cos²x","2sinx cosx","sin2x","sinx²"], a:1},
+    {q:"Sum of first 20 terms of 3,7,11,...", o:["880","900","1000","920"], a:0},
+    {q:"If tan θ = 3/4, sin θ = ?", o:["3/5","4/5","5/3","3/4"], a:0},
+    {q:"lim(x→0) (sin x)/x = ?", o:["1","0","Infinity","-1"], a:0},
+    {q:"Circle with center (2,-1) and radius 5", o:["(x-2)²+(y+1)²=25","(x+2)²+(y-1)²=25","(x+2)²+(y+1)²=5","(x-2)²+(y-1)²=5"], a:0},
+    {q:"log₂x=5, x=?", o:["32","25","64","16"], a:0},
+    {q:"Probability of exactly 2 heads in 3 tosses", o:["3/8","1/2","1/4","1/3"], a:0},
+    {q:"|2x-5|=7, x=?", o:["6 or -1","7 or -2","5 or -1","3 or 4"], a:0},
+    {q:"A∩B if A={1,2,3}, B={2,3,4}", o:["{2,3}","{1,4}","{1,2,3,4}","{3,4}"], a:0},
+    {q:"Area of triangle (0,0),(4,0),(0,3)", o:["6","5","4","3"], a:0},
+    {q:"Solve 3x-y=7, 2x+y=1", o:["x=2, y=-1","x=1, y=2","x=3, y=4","x=0, y=0"], a:0},
+    {q:"Sum to infinity 6 + 2 + 2/3 + ...", o:["9","8","7","10"], a:0},
+    {q:"cos A=3/5, A in QI, sin A=?", o:["4/5","3/5","5/3","1/2"], a:0}
+  ],
+  physics: [
+    {q:"Newton’s second law states?", o:["F=ma","F=mv","F=m/a","F=a/m"], a:0},
+    {q:"Unit of electric charge?", o:["Coulomb","Volt","Ampere","Ohm"], a:0},
+    {q:"Speed of light in vacuum?", o:["3×10⁸ m/s","3×10⁶ m/s","3×10⁷ m/s","3×10⁹ m/s"], a:0},
+    {q:"If a=5 m/s² and m=2kg, F=?","o":["10N","7N","5N","12N"], a:0},
+    {q:"Potential energy formula?", o:["PE= mgh","PE=1/2 mv²","PE= mg/2","PE=mv"], a:0},
+    {q:"Kinetic energy formula?", o:["KE=1/2 mv²","KE=mv","KE= mgh","KE=mv²/3"], a:0},
+    {q:"Ohm’s Law?", o:["V=IR","V=I/R","V=R/I","V=I+R"], a:0},
+    {q:"Frequency and period relationship?", o:["f=1/T","f=T","f=T²","f=2T"], a:0},
+    {q:"Momentum formula?", o:["p=mv","p=m/a","p=ma","p=m+v"], a:0},
+    {q:"Work done formula?", o:["W=F·d","W=Fd²","W=F/d","W=F+d"], a:0},
+    {q:"Power formula?", o:["P=W/t","P=W·t","P=W+t","P=W/t²"], a:0},
+    {q:"Density formula?", o:["ρ=m/v","ρ=mv","ρ=v/m","ρ=m+v"], a:0},
+    {q:"Acceleration due to gravity?", o:["9.8 m/s²","10 m/s²","8 m/s²","9 m/s"], a:0},
+    {q:"Hooke’s Law?", o:["F=kx","F=mv","F=ma","F=m/x"], a:0},
+    {q:"Ohm’s law series resistance?", o:["R=R1+R2","R=R1·R2","R=R1-R2","R=R1/R2"], a:0}
+  ],
+  chemistry: [
+    {q:"Atomic number of Oxygen?", o:["8","16","6","12"], a:0},
+    {q:"Formula of water?", o:["H2O","HO2","O2H","H2O2"], a:0},
+    {q:"Molar mass of CO2?", o:["44 g/mol","28 g/mol","32 g/mol","40 g/mol"], a:0},
+    {q:"pH of neutral solution?", o:["7","0","14","1"], a:0},
+    {q:"Avogadro number?", o:["6.022×10²³","3.0×10²³","1×10²³","9×10²³"], a:0},
+    {q:"Electron configuration of Carbon?", o:["1s²2s²2p²","1s²2s¹2p³","1s²2s²2p³","1s²2s²2p⁴"], a:0},
+    {q:"Ideal gas law?", o:["PV=nRT","PV=nR","P+V=nRT","PV=nR/T"], a:0},
+    {q:"Electrolysis of water produces?", o:["H2 & O2","H2O2","H2O","O2 only"], a:0},
+    {q:"Strong acid example?", o:["HCl","CH3COOH","NaOH","H2O"], a:0},
+    {q:"Redox reaction involves?", o:["Oxidation & Reduction","Acid & Base","Salt & Water","Electron transfer only"], a:0},
+    {q:"Boiling point of water?", o:["100°C","0°C","50°C","200°C"], a:0},
+    {q:"Atomic mass of Hydrogen?", o:["1","2","4","0"], a:0},
+    {q:"Covalent bond involves?", o:["Sharing electrons","Transfer electrons","Ionic bond","Magnetic bond"], a:0},
+    {q:"Empirical formula of glucose?", o:["CH2O","C6H12O6","C3H6O3","CHO"], a:0}
+  ],
+  biology: [
+    {q:"Basic unit of life?", o:["Cell","Atom","Molecule","Organ"], a:0},
+    {q:"Site of photosynthesis?", o:["Chloroplast","Mitochondria","Nucleus","Ribosome"], a:0},
+    {q:"DNA stands for?", o:["Deoxyribonucleic acid","Dioxyrib acid","Deox acid","Ribonucleic acid"], a:0},
+    {q:"Process of cell division?", o:["Mitosis","Meiosis","Osmosis","Diffusion"], a:0},
+    {q:"Blood group with no antigens?", o:["O","A","B","AB"], a:0},
+    {q:"Human genome consists of?", o:["DNA","RNA","Proteins","Lipids"], a:0},
+    {q:"Largest organ in human body?", o:["Skin","Liver","Heart","Lungs"], a:0},
+    {q:"Functional unit of kidney?", o:["Nephron","Neuron","Neuroglia","Alveolus"], a:0},
+    {q:"Heart chamber that receives oxygenated blood?", o:["Left atrium","Right atrium","Left ventricle","Right ventricle"], a:0},
+    {q:"Plant tissue for transport of water?", o:["Xylem","Phloem","Cambium","Parenchyma"], a:0},
+    {q:"Photosynthetic pigment?", o:["Chlorophyll","Carotene","Xanthophyll","Anthocyanin"], a:0},
+    {q:"Human insulin produced by?", o:["Pancreas","Liver","Kidney","Spleen"], a:0},
+    {q:"Genetic material in viruses?", o:["DNA or RNA","Protein","Lipid","Carbohydrate"], a:0},
+    {q:"Site of protein synthesis?", o:["Ribosome","Nucleus","Mitochondria","Golgi body"], a:0}
+  ],
+  government: [
+    {q:"Who wrote the Nigerian constitution 1999?", o:["National Assembly","Obasanjo","Buhari","Nnamdi Azikiwe"], a:0},
+    {q:"Nigeria operates which government system?", o:["Federal Republic","Unitary","Confederation","Monarchy"], a:0},
+    {q:"Three arms of government?", o:["Legislature, Executive, Judiciary","President, Governor, Mayor","House, Senate, Assembly","Police, Army, Judiciary"], a:0},
+    {q:"Function of judiciary?", o:["Interpret laws","Make laws","Enforce laws","Advise laws"], a:0},
+    {q:"Head of state in Nigeria?", o:["President","Governor","Senator","Speaker"], a:0},
+    {q:"Power to make laws?", o:["Legislature","Executive","Judiciary","Council"], a:0},
+    {q:"Senate consists of?", o:["109 members","360 members","100 members","200 members"], a:0},
+    {q:"National Assembly consists of?", o:["Senate and House of Representatives","Senate only","House only","Supreme Court","Governor"], a:0},
+    {q:"Voting age in Nigeria?", o:["18 years","16 years","21 years","20 years"], a:0},
+    {q:"President serves for?", o:["4 years","5 years","6 years","3 years"], a:0},
+    {q:"Executive powers reside in?", o:["President","Governor","Assembly","Speaker"], a:0},
+    {q:"Judiciary independent under?", o:["1999 Constitution","1989 Constitution","Military decree","1990 Act"], a:0},
+    {q:"Nigeria practices?", o:["Democracy","Monarchy","Dictatorship","Oligarchy"], a:0},
+    {q:"Number of states in Nigeria?", o:["36","37","34","30"], a:0},
+    {q:"Federal character principle?", o:["Equitable representation","Majority rule","Minority rule","Random selection"], a:0}
+  ],
+  economics: [
+    {q:"Definition of economics?", o:["Study of scarcity and choice","Study of money","Study of law","Study of politics"], a:0},
+    {q:"Law of demand states?", o:["Price↑ Demand↓","Price↑ Demand↑","Price↓ Demand↓","Price↑ Supply↓"], a:0},
+    {q:"Law of supply states?", o:["Price↑ Supply↑","Price↑ Supply↓","Price↓ Supply↑","Price↓ Supply↓"], a:0},
+    {q:"GDP stands for?", o:["Gross Domestic Product","Gross Domestic Price","General Domestic Product","Gross Domestic Production"], a:0},
+    {q:"Inflation means?", o:["Rise in general price level","Fall in price","Stable prices","Increase in supply"], a:0},
+    {q:"Opportunity cost?", o:["Value of next best alternative","Money spent","Loss of goods","Production cost"], a:0},
+    {q:"Monetary policy is controlled by?", o:["Central Bank","Government","Supreme Court","Minister of Finance"], a:0},
+    {q:"Fiscal policy deals with?", o:["Government revenue & expenditure","Interest rates","Money supply","Tax evasion"], a:0},
+    {q:"Elasticity measures?", o:["Responsiveness of quantity to price","Price only","Quantity only","Profit only"], a:0},
+    {q:"Money market deals with?", o:["Short-term funds","Long-term investment","Stock exchange","Foreign exchange"], a:0},
+    {q:"Capital market deals with?", o:["Long-term funds","Short-term funds","Savings only","Banks"], a:0},
+    {q:"Unemployment type caused by mismatch of skills?", o:["Structural","Frictional","Cyclical","Seasonal"], a:0},
+    {q:"Demand-pull inflation caused by?", o:["Excess demand","Excess supply","Decrease in demand","Government control"], a:0},
+    {q:"Elasticity formula?", o:["%ΔQ/%ΔP","Q/P","ΔP/ΔQ","P×Q"], a:0},
+    {q:"Price ceiling causes?", o:["Shortage","Surplus","Equilibrium","Inflation"], a:0}
+  ],
+  commerce: [
+    {q:"Definition of commerce?", o:["Trade and business activities","Agriculture","Law","Economics"], a:0},
+    {q:"Primary function of commerce?", o:["Facilitate exchange of goods","Produce goods","Consume goods","Store goods"], a:0},
+    {q:"Agent of commerce?", o:["Wholesalers","Farmer","Doctor","Teacher"], a:0},
+    {q:"Retailing means?", o:["Selling to final consumers","Selling in bulk","Exporting","Importing"], a:0},
+    {q:"Functions of transport?", o:["Move goods and people","Store goods","Produce goods","Sell goods"], a:0},
+    {q:"Insurance protects against?", o:["Risk","Profit","Loss only","Debt"], a:0},
+    {q:"Bank provides?", o:["Credit facilities","Transport","Retailing","Storage"], a:0},
+    {q:"Capital in commerce?", o:["Money or assets","Land","Labor","Skill"], a:0},
+    {q:"Commercial documents include?", o:["Invoice, Receipt, Bill of Lading","DNA, RNA","Map, Chart","Contract, Law"], a:0},
+    {q:"E-commerce is?", o:["Electronic trade","Agriculture trade","Physical trade","Export only"], a:0},
+    {q:"Ledger used for?", o:["Record transactions","Store money","Calculate tax","Measure profit"], a:0},
+    {q:"Profit formula?", o:["Revenue - Cost","Revenue + Cost","Cost - Revenue","Revenue × Cost"], a:0},
+    {q:"Balance sheet shows?", o:["Assets & Liabilities","Income","Expense","Capital"], a:0},
+    {q:"JIT in commerce?", o:["Just in Time","Joint in Trade","Job in Transport","Justice in Trade"], a:0},
+    {q:"Discount meaning?", o:["Reduction in price","Increase in price","Profit","Loss"], a:0}
+  ],
+  english: [
+    {q:"Synonym of 'Abundant'?", o:["Plentiful","Rare","Scarce","Empty"], a:0},
+    {q:"Antonym of 'Generous'?", o:["Stingy","Kind","Helpful","Large"], a:0},
+    {q:"Choose correct spelling?", o:["Accommodate","Acommodate","Acommadate","Accomadate"], a:0},
+    {q:"Fill in: He is ___ than I.", o:["taller","more tall","tallest","tall"], a:0},
+    {q:"Idiom: 'Break the ice'", o:["Start conversation","Break object","Ice skating","Break literally"], a:0},
+    {q:"Correct past tense of 'Go'", o:["Went","Gone","Go","Goed"], a:0},
+    {q:"Passive form: 'She writes letters'", o:["Letters are written by her","She is written letters","She writes letters","Her letters writes"], a:0},
+    {q:"Plural of 'Analysis'", o:["Analyses","Analysises","Analysis","Analyse"], a:0},
+    {q:"Choose correct article: ___ apple", o:["An","A","The","No article"], a:0},
+    {q:"Synonym of 'Happy'?", o:["Joyful","Sad","Angry","Tired"], a:0},
+    {q:"Antonym of 'Increase'?", o:["Decrease","Rise","Grow","Multiply"], a:0},
+    {q:"Fill in: They ___ playing football.", o:["are","is","was","be"], a:0},
+    {q:"Identify the adverb: 'She ran quickly.'", o:["quickly","ran","she","none"], a:0},
+    {q:"Choose correct preposition: He is good ___ Maths.", o:["at","in","on","with"], a:0},
+    {q:"Synonym of 'Intelligent'?", o:["Smart","Dull","Slow","Foolish"], a:0}
+  ]
+  // You can add remaining subjects (chemistry, biology, government, economics, commerce, english) similarly
+};
+
+const urlParams = new URLSearchParams(window.location.search);
+const subject = urlParams.get('subject') || 'mathematics';
+const year = urlParams.get('year') || '2025';
+document.getElementById('subjectYear').textContent = `${subject.toUpperCase()} - ${year}`;
+
+let current = 0;
+let scoreCount = 0;
+const questionBox = document.getElementById('questionBox');
+const optionsContainer = document.getElementById('optionsContainer');
+const questionText = document.getElementById('questionText');
+const correctAnswerDiv = document.getElementById('correctAnswer');
+const scoreBox = document.getElementById('scoreBox');
+const scoreText = document.getElementById('score');
+const prevBtn = document.getElementById('prevBtn');
+const nextBtn = document.getElementById('nextBtn');
+
+const selectedQuestions = QUESTIONS[subject] || QUESTIONS['mathematics'];
+
+function loadQuestion(index){
+  const q = selectedQuestions[index];
+  questionText.textContent = `${index+1}. ${q.q}`;
+  optionsContainer.innerHTML = '';
+  correctAnswerDiv.textContent = '';
+
+  q.o.forEach((opt, i)=>{
+    const btn = document.createElement('button');
+    btn.textContent = opt;
+    btn.onclick = ()=>{
+      Array.from(optionsContainer.children).forEach((b, idx)=>{
+        b.disabled = true;
+        if(idx === q.a){
+          b.style.backgroundColor = '#2ed573';
+          b.style.color = '#fff';
+        } else if(b === btn && i !== q.a){
+          b.style.backgroundColor = '#ff4757';
+          b.style.color = '#fff';
+        }
+      });
+      correctAnswerDiv.textContent = `Correct Answer: ${q.o[q.a]}`;
+      if(i === q.a) scoreCount++;
+    };
+    optionsContainer.appendChild(btn);
+  });
+}
+
+nextBtn.onclick = ()=>{
+  if(current<selectedQuestions.length-1){
+    current++;
+    loadQuestion(current);
+  } else {
+    showScore();
+  }
+}
+
+prevBtn.onclick = ()=>{
+  if(current>0){current--; loadQuestion(current);}
+}
+
+function showScore(){
+  questionBox.style.display='none';
+  document.querySelector('.nav-buttons').style.display='none';
+  scoreBox.style.display='block';
+  scoreText.textContent=scoreCount;
+}
+
+// Auth & Premium Check
+onAuthStateChanged(auth, async (user)=>{
+  if(!user) location.href='login.html';
+  const userSnap = await getDoc(doc(db,'users',user.uid));
+  const userData = userSnap.exists()?userSnap.data():{};
+  if(!userData.isPremium){
+    Swal.fire({
+      icon:'warning',
+      title:'Premium Feature 🔒',
+      text:'Only Premium users can access this exam.',
+      confirmButtonText:'Upgrade Now',
+      allowOutsideClick:false
+    }).then(()=>{location.href='upgrade.html';});
+  } else {
+    loadQuestion(current);
+  }
+});
+</script>
+</body>
+</html>

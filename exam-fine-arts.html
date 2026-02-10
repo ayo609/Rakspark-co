@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>JAMB CBT – Fine Arts </title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<!-- SweetAlert2 -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<!-- Google Font -->
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+:root{
+  --navy:#001f3f;
+  --sky:#eaf4ff;
+  --green:#2ed573;
+  --red:#ff4757;
+  --gold:#f1c40f;
+  --gray:#f5f5f5;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+  font-family:Poppins,sans-serif;
+  background:linear-gradient(135deg,#eaf4ff,#d6e9ff);
+  min-height:100vh;
+  padding:20px;
+}
+.container{
+  max-width:1100px;
+  margin:auto;
+  background:#fff;
+  border-radius:25px;
+  box-shadow:0 25px 70px rgba(0,0,0,.15);
+  overflow:hidden;
+}
+header{
+  background:var(--navy);
+  color:#fff;
+  padding:25px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+header h2{font-size:1.6rem}
+#timer{
+  background:#fff;
+  color:var(--navy);
+  padding:8px 18px;
+  border-radius:20px;
+  font-weight:700;
+}
+#freeNote{
+  background:#fff3cd;
+  color:#856404;
+  padding:12px;
+  text-align:center;
+  font-weight:600;
+  display:none;
+}
+.main{
+  padding:30px;
+}
+#progress{
+  height:10px;
+  background:#eee;
+  border-radius:10px;
+  overflow:hidden;
+  margin-bottom:20px;
+}
+#progressFill{
+  height:100%;
+  width:0%;
+  background:linear-gradient(90deg,var(--green),var(--gold));
+}
+#qText{
+  font-size:1.3rem;
+  font-weight:600;
+  margin-bottom:20px;
+}
+.option{
+  background:var(--gray);
+  padding:15px 18px;
+  border-radius:15px;
+  margin-bottom:12px;
+  cursor:pointer;
+  transition:.3s;
+}
+.option:hover{background:#e0e0e0}
+.option.selected{
+  background:var(--navy);
+  color:#fff;
+}
+.nav-btns{
+  display:flex;
+  justify-content:space-between;
+  margin-top:25px;
+}
+button{
+  padding:12px 30px;
+  border:none;
+  border-radius:30px;
+  font-weight:600;
+  cursor:pointer;
+}
+#backBtn{background:#ccc}
+#nextBtn{background:var(--navy);color:#fff}
+#submitBtn{
+  background:var(--green);
+  color:#fff;
+}
+#qNav{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(45px,1fr));
+  gap:10px;
+  margin-top:30px;
+}
+.qbtn{
+  padding:10px;
+  border-radius:10px;
+  border:none;
+  cursor:pointer;
+  font-weight:600;
+}
+.qbtn.current{background:var(--navy);color:#fff}
+.qbtn.answered{background:var(--green);color:#fff}
+.qbtn.locked{background:#ddd;color:#999;cursor:not-allowed}
+.review{
+  display:none;
+  padding:30px;
+}
+.review h2{text-align:center;margin-bottom:20px}
+.score-box{
+  display:flex;
+  justify-content:space-around;
+  margin-bottom:25px;
+  flex-wrap:wrap;
+}
+.score-card{
+  background:var(--gray);
+  padding:20px;
+  border-radius:20px;
+  text-align:center;
+  min-width:160px;
+}
+.correct{color:var(--green);font-weight:700}
+.wrong{color:var(--red);font-weight:700}
+.review-q{
+  background:#f9f9f9;
+  padding:15px;
+  border-radius:15px;
+  margin-bottom:15px;
+}
+.review-q p{margin:6px 0}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<header>
+  <h2>JAMB CBT – Fine Arts</h2>
+  <div id="timer">00:00</div>
+</header>
+
+<div id="freeNote">
+  Free users can attempt only <b>25 questions</b>. Upgrade to Premium for all 99+.
+</div>
+
+<div class="main" id="examSection">
+  <div id="progress"><div id="progressFill"></div></div>
+  <div id="qText"></div>
+  <div id="optionsWrap"></div>
+
+  <div class="nav-btns">
+    <button id="backBtn">Back</button>
+    <button id="nextBtn">Next</button>
+    <button id="submitBtn">Submit</button>
+  </div>
+
+  <div id="qNav"></div>
+</div>
+
+<div class="review" id="reviewSection">
+  <h2>Exam Review</h2>
+  <div class="score-box">
+    <div class="score-card">Score<br><span id="rScore"></span></div>
+    <div class="score-card">Failed<br><span id="rFail"></span></div>
+    <div class="score-card">Percentage<br><span id="rPercent"></span></div>
+  </div>
+  <div id="reviewList"></div>
+</div>
+
+</div>
+
+<script type="module">
+/* ================= FIREBASE ================= */
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js";
+import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDTDWqG_WAXZO7O6yAxV5lOHUkHZp-wwQk",
+  authDomain: "rackspark.firebaseapp.com",
+  projectId: "rackspark",
+  storageBucket: "rackspark.firebasestorage.app",
+  messagingSenderId: "125488977166",
+  appId: "1:125488977166:web:b519b6871df21662c0f35f"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+/* ================= QUESTIONS ================= */
+
+const QUESTIONS = [
+
+/* ===================== 1–10 ===================== */
+{q:"Which of these is a primary color in painting?", o:["Red","Green","Purple","Brown"], a:0, y:2021},
+{q:"The art of folding paper into decorative shapes is called?", o:["Origami","Collage","Mosaic","Calligraphy"], a:0, y:2021},
+{q:"Who painted the Mona Lisa?", o:["Leonardo da Vinci","Michelangelo","Raphael","Vincent van Gogh"], a:0, y:2022},
+{q:"Which medium uses pigments suspended in water and applied to paper?", o:["Watercolor","Oil paint","Acrylic","Tempera"], a:0, y:2022},
+{q:"Sculpture that is freestanding and can be viewed from all sides is called?", o:["In-the-round","Relief","Bas-relief","Assemblage"], a:0, y:2023},
+{q:"The formal elements of art include?", o:["Line, Shape, Color, Texture, Space, Value","Balance, Rhythm, Harmony","Mood, Theme, Concept","Subject, Content, Medium"], a:0, y:2023},
+{q:"Which Nigerian artist is known for contemporary paintings and mixed media?", o:["Ben Enwonwu","Nike Davies-Okundaye","El Anatsui","Peju Alatise"], a:0, y:2021},
+{q:"A painting done on wet plaster is called?", o:["Fresco","Tempera","Oil painting","Encaustic"], a:0, y:2022},
+{q:"The art of making decorative designs with glass pieces is called?", o:["Mosaic","Collage","Fresco","Etching"], a:0, y:2023},
+{q:"The formal principle that refers to the arrangement of elements to create stability is called?", o:["Balance","Contrast","Emphasis","Unity"], a:0, y:2023},
+
+/* ===================== 11–20 ===================== */
+{q:"Which tool is used to sculpt clay?", o:["Modeling tools","Brush","Chisel","Palette knife"], a:0, y:2021},
+{q:"The term 'Chiaroscuro' in art refers to?", o:["Light and shade","Perspective","Texture","Pattern"], a:0, y:2021},
+{q:"The Nigerian Nsukka School is famous for using?", o:["Uli designs","Western realism","Abstract expressionism","Cubism"], a:0, y:2022},
+{q:"The art of carving or shaping wood is called?", o:["Woodcarving","Etching","Mosaic","Ceramics"], a:0, y:2022},
+{q:"Which of these is a complementary color of red?", o:["Green","Blue","Yellow","Orange"], a:0, y:2023},
+{q:"The term 'Perspective' in art is used to show?", o:["Depth and distance","Texture","Pattern","Color intensity"], a:0, y:2023},
+{q:"The famous Nigerian sculptor who works with bottle caps is?", o:["El Anatsui","Ben Enwonwu","Lamidi Olonade Fakeye","Peju Alatise"], a:0, y:2021},
+{q:"The art form of applying paint to wet plaster walls is?", o:["Fresco","Tempera","Oil painting","Encaustic"], a:0, y:2022},
+{q:"The technique of making prints from a carved wood block is called?", o:["Woodcut","Etching","Lithography","Screen printing"], a:0, y:2023},
+{q:"Art that uses found objects to create new artworks is called?", o:["Assemblage","Collage","Sculpture","Relief"], a:0, y:2023},
+
+/* ===================== 21–30 ===================== */
+{q:"Which element of art refers to the tactile quality or visual feel of a surface?", o:["Texture","Shape","Line","Color"], a:0, y:2021},
+{q:"Which Nigerian artist is known as the pioneer of modern Nigerian art?", o:["Ben Enwonwu","Nike Davies-Okundaye","El Anatsui","Peju Alatise"], a:0, y:2021},
+{q:"The Edo people of Nigeria are known for?", o:["Bronze casting","Wood carving","Pottery","Textiles"], a:0, y:2022},
+{q:"A two-dimensional artwork that shows depth through shading is called?", o:["Relief","Drawing","Painting","Printmaking"], a:1, y:2022},
+{q:"The art of decorating fabrics with stitched designs is called?", o:["Embroidery","Applique","Weaving","Dyeing"], a:0, y:2023},
+{q:"Which medium is made by mixing pigment with egg yolk?", o:["Tempera","Oil paint","Acrylic","Watercolor"], a:0, y:2023},
+{q:"The term 'Iconography' in art refers to?", o:["Symbolism and subject matter","Color theory","Texture techniques","Perspective methods"], a:0, y:2021},
+{q:"The Bauhaus School is known for which style?", o:["Modernist design","Renaissance","Baroque","Romanticism"], a:0, y:2022},
+{q:"The principle of design that refers to differences to create interest is?", o:["Contrast","Balance","Unity","Rhythm"], a:0, y:2023},
+{q:"Art that tells a story or conveys a message is called?", o:["Narrative art","Abstract art","Decorative art","Conceptual art"], a:0, y:2023},
+
+/* ===================== 31–40 ===================== */
+{q:"Which Nigerian artist is known for Uli designs?", o:["Obiora Udechukwu","El Anatsui","Peju Alatise","Ben Enwonwu"], a:0, y:2021},
+{q:"The Yoruba art of beadwork is mainly used for?", o:["Royal regalia","House decoration","Pottery","Textiles"], a:0, y:2021},
+{q:"In perspective drawing, parallel lines converge at?", o:["Vanishing point","Horizon","Corner","Center"], a:0, y:2022},
+{q:"The term 'Fresco' literally means painting on?", o:["Wet plaster","Canvas","Paper","Wood"], a:0, y:2022},
+{q:"Which Nigerian sculptor is famous for carved wooden masks?", o:["Lamidi Olonade Fakeye","El Anatsui","Ben Enwonwu","Peju Alatise"], a:0, y:2023},
+{q:"Which element of art refers to an enclosed space?", o:["Shape","Line","Color","Texture"], a:0, y:2023},
+{q:"The principle that creates a sense of oneness in art is called?", o:["Unity","Contrast","Emphasis","Balance"], a:0, y:2021},
+{q:"Which medium uses powdered pigments mixed with oil?", o:["Oil painting","Watercolor","Tempera","Acrylic"], a:0, y:2022},
+{q:"The technique of applying small dots of color to form an image is?", o:["Pointillism","Stippling","Hatching","Cross-hatching"], a:0, y:2023},
+{q:"The term 'Collage' refers to?", o:["Assembling various materials","Single medium painting","Sculpture","Printmaking"], a:0, y:2023},
+
+/* ===================== 41–50 ===================== */
+{q:"Which Nigerian artist is known for contemporary textile art?", o:["Nike Davies-Okundaye","El Anatsui","Peju Alatise","Ben Enwonwu"], a:0, y:2021},
+{q:"The art of cutting paper to create patterns is called?", o:["Papercutting","Origami","Mosaic","Collage"], a:0, y:2021},
+{q:"Which type of sculpture is attached to a background?", o:["Relief","In-the-round","Assemblage","Installation"], a:0, y:2022},
+{q:"Which color combination produces secondary colors?", o:["Mixing two primary colors","Mixing two secondary colors","Mixing primary and secondary","Mixing all colors"], a:0, y:2022},
+{q:"The Edo Benin bronzes mainly depict?", o:["Royal figures","Farmers","Traders","Warriors"], a:0, y:2023},
+{q:"Which Nigerian artist is known for bottle-cap installations?", o:["El Anatsui","Ben Enwonwu","Peju Alatise","Nike Davies-Okundaye"], a:0, y:2023},
+{q:"The process of making prints by carving a design on a metal plate is?", o:["Etching","Woodcut","Screen printing","Lithography"], a:0, y:2021},
+{q:"Which Nigerian sculptor is known for terracotta works?", o:["Ben Enwonwu","El Anatsui","Peju Alatise","Lamidi Olonade Fakeye"], a:0, y:2022},
+{q:"Which principle of design creates a sense of movement?", o:["Rhythm","Balance","Unity","Emphasis"], a:0, y:2023},
+{q:"The process of decorating pottery with colored slips is called?", o:["Slip painting","Engraving","Sgraffito","Burnishing"], a:0, y:2023},
+
+/* ===================== 51–60 ===================== */
+{q:"Which Nigerian art school is famous for modern art and Uli designs?", o:["Nsukka School","Zaria Art School","Lagos School","Yaba College of Technology"], a:0, y:2021},
+{q:"The principle of art that draws attention to a particular area is?", o:["Emphasis","Balance","Unity","Rhythm"], a:0, y:2021},
+{q:"The Edo Benin Kingdom is known for?", o:["Bronze casting","Textiles","Ceramics","Painting"], a:0, y:2022},
+{q:"The term 'Assemblage' in art refers to?", o:["Using found objects to create art","Sculpting marble","Painting on canvas","Wood carving"], a:0, y:2022},
+{q:"Which Nigerian artist is known for mixed-media contemporary art?", o:["Peju Alatise","El Anatsui","Nike Davies-Okundaye","Ben Enwonwu"], a:0, y:2023},
+{q:"A painting technique where colors are applied in layers is called?", o:["Glazing","Pointillism","Hatching","Dry brush"], a:0, y:2023},
+{q:"The formal element that defines boundaries in art is?", o:["Line","Texture","Shape","Color"], a:0, y:2021},
+{q:"Art that represents real objects in a realistic way is?", o:["Realism","Abstract","Expressionism","Cubism"], a:0, y:2022},
+{q:"The principle that refers to the distribution of visual weight is?", o:["Balance","Emphasis","Unity","Contrast"], a:0, y:2023},
+{q:"A work of art that uses motion, time, or light is called?", o:["Kinetic art","Mosaic","Relief","Collage"], a:0, y:2023},
+
+/* ===================== 61–70 ===================== */
+{q:"The Zaria Art Society was founded in which Nigerian art school?", o:["Zaria College of Art","Nsukka School","Lagos Art School","Yaba College of Technology"], a:0, y:2021},
+{q:"Which element of art refers to the lightness or darkness of a color?", o:["Value","Hue","Texture","Shape"], a:0, y:2021},
+{q:"The principle of design that relates to differences to create interest is?", o:["Contrast","Unity","Balance","Emphasis"], a:0, y:2022},
+{q:"Which medium uses pigment mixed with hot wax?", o:["Encaustic","Oil paint","Watercolor","Acrylic"], a:0, y:2022},
+{q:"Art made from assembling everyday objects is?", o:["Assemblage","Collage","Sculpture","Painting"], a:0, y:2023},
+{q:"The term 'Abstract art' refers to?", o:["Non-representational art","Realistic painting","Relief sculpture","Mosaic"], a:0, y:2023},
+{q:"A continuous mark made on a surface is called?", o:["Line","Shape","Texture","Form"], a:0, y:2021},
+{q:"Which Nigerian artist is renowned for textile dyeing?", o:["Nike Davies-Okundaye","Ben Enwonwu","Peju Alatise","El Anatsui"], a:0, y:2022},
+{q:"The term 'Etching' refers to?", o:["Printing from a metal plate","Carving wood","Painting on canvas","Molding clay"], a:0, y:2023},
+{q:"Art that focuses on expressing emotion rather than reality is?", o:["Expressionism","Realism","Abstract","Cubism"], a:0, y:2023},
+
+/* ===================== 71–80 ===================== */
+{q:"The Edo Benin bronze casting is mainly made of?", o:["Bronze","Wood","Clay","Iron"], a:0, y:2021},
+{q:"Art that uses geometric shapes to represent objects is?", o:["Cubism","Realism","Expressionism","Surrealism"], a:0, y:2021},
+{q:"The Nigerian Nsukka School focuses on?", o:["Uli designs and modern art","Realism","Photography","Sculpture only"], a:0, y:2022},
+{q:"The formal element of art that refers to actual or implied surface feel is?", o:["Texture","Line","Shape","Color"], a:0, y:2022},
+{q:"The principle that suggests repeated visual elements is?", o:["Rhythm","Unity","Balance","Contrast"], a:0, y:2023},
+{q:"The term 'Sgraffito' refers to?", o:["Scratching a surface to reveal layers","Painting wet plaster","Assembling found objects","Carving wood"], a:0, y:2023},
+{q:"A two-dimensional art form that creates the illusion of depth is?", o:["Drawing","Sculpture","Assemblage","Installation"], a:0, y:2021},
+{q:"The Nigerian artist famous for carving masks is?", o:["Lamidi Olonade Fakeye","Ben Enwonwu","El Anatsui","Peju Alatise"], a:0, y:2022},
+{q:"Which medium uses powdered pigment mixed with gum Arabic?", o:["Watercolor","Oil paint","Acrylic","Tempera"], a:0, y:2023},
+{q:"The term 'Palette' in art refers to?", o:["A surface for mixing paints","A type of brush","A sculpting tool","A frame for canvas"], a:0, y:2023},
+
+/* ===================== 81–90 ===================== */
+{q:"Art that uses tiny dots to form an image is?", o:["Pointillism","Hatching","Stippling","Cross-hatching"], a:0, y:2021},
+{q:"The principle that refers to equal visual weight is?", o:["Balance","Contrast","Emphasis","Unity"], a:0, y:2021},
+{q:"A painting made by applying thick paint layers is called?", o:["Impasto","Fresco","Tempera","Watercolor"], a:0, y:2022},
+{q:"The Edo Benin Kingdom is located in which country?", o:["Nigeria","Ghana","Togo","Benin Republic"], a:0, y:2022},
+{q:"Art that represents dreams or the unconscious is?", o:["Surrealism","Expressionism","Cubism","Realism"], a:0, y:2023},
+{q:"Which Nigerian artist is known for contemporary sculpture and installation art?", o:["El Anatsui","Ben Enwonwu","Nike Davies-Okundaye","Peju Alatise"], a:0, y:2023},
+{q:"A sculptor who creates freestanding sculptures makes?", o:["In-the-round sculptures","Relief sculptures","Assemblages","Collages"], a:0, y:2021},
+{q:"The formal element that refers to light reflected from surfaces is?", o:["Value","Color","Texture","Line"], a:0, y:2022},
+{q:"Which technique involves carving into a surface to produce an image?", o:["Engraving","Painting","Drawing","Collage"], a:0, y:2023},
+{q:"Art that combines text, images, and materials on a surface is?", o:["Collage","Sculpture","Fresco","Etching"], a:0, y:2023},
+
+/* ===================== 91–100 ===================== */
+{q:"Which Nigerian art school is famous for innovative contemporary art?", o:["Nsukka School","Zaria School","Yaba College","Lagos School"], a:0, y:2021},
+{q:"The Edo Benin bronzes mainly depict which figures?", o:["Royalty and nobles","Farmers","Traders","Commoners"], a:0, y:2021},
+{q:"The technique of carving designs on clay and painting them before firing is?", o:["Sgraffito","Impasto","Fresco","Collage"], a:0, y:2022},
+{q:"Art that emphasizes geometric forms and abstraction is?", o:["Cubism","Realism","Expressionism","Impressionism"], a:0, y:2022},
+{q:"The principle of art that emphasizes certain areas to attract attention is?", o:["Emphasis","Balance","Rhythm","Unity"], a:0, y:2023},
+{q:"The Zaria Art Society was founded in?", o:["1958","1960","1963","1965"], a:0, y:2023},
+{q:"Which medium uses pigment mixed with water and gum Arabic?", o:["Watercolor","Oil paint","Tempera","Acrylic"], a:0, y:2021},
+{q:"A continuous mark that defines shapes in art is?", o:["Line","Texture","Color","Value"], a:0, y:2022},
+{q:"Assemblage art involves?", o:["Assembling found objects","Carving wood","Painting","Etching"], a:0, y:2023},
+{q:"The principle of art that creates harmony and completeness is?", o:["Unity","Contrast","Balance","Emphasis"], a:0, y:2023}
+
+];
+/* ================= VARIABLES ================= */
+let current = 0;
+let answers = [];
+let isPremium = false;
+let time = 0;          // exam duration in seconds
+let selectedMinutes = 0;
+let timerInt;
+let timerStarted = false;
+
+const qText = document.getElementById("qText");
+const optionsWrap = document.getElementById("optionsWrap");
+const qNav = document.getElementById("qNav");
+const progressFill = document.getElementById("progressFill");
+const timerEl = document.getElementById("timer");
+
+/* ================= UTILITY ================= */
+function shuffle(array){
+  for(let i=array.length-1;i>0;i--){
+    const j=Math.floor(Math.random()*(i+1));
+    [array[i],array[j]]=[array[j],array[i]];
+  }
+}
+
+/* ================= RENDER QUESTIONS ================= */
+function render(){
+  const q = QUESTIONS[current];
+  qText.innerHTML = `${current+1}. ${q.q} <small>${q.y ? "(Year "+q.y+")":""}</small>`;
+  optionsWrap.innerHTML="";
+  q.o.forEach((op,i)=>{
+    const d=document.createElement("div");
+    d.className="option";
+    if(answers[current]===i) d.classList.add("selected");
+    d.innerText=op;
+    d.onclick=()=>{answers[current]=i; render();};
+    optionsWrap.appendChild(d);
+  });
+  progressFill.style.width=((answers.filter(a=>a!==null).length/QUESTIONS.length)*100)+"%";
+  buildNav();
+}
+
+function buildNav(){
+  qNav.innerHTML="";
+  for(let i=0;i<QUESTIONS.length;i++){
+    const b=document.createElement("button");
+    b.className="qbtn";
+    if(i===current) b.classList.add("current");
+    if(answers[i]!=null) b.classList.add("answered");
+    if(!isPremium && i>=25){
+      b.classList.add("locked");
+      b.disabled=true;
+    }
+    b.innerText=i+1;
+    b.onclick=()=>{current=i; render();}
+    qNav.appendChild(b);
+  }
+}
+
+/* ================= TIMER ================= */
+async function chooseExamTime(){
+  const { value } = await Swal.fire({
+    title: "Select Exam Duration",
+    text: "Choose your preferred exam time",
+    icon: "info",
+    allowOutsideClick: false,
+    allowEscapeKey: false,
+    confirmButtonText: "Start Exam",
+    input: "radio",
+    inputOptions: {
+      20: "20 Minutes",
+      30: "30 Minutes",
+      40: "40 Minutes",
+      60: "60 Minutes"
+    },
+    inputValidator: (value) => {
+      if (!value) return "Please select a duration";
+    }
+  });
+
+  selectedMinutes = Number(value);
+  time = selectedMinutes * 60;
+}
+
+function startTimer(){
+  if(timerStarted) return;
+  timerStarted = true;
+
+  timerInt = setInterval(()=>{
+    let m = Math.floor(time / 60);
+    let s = time % 60;
+    timerEl.innerText = `${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}`;
+    time--;
+    if(time<0){
+      clearInterval(timerInt);
+      Swal.fire({
+        title:"Time Up!",
+        text:"Your exam has been submitted automatically.",
+        icon:"warning",
+        confirmButtonText:"View Result"
+      }).then(()=>showReview());
+    }
+  },1000);
+}
+
+/* ================= SUBMIT & REVIEW ================= */
+function submitExam(){
+  Swal.fire({
+    title:"Submit Exam?",
+    icon:"warning",
+    showCancelButton:true,
+    confirmButtonText:"Yes Submit"
+  }).then(r=>{
+    if(!r.isConfirmed) return;
+    showReview();
+  });
+}
+
+function showReview(){
+  clearInterval(timerInt);
+  document.getElementById("examSection").style.display="none";
+  document.getElementById("reviewSection").style.display="block";
+
+  const total = isPremium ? QUESTIONS.length : Math.min(25, QUESTIONS.length);
+  let score = 0;
+  const list = document.getElementById("reviewList");
+  list.innerHTML="";
+
+  for(let i=0;i<total;i++){
+    if(answers[i]===QUESTIONS[i].a) score++;
+    const div=document.createElement("div");
+    div.className="review-q";
+    div.innerHTML=`
+      <p><b>${i+1}. ${QUESTIONS[i].q}</b></p>
+      <p>Your Answer: <span class="${answers[i]===QUESTIONS[i].a?"correct":"wrong"}">${QUESTIONS[i].o[answers[i]]||"Not Answered"}</span></p>
+      <p>Correct Answer: ${QUESTIONS[i].o[QUESTIONS[i].a]}</p>
+    `;
+    list.appendChild(div);
+  }
+
+  document.getElementById("rScore").innerText = `${score}/${total}`;
+  document.getElementById("rFail").innerText = total-score;
+  document.getElementById("rPercent").innerText = ((score/total)*100).toFixed(1)+"%";
+}
+
+/* ================= BUTTONS ================= */
+document.getElementById("nextBtn").onclick=()=>{
+  if(!isPremium && current===24){
+    Swal.fire("Upgrade Required","Only 25 questions for free users","info");
+    return;
+  }
+  if(current<QUESTIONS.length-1){current++;render();}
+};
+document.getElementById("backBtn").onclick=()=>{if(current>0){current--;render();}};
+document.getElementById("submitBtn").onclick=submitExam;
+
+/* ================= AUTH & INIT ================= */
+onAuthStateChanged(auth, async(user)=>{
+  if(!user){ location.href="login.html"; return; }
+
+  const snap = await getDoc(doc(db,"users",user.uid));
+  isPremium = snap.exists() && snap.data().isPremium===true;
+  if(!isPremium) document.getElementById("freeNote").style.display="block";
+
+  // 1. Select exam time
+  await chooseExamTime();
+
+  // 2. Shuffle questions & init answers
+  shuffle(QUESTIONS);
+  answers = Array(QUESTIONS.length).fill(null);
+
+  // 3. Render and start timer
+  render();
+  startTimer();
+});
+</script>
+
+</body>
+</html>

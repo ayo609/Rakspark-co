@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Login • Rakspark Academy</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+  <style>
+    :root {
+      --sky: #87CEEB;
+      --navy: #001F3F;
+      --gold: #FFD700;
+      --white: #fff;
+      --success: #2ed573;
+      --danger: #ff4757;
+      --shadow: rgba(0,31,63,0.3);
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: linear-gradient(145deg, var(--sky) 0%, #5dade2 100%);
+      min-height: 100vh;
+      padding: 40px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow-y: auto;
+    }
+
+    .login-wrapper {
+      width: 100%;
+      max-width: 480px;
+      background: white;
+      border-radius: 32px;
+      overflow: hidden;
+      box-shadow: 0 30px 90px var(--shadow);
+      animation: fadeInUp 1s ease-out;
+    }
+
+    .login-header {
+      background: linear-gradient(135deg, var(--navy), #002b55);
+      color: white;
+      text-align: center;
+      padding: 60px 40px 50px;
+    }
+    .login-header h1 {
+      font-size: 3rem;
+      font-weight: 900;
+      margin-bottom: 12px;
+    }
+    .login-header p {
+      font-size: 1.3rem;
+      opacity: 0.95;
+    }
+
+    .login-body {
+      padding: 50px 50px 60px;
+    }
+
+    .input-group {
+      position: relative;
+      margin-bottom: 28px;
+    }
+    .input-group i:first-child {
+      position: absolute;
+      left: 24px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--navy);
+      font-size: 1.4rem;
+    }
+    .password-toggle {
+      position: absolute;
+      right: 24px;
+      top: 50%;
+      transform: translateY(-50%);
+      cursor: pointer;
+      color: var(--navy);
+      font-size: 1.3rem;
+      z-index: 2;
+    }
+    input {
+      width: 100%;
+      padding: 20px 20px 20px 65px;
+      border: 2.5px solid #e8ecf4;
+      border-radius: 18px;
+      font-size: 1.15rem;
+      background: #f8fbff;
+      transition: all 0.4s ease;
+    }
+    input:focus {
+      border-color: var(--navy);
+      background: white;
+      box-shadow: 0 0 0 7px rgba(0,31,63,0.1);
+      outline: none;
+    }
+
+    .forgot {
+      text-align: right;
+      margin-bottom: 30px;
+    }
+    .forgot a {
+      color: var(--navy);
+      font-weight: 600;
+      text-decoration: none;
+      font-size: 1rem;
+    }
+    .forgot a:hover {
+      text-decoration: underline;
+    }
+
+    .btn {
+      width: 100%;
+      padding: 20px;
+      border: none;
+      border-radius: 18px;
+      font-size: 1.35rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.5s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    .btn-login {
+      background: var(--navy);
+      color: white;
+    }
+    .btn-login:hover {
+      background: #001233;
+      transform: translateY(-5px);
+      box-shadow: 0 15px 35px rgba(0,31,63,0.35);
+    }
+    .btn-google {
+      background: white;
+      color: var(--navy);
+      border: 2.5px solid #ddd;
+    }
+    .btn-google:hover {
+      background: #f8f9fa;
+      border-color: var(--navy);
+    }
+
+    .divider {
+      text-align: center;
+      margin: 35px 0;
+      color: #888;
+      position: relative;
+    }
+    .divider::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 0;
+      width: 100%;
+      height: 1.5px;
+      background: #ddd;
+      z-index: -1;
+    }
+    .divider span {
+      background: white;
+      padding: 0 30px;
+      font-weight: 600;
+    }
+
+    .register-link {
+      text-align: center;
+      font-size: 1.15rem;
+      color: #555;
+    }
+    .register-link a {
+      color: var(--navy);
+      font-weight: 700;
+      text-decoration: none;
+    }
+    .register-link a:hover {
+      text-decoration: underline;
+    }
+
+    /* Toast */
+    .toast {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      min-width: 340px;
+      padding: 18px 28px;
+      border-radius: 18px;
+      color: white;
+      font-weight: 600;
+      font-size: 1.15rem;
+      box-shadow: 0 15px 45px rgba(0,0,0,0.35);
+      z-index: 10000;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.6s ease;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .toast.show {
+      opacity: 1;
+      visibility: visible;
+      top: 40px;
+    }
+    .toast.success { background: var(--success); }
+    .toast.error { background: var(--danger); }
+
+    /* WhatsApp Float */
+    .whatsapp-float {
+      position: fixed;
+      bottom: 30px;
+      right: 30px;
+      background: #25D366;
+      width: 65px;
+      height: 65px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 35px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+      z-index: 9999;
+      animation: float 3s ease-in-out infinite;
+      transition: transform 0.3s;
+    }
+    .whatsapp-float:hover { transform: scale(1.1); }
+    @keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-15px); } }
+
+    @media (max-width: 480px) {
+      .login-wrapper { margin: 20px; border-radius: 24px; }
+      .login-header, .login-body { padding: 40px 30px; }
+      .login-header h1 { font-size: 2.5rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Toast -->
+  <div class="toast" id="toast">
+    <i id="toastIcon"></i>
+    <span id="toastMessage"></span>
+  </div>
+
+  <!-- WhatsApp -->
+  <a href="https://wa.me/2347018051146" class="whatsapp-float" target="_blank" aria-label="Chat on WhatsApp">
+    <i class="fab fa-whatsapp"></i>
+  </a>
+
+  <div class="login-wrapper animate__animated animate__fadeIn">
+    <div class="login-header">
+      <h1>Welcome Back!</h1>
+      <p>Login to continue your JAMB 2026 journey</p>
+    </div>
+
+    <div class="login-body">
+      <form id="loginForm" novalidate>
+        <div class="input-group">
+          <i class="fas fa-envelope"></i>
+          <input type="email" id="email" placeholder="Email Address" required />
+        </div>
+
+        <div class="input-group">
+          <i class="fas fa-lock"></i>
+          <input type="password" id="password" placeholder="Password" required />
+          <i class="fas fa-eye password-toggle" id="togglePassword"></i>
+        </div>
+
+        <div class="forgot">
+          <a href="forgot.html">Forgot Password?</a>
+        </div>
+
+        <button type="submit" class="btn btn-login">
+          <span id="btnText">Login</span>
+          <span id="loading" style="display:none;"><i class="fas fa-spinner fa-spin"></i> Logging in...</span>
+        </button>
+      </form>
+
+      <div class="divider"><span>OR</span></div>
+
+      <button class="btn btn-google" id="googleLogin">
+        <i class="fab fa-google"></i> Continue with Google
+      </button>
+
+      <div class="register-link">
+        New here? <a href="register.html">Create free account</a>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js";
+    import { getAuth, signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDTDWqG_WAXZO7O6yAxV5lOHUkHZp-wwQk",
+      authDomain: "rackspark.firebaseapp.com",
+      projectId: "rackspark",
+      storageBucket: "rackspark.firebasestorage.app",
+      messagingSenderId: "125488977166",
+      appId: "1:125488977166:web:b519b6871df21662c0f35f"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const provider = new GoogleAuthProvider();
+
+    const toast = document.getElementById('toast');
+    const toastMsg = document.getElementById('toastMessage');
+    const toastIcon = document.getElementById('toastIcon');
+
+    function showToast(message, type = 'success') {
+      toastMsg.textContent = message;
+      toast.className = `toast ${type} show`;
+      toastIcon.className = type === 'success' ? 'fas fa-check-circle' : 'fas fa-exclamation-circle';
+      setTimeout(() => toast.classList.remove('show'), 6000);
+    }
+
+    // Password toggle with proper icon switch
+    document.getElementById('togglePassword').addEventListener('click', function() {
+      const pwd = document.getElementById('password');
+      const isPassword = pwd.type === 'password';
+      pwd.type = isPassword ? 'text' : 'password';
+      this.classList.toggle('fa-eye', !isPassword);
+      this.classList.toggle('fa-eye-slash', isPassword);
+    });
+
+    // Email/Password Login
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value;
+
+      if (!email || !password) {
+        showToast('Please fill in all fields', 'error');
+        return;
+      }
+
+      document.getElementById('btnText').style.display = 'none';
+      document.getElementById('loading').style.display = 'flex';
+
+      try {
+        await signInWithEmailAndPassword(auth, email, password);
+        showToast('Welcome back! Redirecting to dashboard...', 'success');
+        setTimeout(() => location.href = "dashboard.html", 1800);
+      } catch (error) {
+        let message = 'Login failed. Please try again.';
+        if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
+          message = 'Invalid email or password';
+        } else if (error.code === 'auth/invalid-email') {
+          message = 'Please enter a valid email address';
+        } else if (error.code === 'auth/too-many-requests') {
+          message = 'Too many attempts. Try again later.';
+        }
+        showToast(message, 'error');
+
+        document.getElementById('btnText').style.display = 'flex';
+        document.getElementById('loading').style.display = 'none';
+      }
+    });
+
+    // Google Login (Optional)
+    document.getElementById('googleLogin').addEventListener('click', async () => {
+      try {
+        await signInWithPopup(auth, provider);
+        showToast('Logged in successfully!', 'success');
+        setTimeout(() => location.href = "dashboard.html", 1500);
+      } catch (error) {
+        if (error.code === 'auth/popup-closed-by-user') {
+          // User closed popup – no toast needed
+          return;
+        }
+        showToast('Google login failed. Try again.', 'error');
+      }
+    });
+  </script>
+</body>
+</html>

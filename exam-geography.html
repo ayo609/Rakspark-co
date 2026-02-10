@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>JAMB CBT –  Geography</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<!-- SweetAlert2 -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<!-- Google Font -->
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+:root{
+  --navy:#001f3f;
+  --sky:#eaf4ff;
+  --green:#2ed573;
+  --red:#ff4757;
+  --gold:#f1c40f;
+  --gray:#f5f5f5;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+  font-family:Poppins,sans-serif;
+  background:linear-gradient(135deg,#eaf4ff,#d6e9ff);
+  min-height:100vh;
+  padding:20px;
+}
+.container{
+  max-width:1100px;
+  margin:auto;
+  background:#fff;
+  border-radius:25px;
+  box-shadow:0 25px 70px rgba(0,0,0,.15);
+  overflow:hidden;
+}
+header{
+  background:var(--navy);
+  color:#fff;
+  padding:25px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+header h2{font-size:1.6rem}
+#timer{
+  background:#fff;
+  color:var(--navy);
+  padding:8px 18px;
+  border-radius:20px;
+  font-weight:700;
+}
+#freeNote{
+  background:#fff3cd;
+  color:#856404;
+  padding:12px;
+  text-align:center;
+  font-weight:600;
+  display:none;
+}
+.main{
+  padding:30px;
+}
+#progress{
+  height:10px;
+  background:#eee;
+  border-radius:10px;
+  overflow:hidden;
+  margin-bottom:20px;
+}
+#progressFill{
+  height:100%;
+  width:0%;
+  background:linear-gradient(90deg,var(--green),var(--gold));
+}
+#qText{
+  font-size:1.3rem;
+  font-weight:600;
+  margin-bottom:20px;
+}
+.option{
+  background:var(--gray);
+  padding:15px 18px;
+  border-radius:15px;
+  margin-bottom:12px;
+  cursor:pointer;
+  transition:.3s;
+}
+.option:hover{background:#e0e0e0}
+.option.selected{
+  background:var(--navy);
+  color:#fff;
+}
+.nav-btns{
+  display:flex;
+  justify-content:space-between;
+  margin-top:25px;
+}
+button{
+  padding:12px 30px;
+  border:none;
+  border-radius:30px;
+  font-weight:600;
+  cursor:pointer;
+}
+#backBtn{background:#ccc}
+#nextBtn{background:var(--navy);color:#fff}
+#submitBtn{
+  background:var(--green);
+  color:#fff;
+}
+#qNav{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(45px,1fr));
+  gap:10px;
+  margin-top:30px;
+}
+.qbtn{
+  padding:10px;
+  border-radius:10px;
+  border:none;
+  cursor:pointer;
+  font-weight:600;
+}
+.qbtn.current{background:var(--navy);color:#fff}
+.qbtn.answered{background:var(--green);color:#fff}
+.qbtn.locked{background:#ddd;color:#999;cursor:not-allowed}
+.review{
+  display:none;
+  padding:30px;
+}
+.review h2{text-align:center;margin-bottom:20px}
+.score-box{
+  display:flex;
+  justify-content:space-around;
+  margin-bottom:25px;
+  flex-wrap:wrap;
+}
+.score-card{
+  background:var(--gray);
+  padding:20px;
+  border-radius:20px;
+  text-align:center;
+  min-width:160px;
+}
+.correct{color:var(--green);font-weight:700}
+.wrong{color:var(--red);font-weight:700}
+.review-q{
+  background:#f9f9f9;
+  padding:15px;
+  border-radius:15px;
+  margin-bottom:15px;
+}
+.review-q p{margin:6px 0}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<header>
+  <h2>JAMB CBT – Geography</h2>
+  <div id="timer">00:00</div>
+</header>
+
+<div id="freeNote">
+  Free users can attempt only <b>25 questions</b>. Upgrade to Premium for all 99+.
+</div>
+
+<div class="main" id="examSection">
+  <div id="progress"><div id="progressFill"></div></div>
+  <div id="qText"></div>
+  <div id="optionsWrap"></div>
+
+  <div class="nav-btns">
+    <button id="backBtn">Back</button>
+    <button id="nextBtn">Next</button>
+    <button id="submitBtn">Submit</button>
+  </div>
+
+  <div id="qNav"></div>
+</div>
+
+<div class="review" id="reviewSection">
+  <h2>Exam Review</h2>
+  <div class="score-box">
+    <div class="score-card">Score<br><span id="rScore"></span></div>
+    <div class="score-card">Failed<br><span id="rFail"></span></div>
+    <div class="score-card">Percentage<br><span id="rPercent"></span></div>
+  </div>
+  <div id="reviewList"></div>
+</div>
+
+</div>
+
+<script type="module">
+/* ================= FIREBASE ================= */
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js";
+import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDTDWqG_WAXZO7O6yAxV5lOHUkHZp-wwQk",
+  authDomain: "rackspark.firebaseapp.com",
+  projectId: "rackspark",
+  storageBucket: "rackspark.firebasestorage.app",
+  messagingSenderId: "125488977166",
+  appId: "1:125488977166:web:b519b6871df21662c0f35f"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+/* ================= QUESTIONS ================= */
+
+const QUESTIONS = [
+
+/* ===================== 1–10 ===================== */
+{q:"What is the largest continent by area?", o:["Asia","Africa","Europe","North America"], a:0, y:2021},
+{q:"Which is the longest river in the world?", o:["Nile","Amazon","Yangtze","Mississippi"], a:0, y:2021},
+{q:"Mount Everest is located in which mountain range?", o:["Himalayas","Andes","Rockies","Alps"], a:0, y:2022},
+{q:"Which ocean is the largest?", o:["Pacific","Atlantic","Indian","Arctic"], a:0, y:2022},
+{q:"The Sahara Desert is located in?", o:["Africa","Asia","Australia","South America"], a:0, y:2023},
+{q:"Which country has the largest population?", o:["China","India","USA","Indonesia"], a:0, y:2023},
+{q:"The equator passes through which continent?", o:["Africa","Europe","Asia","Australia"], a:0, y:2021},
+{q:"Which is the smallest continent?", o:["Australia","Europe","Antarctica","South America"], a:0, y:2022},
+{q:"Which is the highest waterfall in the world?", o:["Angel Falls","Niagara Falls","Victoria Falls","Iguazu Falls"], a:0, y:2023},
+{q:"Which river flows through Egypt?", o:["Nile","Amazon","Congo","Zambezi"], a:0, y:2023},
+
+/* ===================== 11–20 ===================== */
+{q:"Which is the largest desert in the world?", o:["Sahara","Gobi","Kalahari","Arabian"], a:0, y:2021},
+{q:"Which African country has the largest land area?", o:["Algeria","Nigeria","Sudan","Egypt"], a:0, y:2021},
+{q:"Which is the deepest ocean trench?", o:["Mariana Trench","Tonga Trench","Philippine Trench","Puerto Rico Trench"], a:0, y:2022},
+{q:"Which is the capital of Kenya?", o:["Nairobi","Mombasa","Kisumu","Nakuru"], a:0, y:2022},
+{q:"Which country is known as the Land of the Rising Sun?", o:["Japan","China","Thailand","South Korea"], a:0, y:2023},
+{q:"Which is the largest island in the world?", o:["Greenland","New Guinea","Borneo","Madagascar"], a:0, y:2023},
+{q:"Which continent is known as the Dark Continent?", o:["Africa","Asia","Europe","South America"], a:0, y:2021},
+{q:"Which country has the most natural lakes?", o:["Canada","Russia","USA","Brazil"], a:0, y:2022},
+{q:"Which desert is located in China and Mongolia?", o:["Gobi","Sahara","Kalahari","Atacama"], a:0, y:2023},
+{q:"Which river is the largest by volume of water?", o:["Amazon","Congo","Nile","Yangtze"], a:0, y:2023},
+
+/* ===================== 21–30 ===================== */
+{q:"Which mountain is the tallest in Africa?", o:["Mount Kilimanjaro","Mount Kenya","Ruwenzori","Atlas"], a:0, y:2021},
+{q:"Which is the largest country in South America?", o:["Brazil","Argentina","Chile","Peru"], a:0, y:2021},
+{q:"Which country is the largest producer of cocoa?", o:["Côte d’Ivoire","Ghana","Nigeria","Cameroon"], a:0, y:2022},
+{q:"Which is the largest bay in the world?", o:["Bay of Bengal","Hudson Bay","Gulf of Mexico","Bengal Bay"], a:0, y:2022},
+{q:"Which is the longest river in Africa?", o:["Nile","Congo","Niger","Zambezi"], a:0, y:2023},
+{q:"Which is the smallest country in the world?", o:["Vatican City","Monaco","Nauru","San Marino"], a:0, y:2023},
+{q:"Which strait separates Europe and Asia?", o:["Bosphorus","Malacca","Gibraltar","Hormuz"], a:0, y:2021},
+{q:"Which is the largest lake in Africa?", o:["Lake Victoria","Lake Tanganyika","Lake Malawi","Lake Chad"], a:0, y:2022},
+{q:"Which is the highest mountain in North America?", o:["Denali","Mount Logan","Mount Saint Elias","Mount Foraker"], a:0, y:2023},
+{q:"Which country is called the ‘Land of a Thousand Lakes’?", o:["Finland","Canada","Sweden","Norway"], a:0, y:2023},
+
+/* ===================== 31–40 ===================== */
+{q:"Which is the longest river in Asia?", o:["Yangtze","Ganges","Mekong","Indus"], a:0, y:2021},
+{q:"Which is the largest desert in Asia?", o:["Gobi","Thar","Karakum","Kyzylkum"], a:0, y:2021},
+{q:"Which African country is landlocked?", o:["Niger","Nigeria","Egypt","South Africa"], a:0, y:2022},
+{q:"Which is the deepest lake in the world?", o:["Lake Baikal","Lake Tanganyika","Caspian Sea","Lake Victoria"], a:0, y:2022},
+{q:"Which ocean borders the west coast of Africa?", o:["Atlantic","Indian","Pacific","Arctic"], a:0, y:2023},
+{q:"Which is the largest peninsula in the world?", o:["Arabian Peninsula","Indian Peninsula","Scandinavian Peninsula","Balkan Peninsula"], a:0, y:2023},
+{q:"Which desert is located in northern China and southern Mongolia?", o:["Gobi","Sahara","Karakum","Kalahari"], a:0, y:2021},
+{q:"Which river flows through Brazil and Colombia?", o:["Amazon","Orinoco","Paraná","Niger"], a:0, y:2022},
+{q:"Which country has the largest coastline in the world?", o:["Canada","Russia","USA","Australia"], a:0, y:2023},
+{q:"Which is the highest mountain in Europe?", o:["Mount Elbrus","Mont Blanc","Matterhorn","Mount Etna"], a:0, y:2023},
+
+/* ===================== 41–50 ===================== */
+{q:"Which continent has the largest number of countries?", o:["Africa","Europe","Asia","South America"], a:0, y:2021},
+{q:"Which country is the largest producer of oil in Africa?", o:["Nigeria","Angola","Libya","Algeria"], a:0, y:2021},
+{q:"Which country is famous for the Great Barrier Reef?", o:["Australia","USA","Philippines","Indonesia"], a:0, y:2022},
+{q:"Which river flows through Iraq?", o:["Tigris","Nile","Jordan","Euphrates"], a:0, y:2022},
+{q:"Which country has the largest population in Africa?", o:["Nigeria","Ethiopia","Egypt","DR Congo"], a:0, y:2023},
+{q:"Which is the highest mountain in South America?", o:["Aconcagua","Huascarán","Chimborazo","Cotopaxi"], a:0, y:2023},
+{q:"Which African country is known as the ‘Horn of Africa’?", o:["Somalia","Ethiopia","Kenya","Djibouti"], a:0, y:2021},
+{q:"Which is the largest island in Africa?", o:["Madagascar","Seychelles","Mauritius","Comoros"], a:0, y:2022},
+{q:"Which river flows through Nigeria?", o:["Niger","Nile","Congo","Zambezi"], a:0, y:2023},
+{q:"Which desert is located in southern Africa?", o:["Kalahari","Sahara","Namib","Karakum"], a:0, y:2023},
+
+/* ===================== 51–60 ===================== */
+{q:"Which country is known for the Great Wall?", o:["China","Japan","Korea","Vietnam"], a:0, y:2021},
+{q:"Which is the largest city in the world by population?", o:["Tokyo","Shanghai","Delhi","São Paulo"], a:0, y:2021},
+{q:"Which ocean is located between Africa and Australia?", o:["Indian","Atlantic","Pacific","Arctic"], a:0, y:2022},
+{q:"Which is the longest river in South America?", o:["Amazon","Orinoco","Paraná","São Francisco"], a:0, y:2022},
+{q:"Which is the largest lake in the world?", o:["Caspian Sea","Superior","Victoria","Michigan"], a:0, y:2023},
+{q:"Which is the largest island in Indonesia?", o:["Sumatra","Java","Borneo","Sulawesi"], a:0, y:2023},
+{q:"Which country has the largest area in Africa?", o:["Algeria","Sudan","Libya","DR Congo"], a:0, y:2021},
+{q:"Which country is landlocked in West Africa?", o:["Niger","Nigeria","Ghana","Senegal"], a:0, y:2022},
+{q:"Which strait separates Europe from Africa?", o:["Gibraltar","Hormuz","Malacca","Bosphorus"], a:0, y:2023},
+{q:"Which river is known as the ‘Yellow River’?", o:["Huang He","Yangtze","Mekong","Ganges"], a:0, y:2023},
+
+/* ===================== 61–70 ===================== */
+{q:"Which is the smallest continent by population?", o:["Australia","Europe","Antarctica","South America"], a:0, y:2021},
+{q:"Which country has the largest forest area?", o:["Russia","Brazil","Canada","USA"], a:0, y:2021},
+{q:"Which country is known as the Land of the Rising Sun?", o:["Japan","China","Thailand","South Korea"], a:0, y:2022},
+{q:"Which is the highest waterfall in Africa?", o:["Tugela Falls","Victoria Falls","Blue Nile Falls","Kalambo Falls"], a:0, y:2022},
+{q:"Which African country has the longest coastline?", o:["Somalia","Nigeria","Egypt","South Africa"], a:0, y:2023},
+{q:"Which is the largest gulf in the world?", o:["Gulf of Mexico","Persian Gulf","Arabian Gulf","Bay of Bengal"], a:0, y:2023},
+{q:"Which is the highest volcano in the world?", o:["Ojos del Salado","Mount Etna","Mount Fuji","Kilimanjaro"], a:0, y:2021},
+{q:"Which continent is known as the ‘Frozen Continent’?", o:["Antarctica","Europe","Asia","North America"], a:0, y:2022},
+{q:"Which is the largest country in the Middle East?", o:["Saudi Arabia","Iran","Iraq","Turkey"], a:0, y:2023},
+{q:"Which river flows through Paris?", o:["Seine","Thames","Danube","Rhine"], a:0, y:2023},
+
+/* ===================== 71–80 ===================== */
+{q:"Which is the longest river in Europe?", o:["Volga","Danube","Rhine","Seine"], a:0, y:2021},
+{q:"Which African country is the most populous?", o:["Nigeria","Ethiopia","Egypt","DR Congo"], a:0, y:2021},
+{q:"Which is the largest peninsula in Europe?", o:["Scandinavian Peninsula","Iberian Peninsula","Italian Peninsula","Balkan Peninsula"], a:0, y:2022},
+{q:"Which is the highest mountain in the world?", o:["Mount Everest","K2","Kangchenjunga","Lhotse"], a:0, y:2022},
+{q:"Which country is known as the Land of the Midnight Sun?", o:["Norway","Sweden","Finland","Iceland"], a:0, y:2023},
+{q:"Which is the largest desert in North America?", o:["Mojave","Sonoran","Chihuahuan","Great Basin"], a:0, y:2023},
+{q:"Which is the largest city in Africa by population?", o:["Lagos","Cairo","Kinshasa","Johannesburg"], a:0, y:2021},
+{q:"Which strait separates Europe from Asia?", o:["Bosphorus","Gibraltar","Malacca","Hormuz"], a:0, y:2022},
+{q:"Which is the highest mountain in Oceania?", o:["Puncak Jaya","Mount Kosciuszko","Mauna Kea","Mount Wilhelm"], a:0, y:2023},
+{q:"Which country is called the ‘Pearl of Africa’?", o:["Uganda","Kenya","Tanzania","Rwanda"], a:0, y:2023},
+
+/* ===================== 81–90 ===================== */
+{q:"Which river forms part of the border between the USA and Mexico?", o:["Rio Grande","Mississippi","Colorado","Columbia"], a:0, y:2021},
+{q:"Which is the largest bay in Africa?", o:["Gulf of Guinea","Chesapeake Bay","Bay of Bengal","Hudson Bay"], a:0, y:2021},
+{q:"Which country has the largest coral reef system?", o:["Australia","Philippines","Indonesia","Belize"], a:0, y:2022},
+{q:"Which is the longest river in North America?", o:["Mississippi","Missouri","Colorado","Rio Grande"], a:0, y:2022},
+{q:"Which is the largest island in the Caribbean?", o:["Cuba","Hispaniola","Jamaica","Puerto Rico"], a:0, y:2023},
+{q:"Which is the largest river in Europe?", o:["Volga","Danube","Rhine","Seine"], a:0, y:2023},
+{q:"Which country is known for Mount Fuji?", o:["Japan","China","South Korea","Philippines"], a:0, y:2021},
+{q:"Which is the longest mountain range in the world?", o:["Andes","Himalayas","Rockies","Alps"], a:0, y:2022},
+{q:"Which river flows through London?", o:["Thames","Seine","Danube","Rhine"], a:0, y:2023},
+{q:"Which is the largest desert in Australia?", o:["Great Victoria","Great Sandy","Simpson","Gibson"], a:0, y:2023},
+
+/* ===================== 91–100 ===================== */
+{q:"Which African country is known as the Rainbow Nation?", o:["South Africa","Nigeria","Kenya","Ghana"], a:0, y:2021},
+{q:"Which country is home to the Dead Sea?", o:["Jordan","Israel","Palestine","Syria"], a:0, y:2021},
+{q:"Which is the largest waterfall in Africa?", o:["Victoria Falls","Tugela Falls","Kalambo Falls","Blue Nile Falls"], a:0, y:2022},
+{q:"Which ocean borders the east coast of the USA?", o:["Atlantic","Pacific","Indian","Arctic"], a:0, y:2022},
+{q:"Which country is the largest in South America?", o:["Brazil","Argentina","Chile","Peru"], a:0, y:2023},
+{q:"Which African country is known for the pyramids?", o:["Egypt","Sudan","Nigeria","Morocco"], a:0, y:2023},
+{q:"Which river flows through Baghdad?", o:["Tigris","Euphrates","Nile","Jordan"], a:0, y:2021},
+{q:"Which is the highest mountain in Africa?", o:["Mount Kilimanjaro","Mount Kenya","Ruwenzori","Atlas"], a:0, y:2022},
+{q:"Which country is home to the Amazon Rainforest?", o:["Brazil","Peru","Colombia","Venezuela"], a:0, y:2023},
+{q:"Which desert is located in northern Africa?", o:["Sahara","Kalahari","Namib","Gobi"], a:0, y:2023}
+
+];
+/* ================= VARIABLES ================= */
+let current = 0;
+let answers = [];
+let isPremium = false;
+let time = 0;          // exam duration in seconds
+let selectedMinutes = 0;
+let timerInt;
+let timerStarted = false;
+
+const qText = document.getElementById("qText");
+const optionsWrap = document.getElementById("optionsWrap");
+const qNav = document.getElementById("qNav");
+const progressFill = document.getElementById("progressFill");
+const timerEl = document.getElementById("timer");
+
+/* ================= UTILITY ================= */
+function shuffle(array){
+  for(let i=array.length-1;i>0;i--){
+    const j=Math.floor(Math.random()*(i+1));
+    [array[i],array[j]]=[array[j],array[i]];
+  }
+}
+
+/* ================= RENDER QUESTIONS ================= */
+function render(){
+  const q = QUESTIONS[current];
+  qText.innerHTML = `${current+1}. ${q.q} <small>${q.y ? "(Year "+q.y+")":""}</small>`;
+  optionsWrap.innerHTML="";
+  q.o.forEach((op,i)=>{
+    const d=document.createElement("div");
+    d.className="option";
+    if(answers[current]===i) d.classList.add("selected");
+    d.innerText=op;
+    d.onclick=()=>{answers[current]=i; render();};
+    optionsWrap.appendChild(d);
+  });
+  progressFill.style.width=((answers.filter(a=>a!==null).length/QUESTIONS.length)*100)+"%";
+  buildNav();
+}
+
+function buildNav(){
+  qNav.innerHTML="";
+  for(let i=0;i<QUESTIONS.length;i++){
+    const b=document.createElement("button");
+    b.className="qbtn";
+    if(i===current) b.classList.add("current");
+    if(answers[i]!=null) b.classList.add("answered");
+    if(!isPremium && i>=25){
+      b.classList.add("locked");
+      b.disabled=true;
+    }
+    b.innerText=i+1;
+    b.onclick=()=>{current=i; render();}
+    qNav.appendChild(b);
+  }
+}
+
+/* ================= TIMER ================= */
+async function chooseExamTime(){
+  const { value } = await Swal.fire({
+    title: "Select Exam Duration",
+    text: "Choose your preferred exam time",
+    icon: "info",
+    allowOutsideClick: false,
+    allowEscapeKey: false,
+    confirmButtonText: "Start Exam",
+    input: "radio",
+    inputOptions: {
+      20: "20 Minutes",
+      30: "30 Minutes",
+      40: "40 Minutes",
+      60: "60 Minutes"
+    },
+    inputValidator: (value) => {
+      if (!value) return "Please select a duration";
+    }
+  });
+
+  selectedMinutes = Number(value);
+  time = selectedMinutes * 60;
+}
+
+function startTimer(){
+  if(timerStarted) return;
+  timerStarted = true;
+
+  timerInt = setInterval(()=>{
+    let m = Math.floor(time / 60);
+    let s = time % 60;
+    timerEl.innerText = `${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}`;
+    time--;
+    if(time<0){
+      clearInterval(timerInt);
+      Swal.fire({
+        title:"Time Up!",
+        text:"Your exam has been submitted automatically.",
+        icon:"warning",
+        confirmButtonText:"View Result"
+      }).then(()=>showReview());
+    }
+  },1000);
+}
+
+/* ================= SUBMIT & REVIEW ================= */
+function submitExam(){
+  Swal.fire({
+    title:"Submit Exam?",
+    icon:"warning",
+    showCancelButton:true,
+    confirmButtonText:"Yes Submit"
+  }).then(r=>{
+    if(!r.isConfirmed) return;
+    showReview();
+  });
+}
+
+function showReview(){
+  clearInterval(timerInt);
+  document.getElementById("examSection").style.display="none";
+  document.getElementById("reviewSection").style.display="block";
+
+  const total = isPremium ? QUESTIONS.length : Math.min(25, QUESTIONS.length);
+  let score = 0;
+  const list = document.getElementById("reviewList");
+  list.innerHTML="";
+
+  for(let i=0;i<total;i++){
+    if(answers[i]===QUESTIONS[i].a) score++;
+    const div=document.createElement("div");
+    div.className="review-q";
+    div.innerHTML=`
+      <p><b>${i+1}. ${QUESTIONS[i].q}</b></p>
+      <p>Your Answer: <span class="${answers[i]===QUESTIONS[i].a?"correct":"wrong"}">${QUESTIONS[i].o[answers[i]]||"Not Answered"}</span></p>
+      <p>Correct Answer: ${QUESTIONS[i].o[QUESTIONS[i].a]}</p>
+    `;
+    list.appendChild(div);
+  }
+
+  document.getElementById("rScore").innerText = `${score}/${total}`;
+  document.getElementById("rFail").innerText = total-score;
+  document.getElementById("rPercent").innerText = ((score/total)*100).toFixed(1)+"%";
+}
+
+/* ================= BUTTONS ================= */
+document.getElementById("nextBtn").onclick=()=>{
+  if(!isPremium && current===24){
+    Swal.fire("Upgrade Required","Only 25 questions for free users","info");
+    return;
+  }
+  if(current<QUESTIONS.length-1){current++;render();}
+};
+document.getElementById("backBtn").onclick=()=>{if(current>0){current--;render();}};
+document.getElementById("submitBtn").onclick=submitExam;
+
+/* ================= AUTH & INIT ================= */
+onAuthStateChanged(auth, async(user)=>{
+  if(!user){ location.href="login.html"; return; }
+
+  const snap = await getDoc(doc(db,"users",user.uid));
+  isPremium = snap.exists() && snap.data().isPremium===true;
+  if(!isPremium) document.getElementById("freeNote").style.display="block";
+
+  // 1. Select exam time
+  await chooseExamTime();
+
+  // 2. Shuffle questions & init answers
+  shuffle(QUESTIONS);
+  answers = Array(QUESTIONS.length).fill(null);
+
+  // 3. Render and start timer
+  render();
+  startTimer();
+});
+</script>
+
+</body>
+</html>

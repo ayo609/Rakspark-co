@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Flashcards • Rakspark Academy</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<style>
+:root{
+  --sky:#87CEEB;--navy:#001F3F;--gold:#FFD700;--green:#2ed573;--red:#ff4757;--white:#fff;--shadow:rgba(0,31,63,0.25)
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+  font-family:'Poppins',sans-serif;
+  background:linear-gradient(135deg,var(--sky),#5dade2);
+  min-height:100vh;
+  color:#333;
+  padding:30px 20px;
+  display:flex;
+  align-items:center;
+  justify-content:center
+}
+.container{max-width:1000px;width:100%}
+.card{
+  background:white;
+  border-radius:36px;
+  padding:70px 50px;
+  box-shadow:0 30px 100px var(--shadow);
+  text-align:center;
+}
+.header h1{font-size:3.8rem;color:var(--navy);font-weight:800;margin-bottom:20px}
+.header p{font-size:1.6rem;color:#555;margin-bottom:60px}
+
+.subject-selector{margin:50px 0}
+.subject-selector select{
+  padding:22px;
+  border:4px solid var(--navy);
+  border-radius:20px;
+  font-size:1.5rem;
+  width:100%;
+  max-width:500px;
+  background:white;
+  color:var(--navy);
+  cursor:pointer;
+  transition:all 0.3s
+}
+.subject-selector select:focus{
+  outline:none;
+  border-color:var(--gold);
+  box-shadow:0 0 0 8px rgba(255,215,0,0.2)
+}
+
+.flashcard-container{
+  perspective:1200px;
+  margin:80px auto;
+  max-width:750px;
+  height:460px;
+  position:relative
+}
+.flashcard{
+  width:100%;
+  height:100%;
+  position:absolute;
+  transform-style:preserve-3d;
+  transition:transform 0.8s ease-in-out;
+  cursor:pointer;
+  border-radius:32px;
+}
+.flashcard.flipped{transform:rotateY(180deg);}
+.front, .back{
+  position:absolute;
+  width:100%;
+  height:100%;
+  border-radius:32px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:50px;
+  font-size:2.1rem;
+  font-weight:600;
+  text-align:center;
+  backface-visibility:hidden;
+  color:var(--navy);
+}
+.front{background:linear-gradient(135deg,#f8fbff,#e8f4ff);}
+.back{background:linear-gradient(135deg,var(--gold),#ffb300);transform:rotateY(180deg);}
+
+.progress-bar{
+  height:10px;
+  background:#e0e0e0;
+  border-radius:5px;
+  margin:40px auto;
+  max-width:600px;
+  overflow:hidden
+}
+.progress-fill{
+  height:100%;
+  background:var(--green);
+  width:0;
+  transition:width 0.6s ease
+}
+
+.controls{
+  display:flex;
+  justify-content:center;
+  gap:35px;
+  margin-top:60px;
+  flex-wrap:wrap
+}
+.ctrl-btn{
+  padding:20px 45px;
+  background:var(--navy);
+  color:white;
+  border:none;
+  border-radius:50px;
+  font-size:1.5rem;
+  font-weight:700;
+  cursor:pointer;
+  transition:all 0.4s;
+  display:flex;
+  align-items:center;
+  gap:12px
+}
+.ctrl-btn:hover{background:#001233;transform:translateY(-6px)}
+.ctrl-btn:disabled{
+  background:#95a5a6;
+  cursor:not-allowed;
+  transform:none
+}
+.ctrl-btn i{font-size:1.9rem}
+
+.progress-text{
+  margin-top:20px;
+  font-size:1.7rem;
+  color:var(--navy);
+  font-weight:600
+}
+
+.back-link{
+  margin-top:90px;
+  display:block;
+  color:var(--navy);
+  font-size:1.5rem;
+  font-weight:600;
+  text-decoration:none
+}
+.back-link:hover{color:var(--gold)}
+
+@media (max-width:480px){
+  .card{padding:50px 25px}
+  .header h1{font-size:2.8rem}
+  .flashcard-container{height:400px}
+  .front,.back{font-size:1.6rem;padding:30px}
+  .ctrl-btn{padding:16px 30px;font-size:1.3rem}
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="card">
+    <div class="header">
+      <h1>Smart Flashcards</h1>
+      <p>Master any topic with spaced repetition & beautiful animations</p>
+    </div>
+    <div class="subject-selector">
+      <select id="subjectSelect">
+        <option value="">Select Subject to Begin</option>
+        <option value="English">Use of English</option>
+        <option value="Mathematics">Mathematics</option>
+        <option value="Physics">Physics</option>
+        <option value="Chemistry">Chemistry</option>
+        <option value="Biology">Biology</option>
+        <option value="Government">Government</option>
+        <option value="Economics">Economics</option>
+        <option value="Accounting">Accounting</option>
+      </select>
+    </div>
+
+    <div class="flashcard-container">
+      <div class="flashcard" id="flashcard">
+        <div class="front">Select a subject to begin</div>
+        <div class="back">Answer will appear here</div>
+      </div>
+    </div>
+
+    <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+    <div class="controls">
+      <button class="ctrl-btn" id="prevBtn" disabled><i class="fas fa-chevron-left"></i> Previous</button>
+      <button class="ctrl-btn" id="flipBtn"><i class="fas fa-sync-alt"></i> Flip Card</button>
+      <button class="ctrl-btn" id="nextBtn" disabled><i class="fas fa-chevron-right"></i> Next</button>
+    </div>
+    <div class="progress-text" id="progressText">Card 0 of 0</div>
+    <a href="dashboard.html" class="back-link">← Back to Dashboard</a>
+  </div>
+</div>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js";
+import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
+
+// Firebase config
+const firebaseConfig = {
+  apiKey: "AIzaSyDTDWqG_WAXZO7O6yAxV5lOHUkHZp-wwQk",
+  authDomain: "rackspark.firebaseapp.com",
+  projectId: "rackspark",
+  storageBucket: "rackspark.firebasestorage.app",
+  messagingSenderId: "125488977166",
+  appId: "1:125488977166:web:b519b6871df21662c0f35f"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+// Flashcard logic
+let currentCard = 0;
+let cards = [];
+
+const sampleDecks = {
+  "English": [
+    {front: "1. Neither the teacher nor the students ______ ready for the test when the bell rang.", back: "were"},
+    {front: "2. If she had listened to the advice given, she ______ into trouble.", back: "would not have run"},
+    {front: "3. The man, together with his two sons, ______ travelling to Abuja tomorrow.", back: "is"},
+    {front: "4. Hardly had the match started ______ the rain began to fall heavily.", back: "when"},
+    {front: "5. The new rules were introduced ______ improve discipline in the school.", back: "in order to"},
+    {front: "6. The politician is anything but honest. This implies that the politician is", back: "not honest at all"},
+    {front: "7. Hardly had the match begun when the rain disrupted it. This means that the rain", back: "disrupted the match shortly after it began"},
+    {front: "8. The manager was RELUCTANT to approve the request.", back: "unwilling"},
+    {front: "9. The student gave a PLAUSIBLE explanation for his absence.", back: "reasonable"},
+    {front: "10. The villagers were ASTONISHED by the sudden flood.", back: "shocked"},
+    {front: "11. His comment was considered OFFENSIVE by the audience.", back: "insulting"},
+    {front: "12. The judge made a FAIR decision after listening to both sides.", back: "just"},
+    {front: "13. Choose the word that is most opposite in meaning to the word 'Abundant'.", back: "Scarce"},
+    {front: "14. Select the word that is the opposite of 'Hostile'.", back: "Friendly"},
+    {front: "15. Which of the following words is an antonym of 'Obsolete'?", back: "Modern"}
+  ],
+  "Mathematics": [
+    {front:"If f(x) = 3x² - 2x + 1, find f'(x).", back:"f'(x) = 6x - 2"},
+    {front:"Solve for x: 2x² - 7x + 3 = 0.", back:"x = 3 or x = 1/2"},
+    {front:"Find the derivative of y = sin²(x).", back:"dy/dx = sin(2x)"},
+    {front:"The sum of the first 20 terms of the AP: 3, 7, 11,...", back:"880"},
+    {front:"If tan θ = 3/4, find sin θ.", back:"sin θ = 3/5"},
+    {front:"Evaluate the limit: lim(x→0) (sin x)/x.", back:"1"},
+    {front:"The equation of the circle with center (2, -1) and radius 5.", back:"(x - 2)² + (y + 1)² = 25"},
+    {front:"If log₂x = 5, find x.", back:"x = 32"},
+    {front:"The probability of getting exactly 2 heads in 3 tosses of a fair coin.", back:"3/8"},
+    {front:"Solve: |2x - 5| = 7.", back:"x = 6 or x = -1"},
+    {front:"If A = {1,2,3} and B = {2,3,4}, find A ∩ B.", back:"{2,3}"},
+    {front:"Find the area of a triangle with vertices (0,0), (4,0), (0,3).", back:"6"},
+    {front:"If 3x - y = 7 and 2x + y = 1, find x and y.", back:"x = 2, y = -1"},
+    {front:"Find the sum to infinity of the series: 6 + 2 + 2/3 + ...", back:"9"},
+    {front:"If cos A = 3/5 and A is in quadrant I, find sin A.", back:"sin A = 4/5"}
+  ],
+  "Physics": [
+    {front:"State Newton’s Second Law in formula form.", back:"F = ma"},
+    {front:"A particle moves along a straight line with acceleration a = 6t m/s². Find the velocity after 4 s if initial velocity is 2 m/s.", back:"v = 50 m/s"},
+    {front:"A block of mass 5 kg slides down a frictionless incline of height 4 m. Find its speed at the bottom.", back:"v = √(2gh) ≈ 8.85 m/s"},
+    {front:"State the law of conservation of momentum.", back:"Total momentum of a system remains constant if no external force acts."},
+    {front:"A capacitor of 4 μF is connected across 12 V. Find the charge stored.", back:"Q = CV = 4.8 ×10⁻⁵ C"},
+    {front:"Light passes from air into glass (n=1.5) at 30°. Find the angle of refraction.", back:"θ₂ ≈ 19.47°"},
+    {front:"Find the de Broglie wavelength of an electron moving at 2×10⁶ m/s.", back:"λ ≈ 3.64 × 10⁻¹⁰ m"},
+    {front:"A 50 W resistor is connected to 220 V. Find the current through it.", back:"I ≈ 0.227 A"},
+    {front:"A wave has a frequency of 500 Hz and wavelength 2 m. Find its speed.", back:"v = 1000 m/s"},
+    {front:"Define specific heat capacity.", back:"Heat required to raise 1 kg of substance by 1 K"},
+    {front:"A mass-spring system with m = 0.2 kg and k = 50 N/m oscillates. Find its period.", back:"T ≈ 0.398 s"},
+    {front:"A proton moves perpendicular to B = 0.5 T with velocity 2×10⁶ m/s. Find the force.", back:"F ≈ 1.6 ×10⁻¹³ N"},
+    {front:"The half-life of a radioactive substance is 4 hours. Fraction after 12 hours?", back:"1/8"},
+    {front:"A lens forms an image at 30 cm for an object 20 cm away. Find focal length.", back:"f = 12 cm"},
+    {front:"State the principle of moments.", back:"Sum of clockwise moments = sum of anticlockwise moments"}
+  ],
+  "Chemistry": [
+    {front:"State the first law of thermodynamics.", back:"ΔU = Q - W"},
+    {front:"Empirical formula: 40% C, 6.7% H, 53.3% O.", back:"CH₂O"},
+    {front:"Balance: C₄H₁₀ + O₂ → CO₂ + H₂O.", back:"2 C₄H₁₀ + 13 O₂ → 8 CO₂ + 10 H₂O"},
+    {front:"Molarity of 0.5 mol in 250 mL?", back:"M = 2 M"},
+    {front:"Calculate pH of 0.01 M HCl.", back:"pH = 2"},
+    {front:"State Le Chatelier's principle.", back:"System shifts to counteract disturbance"},
+    {front:"Oxidation number of Cr in K₂Cr₂O₇.", back:"+6"},
+    {front:"Moles in 22 g CO₂ (M = 44 g/mol).", back:"0.5 mol"},
+    {front:"Volume of 0.1 M NaOH to neutralize 25 mL of 0.2 M HCl?", back:"50 mL"},
+    {front:"Why ionic compounds conduct in molten state?", back:"Ions free to move"},
+    {front:"Hybridization of C in CO₃²⁻?", back:"sp²"},
+    {front:"ΔH° for H₂ + ½ O₂ → H₂O", back:"ΔH° = -286 kJ/mol"},
+    {front:"Major product of CH₃CH=CH₂ + HBr", back:"CH₃CHBrCH₃"},
+    {front:"Moles in 1.2 g NaCl (M=58.5)?", back:"≈0.0205 mol"},
+    {front:"Exothermic vs Endothermic", back:"Exothermic releases heat; Endothermic absorbs heat"}
+  ],
+  "Biology": [
+    {front:"State the central dogma of molecular biology.", back:"DNA → RNA → Protein"},
+    {front:"Ploidy of gametes in humans?", back:"Haploid (n=23)"},
+    {front:"Dihybrid cross AaBb × AaBb ratio?", back:"9:3:3:1"},
+    {front:"Describe transcription.", back:"DNA → complementary RNA"},
+    {front:"Phase of meiosis with crossing over?", back:"Prophase I"},
+    {front:"Explain Bohr effect.", back:"Decrease pH/↑CO₂ reduces O₂ affinity"},
+    {front:"Function of Golgi apparatus?", back:"Modifies, packages, distributes proteins/lipids"},
+    {front:"Allele frequency of A if 160 AA, 80 Aa, 60 aa?", back:"p = 0.667"},
+    {front:"Role of NADP⁺ in photosynthesis?", back:"Electron carrier → NADPH"},
+    {front:"RNA vs DNA?", back:"RNA single-strand, ribose, uracil; DNA double-strand, deoxyribose, thymine"},
+    {front:"Sliding filament theory?", back:"Actin slides over myosin shortening sarcomere"},
+    {front:"Kidney filtration process?", back:"Blood filtered in glomerulus; small molecules pass to Bowman's capsule"},
+    {front:"Define ecological succession.", back:"Gradual ecosystem change over time"},
+    {front:"Heterozygous tall (Tt) × short (tt) probability short?", back:"50%"},
+    {front:"Explain natural selection.", back:"Advantageous traits increase survival/reproduction"}
+  ],
+  "Government": [
+    {front:"Define 'sovereignty'.", back:"Supreme authority of a state to govern itself"},
+    {front:"Explain separation of powers.", back:"Dividing authority among legislature, executive, judiciary"},
+    {front:"Unitary vs federal government?", back:"Unitary central power; Federal shared power"},
+    {front:"Main function of legislature?", back:"Make, amend, repeal laws"},
+    {front:"Define political socialization.", back:"Process of acquiring political values/behavior"},
+    {front:"Objectives of Nigerian 1999 Constitution?", back:"Democracy, human rights, justice, unity"},
+    {front:"Doctrine of judicial review?", back:"Judiciary can invalidate unconstitutional laws/actions"},
+    {front:"Democracy vs dictatorship?", back:"Democracy: participation/accountability; Dictatorship: concentrated power"},
+    {front:"Role of INEC?", back:"Organizes/conducts elections"},
+    {front:"Bicameral legislature?", back:"Two chambers: Senate & House of Representatives"},
+    {front:"Types of political parties?", back:"Ideological, One-party dominant, Ethnic-based"},
+    {front:"Objectives of UN?", back:"Peace, human rights, economic/social development, cooperation"},
+    {front:"Concept of rule of law?", back:"Everyone accountable to law"},
+    {front:"Referendum vs general election?", back:"Referendum: vote on issue; General election: elect representatives"},
+    {front:"Political accountability significance?", back:"Transparency, responsibility, evaluation"}
+  ],
+  "Economics": [
+    {front:"Define opportunity cost.", back:"Value of next best alternative foregone"},
+    {front:"Law of diminishing marginal returns?", back:"Additional output eventually decreases"},
+    {front:"Price elasticity of demand?", back:"Measure of quantity demanded response to price change"},
+    {front:"Nominal vs Real GDP?", back:"Nominal: current prices; Real: adjusted for inflation"},
+    {front:"Equilibrium price?", back:"Price where quantity demanded = quantity supplied"},
+    {front:"Effects of inflation?", back:"Reduces purchasing power; increases production cost"},
+    {front:"Fiscal policy?", back:"Use of govt spending & taxation to influence economy"},
+    {front:"Central Bank role?", back:"Regulates money supply via tools like interest rates"},
+    {front:"Monopoly vs perfect competition?", back:"Monopoly: single seller, price maker; Perfect: many sellers, price taker"},
+    {front:"Significance of PPF?", back:"Shows max output, opportunity costs, scarcity, efficiency"},
+    {front:"Aggregate demand?", back:"Total demand for goods/services at given price level"},
+    {front:"Causes of unemployment?", back:"Structural, frictional, cyclical"},
+    {front:"Direct vs indirect taxes?", back:"Direct: paid directly; Indirect: passed to consumers"},
+    {front:"Balance of payments?", back:"Record of all economic transactions with rest of world"},
+    {front:"Role of entrepreneurship?", back:"Creates jobs, innovation, growth"}
+  ],
+  "Accounting": [
+    {front:"Define accounting equation.", back:"Assets = Liabilities + Owner’s Equity"},
+    {front:"Capital vs revenue expenditure?", back:"Capital: long-term assets; Revenue: daily operations"},
+    {front:"Trial balance: Cash ₦50,000; Capital ₦80,000; Purchases ₦40,000; Sales ₦100,000; Expenses ₦20,000.", back:"Debit: Cash 50k, Purchases 40k, Expenses 20k; Credit: Capital 80k, Sales 100k"},
+    {front:"Purpose of depreciation?", back:"Allocate cost of asset over useful life"},
+    {front:"COGS with Opening 50k, Purchases 120k, Closing 30k?", back:"COGS = 140k"},
+    {front:"Cash vs accrual basis?", back:"Cash: recorded when cash moves; Accrual: recorded when earned/incurred"},
+    {front:"Define ledger.", back:"Book/file containing all accounts"},
+    {front:"Importance of financial statements?", back:"Decision-making, performance evaluation, accountability"},
+    {front:"Net profit if Sales 500k, COGS 300k, Expenses 120k?", back:"Net profit = 80k"},
+    {front:"Capital vs revenue receipts?", back:"Capital: non-operating inflow; Revenue: ordinary business inflow"},
+    {front:"Double-entry system?", back:"Each transaction affects ≥2 accounts; debits = credits"},
+    {front:"Simple balance sheet: Assets Cash 50k, AR 30k; Liabilities Loan 40k, Capital 40k", back:"Assets 80k = Liabilities+Capital 80k → Balanced"},
+    {front:"Define accounting policies.", back:"Principles/rules used in preparing statements"},
+    {front:"Gross vs net profit?", back:"Gross: Sales-COGS; Net: Gross - Expenses/Taxes"},
+    {front:"Straight-line depreciation for machine 200k, residual 20k, 5 years?", back:"Depreciation = 36k per year"}
+  ]
+};
+function showUpgradeModal() {
+  Swal.fire({
+    icon:'warning',
+    title:'Premium Feature 🔒',
+    html:`<p style="font-size:1.5rem;margin:20px 0">Smart Flashcards are exclusive to <strong>Premium members</strong></p>
+          <p style="color:#555;font-size:1.3rem">Upgrade now and master any subject 3x faster!</p>`,
+    confirmButtonText:'Upgrade to Premium Now',
+    cancelButtonText:'Back to Dashboard',
+    showCancelButton:true,
+    confirmButtonColor:'#001F3F',
+    cancelButtonColor:'#95a5a6',
+    allowOutsideClick:false,
+    allowEscapeKey:false
+  }).then(result=>{
+    if(result.isConfirmed) location.href="upgrade.html";
+    else location.href="dashboard.html";
+  });
+}
+
+function loadCards(subject){
+  cards = sampleDecks[subject] || [];
+  currentCard = 0;
+  updateCard();
+  updateControls();
+}
+
+function updateCard(){
+  const cardEl = document.getElementById('flashcard');
+  const frontEl = cardEl.querySelector('.front');
+  const backEl = cardEl.querySelector('.back');
+
+  if(cards.length === 0){
+    frontEl.textContent = "No flashcards available for this subject yet";
+    backEl.textContent = "";
+    document.getElementById('progressText').textContent = "Card 0 of 0";
+    document.getElementById('progressFill').style.width = "0%";
+    document.getElementById('prevBtn').disabled = true;
+    document.getElementById('nextBtn').disabled = true;
+    return;
+  }
+
+  const current = cards[currentCard];
+  frontEl.textContent = current.front;
+  backEl.textContent = current.back;
+  cardEl.classList.remove('flipped');
+
+  document.getElementById('progressText').textContent = `Card ${currentCard + 1} of ${cards.length}`;
+  document.getElementById('progressFill').style.width = `${((currentCard + 1)/cards.length)*100}%`;
+}
+
+function updateControls(){
+  document.getElementById('prevBtn').disabled = currentCard === 0;
+  document.getElementById('nextBtn').disabled = currentCard === cards.length-1;
+}
+
+// Event listeners
+document.getElementById('subjectSelect').addEventListener('change',(e)=>{
+  if(e.target.value) loadCards(e.target.value);
+});
+
+const flashcardEl = document.getElementById('flashcard');
+document.getElementById('flipBtn').onclick = ()=> flashcardEl.classList.toggle('flipped');
+flashcardEl.onclick = ()=> flashcardEl.classList.toggle('flipped');
+
+document.getElementById('nextBtn').onclick = ()=>{
+  if(currentCard<cards.length-1){
+    currentCard++;
+    updateCard();
+    updateControls();
+  }
+};
+document.getElementById('prevBtn').onclick = ()=>{
+  if(currentCard>0){
+    currentCard--;
+    updateCard();
+    updateControls();
+  }
+};
+
+// Auth & Premium Check
+onAuthStateChanged(auth, async(user)=>{
+  if(!user){ location.href="login.html"; return; }
+  const userSnap = await getDoc(doc(db,"users",user.uid));
+  const userData = userSnap.exists()?userSnap.data():{};
+  if(!userData.isPremium) showUpgradeModal();
+});
+</script>
+</body>
+</html>

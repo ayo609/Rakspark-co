@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>JAMB CBT – Literature- In English</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<!-- SweetAlert2 -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<!-- Google Font -->
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+:root{
+  --navy:#001f3f;
+  --sky:#eaf4ff;
+  --green:#2ed573;
+  --red:#ff4757;
+  --gold:#f1c40f;
+  --gray:#f5f5f5;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+  font-family:Poppins,sans-serif;
+  background:linear-gradient(135deg,#eaf4ff,#d6e9ff);
+  min-height:100vh;
+  padding:20px;
+}
+.container{
+  max-width:1100px;
+  margin:auto;
+  background:#fff;
+  border-radius:25px;
+  box-shadow:0 25px 70px rgba(0,0,0,.15);
+  overflow:hidden;
+}
+header{
+  background:var(--navy);
+  color:#fff;
+  padding:25px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+header h2{font-size:1.6rem}
+#timer{
+  background:#fff;
+  color:var(--navy);
+  padding:8px 18px;
+  border-radius:20px;
+  font-weight:700;
+}
+#freeNote{
+  background:#fff3cd;
+  color:#856404;
+  padding:12px;
+  text-align:center;
+  font-weight:600;
+  display:none;
+}
+.main{
+  padding:30px;
+}
+#progress{
+  height:10px;
+  background:#eee;
+  border-radius:10px;
+  overflow:hidden;
+  margin-bottom:20px;
+}
+#progressFill{
+  height:100%;
+  width:0%;
+  background:linear-gradient(90deg,var(--green),var(--gold));
+}
+#qText{
+  font-size:1.3rem;
+  font-weight:600;
+  margin-bottom:20px;
+}
+.option{
+  background:var(--gray);
+  padding:15px 18px;
+  border-radius:15px;
+  margin-bottom:12px;
+  cursor:pointer;
+  transition:.3s;
+}
+.option:hover{background:#e0e0e0}
+.option.selected{
+  background:var(--navy);
+  color:#fff;
+}
+.nav-btns{
+  display:flex;
+  justify-content:space-between;
+  margin-top:25px;
+}
+button{
+  padding:12px 30px;
+  border:none;
+  border-radius:30px;
+  font-weight:600;
+  cursor:pointer;
+}
+#backBtn{background:#ccc}
+#nextBtn{background:var(--navy);color:#fff}
+#submitBtn{
+  background:var(--green);
+  color:#fff;
+}
+#qNav{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(45px,1fr));
+  gap:10px;
+  margin-top:30px;
+}
+.qbtn{
+  padding:10px;
+  border-radius:10px;
+  border:none;
+  cursor:pointer;
+  font-weight:600;
+}
+.qbtn.current{background:var(--navy);color:#fff}
+.qbtn.answered{background:var(--green);color:#fff}
+.qbtn.locked{background:#ddd;color:#999;cursor:not-allowed}
+.review{
+  display:none;
+  padding:30px;
+}
+.review h2{text-align:center;margin-bottom:20px}
+.score-box{
+  display:flex;
+  justify-content:space-around;
+  margin-bottom:25px;
+  flex-wrap:wrap;
+}
+.score-card{
+  background:var(--gray);
+  padding:20px;
+  border-radius:20px;
+  text-align:center;
+  min-width:160px;
+}
+.correct{color:var(--green);font-weight:700}
+.wrong{color:var(--red);font-weight:700}
+.review-q{
+  background:#f9f9f9;
+  padding:15px;
+  border-radius:15px;
+  margin-bottom:15px;
+}
+.review-q p{margin:6px 0}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<header>
+  <h2>JAMB CBT – Literature-in-English</h2>
+  <div id="timer">00:00</div>
+</header>
+
+<div id="freeNote">
+  Free users can attempt only <b>25 questions</b>. Upgrade to Premium for all 99+.
+</div>
+
+<div class="main" id="examSection">
+  <div id="progress"><div id="progressFill"></div></div>
+  <div id="qText"></div>
+  <div id="optionsWrap"></div>
+
+  <div class="nav-btns">
+    <button id="backBtn">Back</button>
+    <button id="nextBtn">Next</button>
+    <button id="submitBtn">Submit</button>
+  </div>
+
+  <div id="qNav"></div>
+</div>
+
+<div class="review" id="reviewSection">
+  <h2>Exam Review</h2>
+  <div class="score-box">
+    <div class="score-card">Score<br><span id="rScore"></span></div>
+    <div class="score-card">Failed<br><span id="rFail"></span></div>
+    <div class="score-card">Percentage<br><span id="rPercent"></span></div>
+  </div>
+  <div id="reviewList"></div>
+</div>
+
+</div>
+
+<script type="module">
+/* ================= FIREBASE ================= */
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js";
+import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDTDWqG_WAXZO7O6yAxV5lOHUkHZp-wwQk",
+  authDomain: "rackspark.firebaseapp.com",
+  projectId: "rackspark",
+  storageBucket: "rackspark.firebasestorage.app",
+  messagingSenderId: "125488977166",
+  appId: "1:125488977166:web:b519b6871df21662c0f35f"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+/* ================= QUESTIONS ================= */
+
+const QUESTIONS = [
+
+/* ===================== 1–10 ===================== */
+{q:"Literature is best defined as?", o:["Written works of artistic value","Scientific writing","Historical records only","Political speeches"], a:0, y:2021},
+{q:"Literature-in-English is studied mainly to?", o:["Appreciate human experiences","Learn grammar only","Memorize authors","Study science"], a:0, y:2021},
+{q:"A novel is a?", o:["Long prose narrative","Short poem","Drama text","Song"], a:0, y:2022},
+{q:"A play is written mainly for?", o:["Stage performance","Silent reading","Examination only","Poetry recital"], a:0, y:2022},
+{q:"Poetry is best described as?", o:["Verse with rhythm","Prose narrative","Historical writing","Scientific text"], a:0, y:2023},
+{q:"Which is NOT a genre of literature?", o:["Journalism","Poetry","Drama","Prose"], a:0, y:2023},
+{q:"Prose includes?", o:["Novel and short story","Poem and song","Drama only","Epic poetry"], a:0, y:2021},
+{q:"Drama mainly presents life through?", o:["Dialogue and action","Narration","Description","Explanation"], a:0, y:2022},
+{q:"A short story differs from a novel in its?", o:["Length","Theme","Language","Setting"], a:0, y:2023},
+{q:"The writer of a poem is called a?", o:["Poet","Author","Playwright","Novelist"], a:0, y:2021},
+
+/* ===================== 11–20 ===================== */
+{q:"The writer of a play is known as?", o:["Playwright","Poet","Novelist","Editor"], a:0, y:2022},
+{q:"The writer of a novel is called?", o:["Novelist","Poet","Dramatist","Critic"], a:0, y:2022},
+{q:"Theme refers to?", o:["Central idea of a work","Title of a book","Name of character","Style of writing"], a:0, y:2023},
+{q:"Setting refers to the?", o:["Time and place of a story","Moral lesson","Characters","Plot"], a:0, y:2023},
+{q:"Plot is the?", o:["Sequence of events","Theme","Language","Setting"], a:0, y:2021},
+{q:"Characterization deals with?", o:["Creation of characters","Use of symbols","Narration","Setting"], a:0, y:2022},
+{q:"Protagonist is the?", o:["Main character","Villain","Narrator","Minor character"], a:0, y:2022},
+{q:"Antagonist is the?", o:["Opposing character","Hero","Narrator","Author"], a:0, y:2023},
+{q:"Round characters are?", o:["Well developed","Flat","Static","Minor"], a:0, y:2023},
+{q:"Flat characters are?", o:["One-dimensional","Complex","Dynamic","Major"], a:0, y:2021},
+
+/* ===================== 21–30 ===================== */
+{q:"Dynamic characters are those that?", o:["Change","Remain same","Disappear","Narrate story"], a:0, y:2021},
+{q:"Static characters?", o:["Do not change","Grow","Develop","Control plot"], a:0, y:2022},
+{q:"Narrator is the?", o:["Story teller","Main character","Villain","Author"], a:0, y:2022},
+{q:"First-person narration uses?", o:["I","He","They","You"], a:0, y:2023},
+{q:"Third-person narration uses?", o:["He or she","I","We","You"], a:0, y:2023},
+{q:"Point of view refers to?", o:["Narrative perspective","Theme","Setting","Mood"], a:0, y:2021},
+{q:"Conflict in literature means?", o:["Struggle","Peace","Resolution","Climax"], a:0, y:2022},
+{q:"Internal conflict occurs within a?", o:["Character","Community","Family","Nation"], a:0, y:2022},
+{q:"External conflict occurs between?", o:["Characters","Thoughts","Ideas","Dreams"], a:0, y:2023},
+{q:"Climax is the?", o:["Highest point of tension","Beginning","Ending","Theme"], a:0, y:2023},
+
+/* ===================== 31–40 ===================== */
+{q:"Resolution is the?", o:["Ending of the story","Conflict","Introduction","Climax"], a:0, y:2021},
+{q:"Mood refers to?", o:["Atmosphere","Theme","Plot","Setting"], a:0, y:2021},
+{q:"Tone shows the writer’s?", o:["Attitude","Setting","Plot","Character"], a:0, y:2022},
+{q:"Style refers to?", o:["Writer’s method","Theme","Plot","Setting"], a:0, y:2022},
+{q:"Symbolism involves?", o:["Using objects to represent ideas","Direct explanation","Narration","Dialogue"], a:0, y:2023},
+{q:"Irony is when?", o:["Opposite is expected","Everything is clear","Conflict is resolved","Characters agree"], a:0, y:2023},
+{q:"Dramatic irony occurs when?", o:["Audience knows more","Characters know all","Writer explains","Plot ends"], a:0, y:2021},
+{q:"Foreshadowing means?", o:["Hinting future events","Ending story","Introducing character","Explaining theme"], a:0, y:2022},
+{q:"Flashback is used to?", o:["Recall past events","Predict future","End story","Create conflict"], a:0, y:2022},
+{q:"Imagery appeals to?", o:["The senses","Logic","Reason","Argument"], a:0, y:2023},
+
+/* ===================== 41–50 ===================== */
+{q:"Simile compares using?", o:["Like or as","Is","Because","Than"], a:0, y:2021},
+{q:"Metaphor compares without?", o:["Like or as","Meaning","Sense","Purpose"], a:0, y:2021},
+{q:"Personification gives human qualities to?", o:["Non-living things","Humans","Animals only","Characters"], a:0, y:2022},
+{q:"Hyperbole means?", o:["Exaggeration","Comparison","Irony","Symbolism"], a:0, y:2022},
+{q:"Alliteration is repetition of?", o:["Initial consonant sounds","Vowels","Words","Ideas"], a:0, y:2023},
+{q:"Assonance is repetition of?", o:["Vowel sounds","Consonants","Words","Lines"], a:0, y:2023},
+{q:"Onomatopoeia refers to?", o:["Sound imitation","Comparison","Symbol","Irony"], a:0, y:2021},
+{q:"Rhyme is similarity of?", o:["End sounds","Ideas","Lines","Words"], a:0, y:2022},
+{q:"Meter refers to?", o:["Rhythmic pattern","Theme","Setting","Plot"], a:0, y:2022},
+{q:"Stanza is to poetry as paragraph is to?", o:["Prose","Drama","Novel","Play"], a:0, y:2023},
+
+/* ===================== 51–60 ===================== */
+{q:"Epic is a?", o:["Long narrative poem","Short lyric","Drama","Prose"], a:0, y:2021},
+{q:"Lyric poem expresses?", o:["Personal feelings","History","War","Politics"], a:0, y:2021},
+{q:"Ballad is a?", o:["Narrative poem","Dramatic play","Novel","Essay"], a:0, y:2022},
+{q:"Sonnet has how many lines?", o:["14","12","10","16"], a:0, y:2022},
+{q:"Elegy is a poem of?", o:["Lamentation","Joy","Praise","Love"], a:0, y:2023},
+{q:"Ode is a poem of?", o:["Praise","Sadness","Mockery","Anger"], a:0, y:2023},
+{q:"Satire aims to?", o:["Correct societal vices","Praise leaders","Entertain only","Narrate history"], a:0, y:2021},
+{q:"Comedy ends with?", o:["Happiness","Tragedy","Death","Conflict"], a:0, y:2022},
+{q:"Tragedy ends with?", o:["Death or sorrow","Marriage","Comedy","Peace"], a:0, y:2022},
+{q:"Tragic hero has a?", o:["Fatal flaw","Perfect life","Happy ending","Comic role"], a:0, y:2023},
+
+/* ===================== 61–70 ===================== */
+{q:"Catharsis means?", o:["Emotional purification","Conflict","Resolution","Irony"], a:0, y:2023},
+{q:"Aside in drama is?", o:["Speech to audience","Dialogue","Narration","Conflict"], a:0, y:2021},
+{q:"Soliloquy is a?", o:["Speech to oneself","Group discussion","Dialogue","Narration"], a:0, y:2021},
+{q:"Dialogue involves?", o:["Conversation","Narration","Description","Argument"], a:0, y:2022},
+{q:"Stage directions guide?", o:["Actors","Readers","Poets","Editors"], a:0, y:2022},
+{q:"African literature often focuses on?", o:["Culture and tradition","Technology","Space","Science"], a:0, y:2023},
+{q:"Chinua Achebe is known for?", o:["Things Fall Apart","Julius Caesar","Hamlet","Animal Farm"], a:0, y:2023},
+{q:"Wole Soyinka is a?", o:["Playwright","Novelist","Poet only","Journalist"], a:0, y:2021},
+{q:"Shakespeare wrote?", o:["Julius Caesar","Things Fall Apart","The Lion and the Jewel","Invisible Man"], a:0, y:2022},
+{q:"Julius Caesar is a?", o:["Tragedy","Comedy","Novel","Epic"], a:0, y:2022},
+
+/* ===================== 71–80 ===================== */
+{q:"Things Fall Apart is set in?", o:["Igbo society","Yoruba land","Europe","America"], a:0, y:2023},
+{q:"Colonialism is a major theme in?", o:["African literature","Romantic poetry","Comedy","Epic"], a:0, y:2023},
+{q:"Animal Farm is an example of?", o:["Allegory","Comedy","Epic","Lyric"], a:0, y:2021},
+{q:"Allegory uses?", o:["Symbols to convey ideas","Direct narration","Dialogue only","Drama"], a:0, y:2021},
+{q:"George Orwell wrote?", o:["Animal Farm","Hamlet","Macbeth","Julius Caesar"], a:0, y:2022},
+{q:"Literary criticism involves?", o:["Analysis of texts","Writing novels","Acting","Printing books"], a:0, y:2022},
+{q:"Didactic literature aims to?", o:["Teach lessons","Entertain only","Create conflict","Narrate history"], a:0, y:2023},
+{q:"Moral lesson is called?", o:["Theme","Plot","Setting","Style"], a:0, y:2023},
+{q:"Audience refers to?", o:["Readers or viewers","Characters","Writers","Publishers"], a:0, y:2021},
+{q:"Literary appreciation involves?", o:["Understanding text","Memorizing","Copying","Translating"], a:0, y:2022},
+
+/* ===================== 81–90 ===================== */
+{q:"Oral literature includes?", o:["Folktales","Novels","Plays","Essays"], a:0, y:2022},
+{q:"Myth explains?", o:["Origin of things","Politics","War","Science"], a:0, y:2023},
+{q:"Legend is based on?", o:["Historical facts","Fantasy","Science","Comedy"], a:0, y:2023},
+{q:"Folklore is passed?", o:["Orally","In books","By printing","Digitally"], a:0, y:2021},
+{q:"Audience participation is common in?", o:["Oral literature","Novel","Drama","Essay"], a:0, y:2021},
+{q:"Chorus in drama comments on?", o:["Action","Setting","Theme","Language"], a:0, y:2022},
+{q:"Prologue introduces the?", o:["Play","Conflict","Ending","Theme"], a:0, y:2022},
+{q:"Epilogue appears at the?", o:["End","Beginning","Middle","Conflict"], a:0, y:2023},
+{q:"Literary devices enhance?", o:["Meaning","Length","Pages","Errors"], a:0, y:2023},
+{q:"Theme of love appears mostly in?", o:["Romantic poetry","Satire","Epic","Tragedy"], a:0, y:2021},
+
+/* ===================== 91–100 ===================== */
+{q:"Satirical works criticize?", o:["Society","Nature","Love","Animals"], a:0, y:2021},
+{q:"Mood of tragedy is often?", o:["Sad","Happy","Joyful","Humorous"], a:0, y:2022},
+{q:"Comedy uses humor to?", o:["Entertain","Oppress","Educate only","Destroy"], a:0, y:2022},
+{q:"Drama combines?", o:["Dialogue and action","Narration only","Poetry only","Description"], a:0, y:2023},
+{q:"Audience empathy is created through?", o:["Characterization","Setting","Style","Title"], a:0, y:2023},
+{q:"A playwright communicates through?", o:["Characters","Narrator","Editor","Publisher"], a:0, y:2024},
+{q:"Literature reflects?", o:["Life","Science","Technology","Politics only"], a:0, y:2024},
+{q:"Universal themes are?", o:["Common to all cultures","Local","Regional","Historical only"], a:0, y:2025},
+{q:"Good literature has?", o:["Artistic quality","Errors","Bias","Confusion"], a:0, y:2025},
+{q:"Literature helps to?", o:["Develop imagination","Reduce thinking","Promote ignorance","End culture"], a:0, y:2025}
+
+];
+/* ================= VARIABLES ================= */
+let current = 0;
+let answers = [];
+let isPremium = false;
+let time = 0;          // exam duration in seconds
+let selectedMinutes = 0;
+let timerInt;
+let timerStarted = false;
+
+const qText = document.getElementById("qText");
+const optionsWrap = document.getElementById("optionsWrap");
+const qNav = document.getElementById("qNav");
+const progressFill = document.getElementById("progressFill");
+const timerEl = document.getElementById("timer");
+
+/* ================= UTILITY ================= */
+function shuffle(array){
+  for(let i=array.length-1;i>0;i--){
+    const j=Math.floor(Math.random()*(i+1));
+    [array[i],array[j]]=[array[j],array[i]];
+  }
+}
+
+/* ================= RENDER QUESTIONS ================= */
+function render(){
+  const q = QUESTIONS[current];
+  qText.innerHTML = `${current+1}. ${q.q} <small>${q.y ? "(Year "+q.y+")":""}</small>`;
+  optionsWrap.innerHTML="";
+  q.o.forEach((op,i)=>{
+    const d=document.createElement("div");
+    d.className="option";
+    if(answers[current]===i) d.classList.add("selected");
+    d.innerText=op;
+    d.onclick=()=>{answers[current]=i; render();};
+    optionsWrap.appendChild(d);
+  });
+  progressFill.style.width=((answers.filter(a=>a!==null).length/QUESTIONS.length)*100)+"%";
+  buildNav();
+}
+
+function buildNav(){
+  qNav.innerHTML="";
+  for(let i=0;i<QUESTIONS.length;i++){
+    const b=document.createElement("button");
+    b.className="qbtn";
+    if(i===current) b.classList.add("current");
+    if(answers[i]!=null) b.classList.add("answered");
+    if(!isPremium && i>=25){
+      b.classList.add("locked");
+      b.disabled=true;
+    }
+    b.innerText=i+1;
+    b.onclick=()=>{current=i; render();}
+    qNav.appendChild(b);
+  }
+}
+
+/* ================= TIMER ================= */
+async function chooseExamTime(){
+  const { value } = await Swal.fire({
+    title: "Select Exam Duration",
+    text: "Choose your preferred exam time",
+    icon: "info",
+    allowOutsideClick: false,
+    allowEscapeKey: false,
+    confirmButtonText: "Start Exam",
+    input: "radio",
+    inputOptions: {
+      20: "20 Minutes",
+      30: "30 Minutes",
+      40: "40 Minutes",
+      60: "60 Minutes"
+    },
+    inputValidator: (value) => {
+      if (!value) return "Please select a duration";
+    }
+  });
+
+  selectedMinutes = Number(value);
+  time = selectedMinutes * 60;
+}
+
+function startTimer(){
+  if(timerStarted) return;
+  timerStarted = true;
+
+  timerInt = setInterval(()=>{
+    let m = Math.floor(time / 60);
+    let s = time % 60;
+    timerEl.innerText = `${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}`;
+    time--;
+    if(time<0){
+      clearInterval(timerInt);
+      Swal.fire({
+        title:"Time Up!",
+        text:"Your exam has been submitted automatically.",
+        icon:"warning",
+        confirmButtonText:"View Result"
+      }).then(()=>showReview());
+    }
+  },1000);
+}
+
+/* ================= SUBMIT & REVIEW ================= */
+function submitExam(){
+  Swal.fire({
+    title:"Submit Exam?",
+    icon:"warning",
+    showCancelButton:true,
+    confirmButtonText:"Yes Submit"
+  }).then(r=>{
+    if(!r.isConfirmed) return;
+    showReview();
+  });
+}
+
+function showReview(){
+  clearInterval(timerInt);
+  document.getElementById("examSection").style.display="none";
+  document.getElementById("reviewSection").style.display="block";
+
+  const total = isPremium ? QUESTIONS.length : Math.min(25, QUESTIONS.length);
+  let score = 0;
+  const list = document.getElementById("reviewList");
+  list.innerHTML="";
+
+  for(let i=0;i<total;i++){
+    if(answers[i]===QUESTIONS[i].a) score++;
+    const div=document.createElement("div");
+    div.className="review-q";
+    div.innerHTML=`
+      <p><b>${i+1}. ${QUESTIONS[i].q}</b></p>
+      <p>Your Answer: <span class="${answers[i]===QUESTIONS[i].a?"correct":"wrong"}">${QUESTIONS[i].o[answers[i]]||"Not Answered"}</span></p>
+      <p>Correct Answer: ${QUESTIONS[i].o[QUESTIONS[i].a]}</p>
+    `;
+    list.appendChild(div);
+  }
+
+  document.getElementById("rScore").innerText = `${score}/${total}`;
+  document.getElementById("rFail").innerText = total-score;
+  document.getElementById("rPercent").innerText = ((score/total)*100).toFixed(1)+"%";
+}
+
+/* ================= BUTTONS ================= */
+document.getElementById("nextBtn").onclick=()=>{
+  if(!isPremium && current===24){
+    Swal.fire("Upgrade Required","Only 25 questions for free users","info");
+    return;
+  }
+  if(current<QUESTIONS.length-1){current++;render();}
+};
+document.getElementById("backBtn").onclick=()=>{if(current>0){current--;render();}};
+document.getElementById("submitBtn").onclick=submitExam;
+
+/* ================= AUTH & INIT ================= */
+onAuthStateChanged(auth, async(user)=>{
+  if(!user){ location.href="login.html"; return; }
+
+  const snap = await getDoc(doc(db,"users",user.uid));
+  isPremium = snap.exists() && snap.data().isPremium===true;
+  if(!isPremium) document.getElementById("freeNote").style.display="block";
+
+  // 1. Select exam time
+  await chooseExamTime();
+
+  // 2. Shuffle questions & init answers
+  shuffle(QUESTIONS);
+  answers = Array(QUESTIONS.length).fill(null);
+
+  // 3. Render and start timer
+  render();
+  startTimer();
+});
+</script>
+
+</body>
+</html>
