@@ -1,0 +1,848 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Premium Subscription • Rakspark Academy</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+  <style>
+    :root {
+      --primary: #1E3A8A;
+      --primary-dark: #1E293B;
+      --secondary: #3B82F6;
+      --accent: #F59E0B;
+      --dark: #0F172A;
+      --dark-light: #1E293B;
+      --gray: #F8FAFC;
+      --gray-light: #F1F5F9;
+      --gray-dark: #64748B;
+      --white: #ffffff;
+      --success: #10B981;
+      --danger: #EF4444;
+      --green: #25D366;
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.1);
+      --shadow-md: 0 4px 6px rgba(0,0,0,0.1);
+      --shadow-lg: 0 10px 15px rgba(0,0,0,0.1);
+      --shadow-xl: 0 20px 25px rgba(0,0,0,0.15);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: linear-gradient(135deg, var(--dark) 0%, var(--dark-light) 100%);
+      min-height: 100vh;
+      padding: 20px;
+      position: relative;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      width: 600px;
+      height: 600px;
+      background: radial-gradient(circle, rgba(59, 130, 246, 0.12) 0%, transparent 70%);
+      border-radius: 50%;
+      top: -200px;
+      right: -200px;
+      pointer-events: none;
+    }
+
+    body::after {
+      content: '';
+      position: fixed;
+      width: 500px;
+      height: 500px;
+      background: radial-gradient(circle, rgba(245, 158, 11, 0.08) 0%, transparent 70%);
+      border-radius: 50%;
+      bottom: -150px;
+      left: -150px;
+      pointer-events: none;
+    }
+
+    /* Wrapper */
+    .wrapper {
+      width: 100%;
+      max-width: 960px;
+      margin: auto;
+      animation: fadeUp 0.7s ease;
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(24px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Header */
+    .hero-header {
+      text-align: center;
+      padding: 60px 24px 40px;
+      position: relative;
+    }
+
+    .back-link {
+      position: absolute;
+      top: 24px;
+      left: 0;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: rgba(255,255,255,0.7);
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 500;
+      transition: all 0.3s ease;
+    }
+
+    .back-link:hover {
+      color: white;
+      gap: 12px;
+    }
+
+    .crown-icon {
+      width: 80px;
+      height: 80px;
+      background: linear-gradient(135deg, var(--accent), #D97706);
+      border-radius: 24px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 40px;
+      color: white;
+      margin-bottom: 24px;
+      box-shadow: 0 12px 32px rgba(245, 158, 11, 0.4);
+      animation: float 3s ease-in-out infinite;
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-8px); }
+    }
+
+    .hero-header h1 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 48px;
+      font-weight: 900;
+      color: white;
+      margin-bottom: 12px;
+      letter-spacing: -1px;
+      line-height: 1.2;
+    }
+
+    .hero-header p {
+      font-size: 18px;
+      color: rgba(255, 255, 255, 0.75);
+      font-weight: 400;
+    }
+
+    /* Premium Active Timer */
+    .timer-card {
+      background: linear-gradient(135deg, var(--success), #059669);
+      border-radius: 20px;
+      padding: 28px 32px;
+      margin-bottom: 24px;
+      text-align: center;
+      display: none;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 8px 24px rgba(16, 185, 129, 0.35);
+    }
+
+    .timer-card::before {
+      content: '';
+      position: absolute;
+      width: 200px;
+      height: 200px;
+      background: rgba(255,255,255,0.08);
+      border-radius: 50%;
+      top: -80px;
+      right: -60px;
+    }
+
+    .timer-card h2 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 22px;
+      font-weight: 800;
+      color: white;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+
+    .timer-card span {
+      font-size: 20px;
+      font-weight: 700;
+      color: white;
+      display: block;
+    }
+
+    /* Price Card */
+    .price-section {
+      background: white;
+      border-radius: 20px;
+      padding: 40px;
+      margin-bottom: 24px;
+      text-align: center;
+      box-shadow: var(--shadow-xl);
+    }
+
+    .price-label {
+      display: inline-block;
+      background: rgba(30, 58, 138, 0.1);
+      color: var(--primary);
+      padding: 6px 16px;
+      border-radius: 50px;
+      font-size: 13px;
+      font-weight: 700;
+      margin-bottom: 20px;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+
+    .price-section h2 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 32px;
+      font-weight: 900;
+      color: var(--dark);
+      margin-bottom: 24px;
+    }
+
+    .price-display {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+    }
+
+    .old-price {
+      font-size: 24px;
+      font-weight: 600;
+      color: var(--gray-dark);
+      text-decoration: line-through;
+    }
+
+    .new-price {
+      font-family: 'Outfit', sans-serif;
+      font-size: 56px;
+      font-weight: 900;
+      color: var(--primary);
+      letter-spacing: -2px;
+    }
+
+    .per-month {
+      font-size: 16px;
+      color: var(--gray-dark);
+      font-weight: 500;
+    }
+
+    .discount-badge {
+      display: inline-block;
+      background: linear-gradient(135deg, var(--danger), #DC2626);
+      color: white;
+      padding: 6px 16px;
+      border-radius: 50px;
+      font-size: 14px;
+      font-weight: 700;
+      margin-top: 8px;
+    }
+
+    /* Benefits */
+    .benefits-section {
+      background: white;
+      border-radius: 20px;
+      padding: 40px;
+      margin-bottom: 24px;
+      box-shadow: var(--shadow-xl);
+    }
+
+    .section-title {
+      font-family: 'Outfit', sans-serif;
+      font-size: 28px;
+      font-weight: 900;
+      color: var(--dark);
+      margin-bottom: 8px;
+    }
+
+    .section-subtitle {
+      font-size: 15px;
+      color: var(--gray-dark);
+      margin-bottom: 32px;
+    }
+
+    .benefits-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 16px;
+    }
+
+    .benefit-card {
+      background: var(--gray);
+      border-radius: 16px;
+      padding: 24px;
+      display: flex;
+      gap: 16px;
+      align-items: flex-start;
+      transition: all 0.3s ease;
+      border: 2px solid transparent;
+    }
+
+    .benefit-card:hover {
+      background: white;
+      border-color: var(--primary);
+      transform: translateY(-4px);
+      box-shadow: var(--shadow-lg);
+    }
+
+    .benefit-icon {
+      width: 48px;
+      height: 48px;
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      color: white;
+      flex-shrink: 0;
+    }
+
+    .benefit-text h4 {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--dark);
+      margin-bottom: 4px;
+    }
+
+    .benefit-text p {
+      font-size: 13px;
+      color: var(--gray-dark);
+      line-height: 1.6;
+    }
+
+    /* Payment Section */
+    .payment-section {
+      background: white;
+      border-radius: 20px;
+      padding: 40px;
+      margin-bottom: 24px;
+      box-shadow: var(--shadow-xl);
+    }
+
+    .payment-card {
+      background: var(--gray);
+      border-radius: 16px;
+      padding: 28px;
+      margin-top: 24px;
+    }
+
+    .pay-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 16px 0;
+      border-bottom: 1px solid rgba(0,0,0,0.06);
+    }
+
+    .pay-row:last-child {
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+
+    .pay-label {
+      font-size: 14px;
+      color: var(--gray-dark);
+      font-weight: 500;
+    }
+
+    .pay-value {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--dark);
+    }
+
+    .copy-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .copy-btn:hover {
+      background: var(--primary-dark);
+      transform: translateY(-2px);
+    }
+
+    /* Notice */
+    .notice-card {
+      background: linear-gradient(135deg, #FEF3C7, #FDE68A);
+      border: 2px solid var(--accent);
+      border-radius: 20px;
+      padding: 28px 32px;
+      margin-bottom: 24px;
+    }
+
+    .notice-card h3 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 20px;
+      font-weight: 800;
+      color: #92400E;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .notice-card p {
+      font-size: 15px;
+      color: #78350F;
+      line-height: 1.7;
+      font-weight: 500;
+    }
+
+    /* Steps */
+    .steps {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-top: 20px;
+    }
+
+    .step {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+    }
+
+    .step-number {
+      width: 32px;
+      height: 32px;
+      background: var(--primary);
+      color: white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: 800;
+      flex-shrink: 0;
+    }
+
+    .step p {
+      font-size: 14px;
+      color: #78350F;
+      font-weight: 600;
+      padding-top: 5px;
+    }
+
+    /* WhatsApp Button */
+    .whatsapp-btn {
+      width: 100%;
+      padding: 22px;
+      border: none;
+      border-radius: 16px;
+      background: linear-gradient(135deg, #25D366, #128C7E);
+      color: white;
+      font-size: 18px;
+      font-weight: 800;
+      font-family: 'Outfit', sans-serif;
+      cursor: pointer;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 24px;
+      box-shadow: 0 8px 24px rgba(37, 211, 102, 0.4);
+      transition: all 0.3s ease;
+      animation: pulseShadow 2.5s infinite;
+    }
+
+    @keyframes pulseShadow {
+      0% { box-shadow: 0 8px 24px rgba(37, 211, 102, 0.4); }
+      50% { box-shadow: 0 8px 24px rgba(37, 211, 102, 0.4), 0 0 0 14px rgba(37, 211, 102, 0.12); }
+      100% { box-shadow: 0 8px 24px rgba(37, 211, 102, 0.4); }
+    }
+
+    .whatsapp-btn:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 12px 32px rgba(37, 211, 102, 0.5);
+    }
+
+    .whatsapp-btn i {
+      font-size: 26px;
+    }
+
+    /* Footer note */
+    .footer-note {
+      text-align: center;
+      padding-bottom: 40px;
+    }
+
+    .footer-note a {
+      color: rgba(255,255,255,0.7);
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 500;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.3s ease;
+    }
+
+    .footer-note a:hover {
+      color: white;
+    }
+
+    /* WhatsApp float */
+    .whatsapp-float {
+      position: fixed;
+      bottom: 25px;
+      right: 25px;
+      width: 56px;
+      height: 56px;
+      background: linear-gradient(135deg, #25D366, #128C7E);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      color: white;
+      z-index: 999;
+      box-shadow: 0 4px 12px rgba(37, 211, 102, 0.4);
+      transition: all 0.3s ease;
+      text-decoration: none;
+      animation: pulse 2s infinite;
+    }
+
+    .whatsapp-float:hover {
+      transform: scale(1.1);
+    }
+
+    @keyframes pulse {
+      0% { box-shadow: 0 4px 12px rgba(37, 211, 102, 0.4); }
+      50% { box-shadow: 0 4px 12px rgba(37, 211, 102, 0.4), 0 0 0 10px rgba(37, 211, 102, 0.18); }
+      100% { box-shadow: 0 4px 12px rgba(37, 211, 102, 0.4); }
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .hero-header h1 { font-size: 36px; }
+      .new-price { font-size: 42px; }
+      .price-section, .benefits-section, .payment-section { padding: 28px 20px; }
+      .benefits-grid { grid-template-columns: 1fr; }
+      .pay-row { flex-direction: column; align-items: flex-start; gap: 8px; }
+    }
+
+    @media (max-width: 480px) {
+      .hero-header h1 { font-size: 30px; }
+      .hero-header p { font-size: 15px; }
+      .whatsapp-btn { font-size: 15px; padding: 18px; }
+      .new-price { font-size: 36px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- WhatsApp Float -->
+  <a href="https://wa.me/2349040009663" class="whatsapp-float" target="_blank" aria-label="Chat on WhatsApp">
+    <i class="fab fa-whatsapp"></i>
+  </a>
+
+  <div class="wrapper">
+
+    <!-- Hero Header -->
+    <div class="hero-header">
+      <a href="dashboard.html" class="back-link">
+        <i class="fas fa-arrow-left"></i> Back to Dashboard
+      </a>
+      <div class="crown-icon">
+        <i class="fas fa-crown"></i>
+      </div>
+      <h1>Go Premium Today</h1>
+      <p>Unlock your full potential and score 300+ in JAMB 2026</p>
+    </div>
+
+    <!-- Premium Active Timer -->
+    <div id="timerBox" class="timer-card">
+      <h2>
+        <i class="fas fa-check-circle"></i>
+        Premium Access Active
+      </h2>
+      <span id="timerText">Loading...</span>
+    </div>
+
+    <!-- Price Section -->
+    <div class="price-section">
+      <span class="price-label">Limited Time Offer</span>
+      <h2>Monthly Subscription</h2>
+      <div class="price-display">
+        <span class="old-price">₦5,000</span>
+        <span class="new-price">₦3,000</span>
+      </div>
+      <span class="per-month">per month</span><br>
+      <span class="discount-badge">🔥 40% OFF — Save ₦2,000</span>
+    </div>
+
+    <!-- Benefits -->
+    <div class="benefits-section">
+      <h2 class="section-title">What You Get With Premium</h2>
+      <p class="section-subtitle">Everything you need to ace JAMB 2026 in one package</p>
+      <div class="benefits-grid">
+        <div class="benefit-card">
+          <div class="benefit-icon"><i class="fas fa-book"></i></div>
+          <div class="benefit-text">
+            <h4>All Subjects (2020–2025)</h4>
+            <p>Real JAMB past questions fully covered across all subjects.</p>
+          </div>
+        </div>
+        <div class="benefit-card">
+          <div class="benefit-icon"><i class="fas fa-stopwatch"></i></div>
+          <div class="benefit-text">
+            <h4>CBT Exam Mode</h4>
+            <p>Timed exams with reshuffled questions for real exam practice.</p>
+          </div>
+        </div>
+        <div class="benefit-card">
+          <div class="benefit-icon"><i class="fas fa-brain"></i></div>
+          <div class="benefit-text">
+            <h4>AI Explanations</h4>
+            <p>Smart, clear explanations for faster understanding of difficult topics.</p>
+          </div>
+        </div>
+        <div class="benefit-card">
+          <div class="benefit-icon"><i class="fas fa-video"></i></div>
+          <div class="benefit-text">
+            <h4>Live & Recorded Classes</h4>
+            <p>Revision, tips, and exam strategies from expert tutors.</p>
+          </div>
+        </div>
+        <div class="benefit-card">
+          <div class="benefit-icon"><i class="fas fa-chart-line"></i></div>
+          <div class="benefit-text">
+            <h4>Performance Tracking</h4>
+            <p>Monitor your scores and progress over time with insights.</p>
+          </div>
+        </div>
+        <div class="benefit-card">
+          <div class="benefit-icon"><i class="fas fa-comments"></i></div>
+          <div class="benefit-text">
+            <h4>Dedicated Support</h4>
+            <p>Get help from expert tutors whenever you need guidance.</p>
+          </div>
+        </div>
+        <div class="benefit-card">
+          <div class="benefit-icon"><i class="fas fa-certificate"></i></div>
+          <div class="benefit-text">
+            <h4>Completion Certificates</h4>
+            <p>Receive certificates to validate your learning milestones.</p>
+          </div>
+        </div>
+        <div class="benefit-card">
+          <div class="benefit-icon"><i class="fas fa-gift"></i></div>
+          <div class="benefit-text">
+            <h4>Exclusive Resources</h4>
+            <p>Access extra study materials and bonus learning content.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Payment Section -->
+    <div class="payment-section">
+      <h2 class="section-title">Payment Details</h2>
+      <p class="section-subtitle">Make a bank transfer to the account below</p>
+      <div class="payment-card">
+        <div class="pay-row">
+          <span class="pay-label">Bank</span>
+          <span class="pay-value">OPAY</span>
+        </div>
+        <div class="pay-row">
+          <span class="pay-label">Account Name</span>
+          <span class="pay-value">TOHEEB IYANDA ADELODUN</span>
+          <button class="copy-btn" data-text="TOHEEB IYANDA ADELODUN">
+            <i class="fas fa-copy"></i> Copy
+          </button>
+        </div>
+        <div class="pay-row">
+          <span class="pay-label">Account Number</span>
+          <span class="pay-value">9040009663</span>
+          <button class="copy-btn" data-text="9040009663">
+            <i class="fas fa-copy"></i> Copy
+          </button>
+        </div>
+        <div class="pay-row">
+          <span class="pay-label">Amount</span>
+          <span class="pay-value" style="color: var(--primary); font-size: 20px;">₦3,000</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Notice & Steps -->
+    <div class="notice-card">
+      <h3>
+        <i class="fas fa-exclamation-triangle"></i>
+        Important — How to Activate
+      </h3>
+      <div class="steps">
+        <div class="step">
+          <div class="step-number">1</div>
+          <p>Make a transfer of ₦3,000 to the OPAY account above</p>
+        </div>
+        <div class="step">
+          <div class="step-number">2</div>
+          <p>Take a screenshot or download your payment receipt</p>
+        </div>
+        <div class="step">
+          <div class="step-number">3</div>
+          <p>Click the WhatsApp button below and send your payment proof to admin</p>
+        </div>
+        <div class="step">
+          <div class="step-number">4</div>
+          <p>Your account will be upgraded and your 30-day premium timer will start immediately</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- WhatsApp Button -->
+    <button class="whatsapp-btn" onclick="sendWhatsApp()">
+      <i class="fab fa-whatsapp"></i>
+      Send Payment Proof via WhatsApp
+    </button>
+
+    <!-- Footer Note -->
+    <div class="footer-note">
+      <a href="dashboard.html">
+        <i class="fas fa-arrow-left"></i>
+        Back to Dashboard
+      </a>
+    </div>
+
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js";
+    import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
+
+    const app = initializeApp({
+      apiKey: "AIzaSyDTDWqG_WAXZO7O6yAxV5lOHUkHZp-wwQk",
+      authDomain: "rackspark.firebaseapp.com",
+      projectId: "rackspark",
+      storageBucket: "rackspark.firebasestorage.app",
+      messagingSenderId: "125488977166",
+      appId: "1:125488977166:web:b519b6871df21662c0f35f"
+    });
+
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    let userName = "User";
+    const timerBox = document.getElementById("timerBox");
+    const timerText = document.getElementById("timerText");
+
+    onAuthStateChanged(auth, async user => {
+      if (!user) return location.href = "login.html";
+      userName = user.displayName || user.email;
+
+      const snap = await getDoc(doc(db, "users", user.uid));
+      if (snap.exists()) {
+        const d = snap.data();
+
+        // Check if premium via premiumExpiresAt
+        if (d.isPremium && d.premiumExpiresAt) {
+          const expiryDate = d.premiumExpiresAt.toDate();
+          const now = new Date();
+
+          if (expiryDate > now) {
+            timerBox.style.display = "block";
+            startCountdown(expiryDate);
+          }
+        }
+        // Backward compatible: premiumActivatedAt
+        else if (d.isPremium && d.premiumActivatedAt) {
+          timerBox.style.display = "block";
+          const expiryDate = new Date(d.premiumActivatedAt.toDate().getTime() + (d.premiumDurationDays || 30) * 86400000);
+          if (expiryDate > new Date()) {
+            startCountdown(expiryDate);
+          }
+        }
+      }
+    });
+
+    function startCountdown(expiryDate) {
+      function update() {
+        const diff = expiryDate.getTime() - Date.now();
+        if (diff <= 0) {
+          timerText.textContent = "Premium Expired";
+          timerBox.style.background = "linear-gradient(135deg, #EF4444, #DC2626)";
+          return;
+        }
+        const days = Math.floor(diff / 86400000);
+        const hours = Math.floor((diff % 86400000) / 3600000);
+        const mins = Math.floor((diff % 3600000) / 60000);
+        const secs = Math.floor((diff % 60000) / 1000);
+        timerText.textContent = `${days}d ${hours}h ${mins}m ${secs}s remaining`;
+
+        // Change color when low
+        if (days <= 7) {
+          timerBox.style.background = "linear-gradient(135deg, #F59E0B, #D97706)";
+        }
+      }
+      update();
+      setInterval(update, 1000);
+    }
+
+    window.sendWhatsApp = () => {
+      const msg = encodeURIComponent(
+`Hello Admin 👋
+
+My name is ${userName}.
+I have completed payment of ₦3,000 for Rakspark Academy Premium Subscription.
+
+Please find my payment proof attached for verification and account upgrade.
+
+Thank you! 🙏`
+      );
+      window.open(`https://wa.me/2349040009663?text=${msg}`, "_blank");
+    };
+
+    // Copy buttons
+    document.querySelectorAll(".copy-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        navigator.clipboard.writeText(btn.dataset.text).then(() => {
+          const original = btn.innerHTML;
+          btn.innerHTML = '<i class="fas fa-check"></i> Copied!';
+          btn.style.background = 'var(--success)';
+          setTimeout(() => {
+            btn.innerHTML = original;
+            btn.style.background = '';
+          }, 2000);
+        });
+      });
+    });
+  </script>
+
+</body>
+</html>
